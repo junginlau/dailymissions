@@ -527,7 +527,7 @@
       return;
     }
 
-    // 如果只有一個，直接顯示，不需要輪播
+    // 如果只有一個，直接顯示
     if (cdListData.length === 1) {
       const cd = cdListData[0];
       const target = new Date(cd.date);
@@ -586,7 +586,7 @@
         }
       }, 500);
       
-    }, 4000); // 每 4 秒切換一次
+    }, 4000);
   }
 
   // 統計
@@ -820,7 +820,6 @@
     if (target && target !== dragSrcEl) {
       const rect = target.getBoundingClientRect();
       const next = (e.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
-      // 確保不會抓錯
       if (dragSrcEl.parentNode === this) {
         this.insertBefore(dragSrcEl, next && target.nextSibling || target);
       }
@@ -832,7 +831,6 @@
     dragSrcEl.classList.remove('dragging');
     dragSrcEl = null;
 
-    // 重新獲取 DOM 順序並更新資料
     const newOrderIds = $$('.bm-item', $('#bmList')).map(el => el.dataset.id);
     const newBookmarks = [];
     newOrderIds.forEach(id => {
@@ -1067,6 +1065,33 @@
   });
 
   let todoDraft = null;
+  let todoChanged = false;
+
+  function checkTodoChanged() {
+    if (!todoDraft) return;
+    const s1 = JSON.stringify(todoDraft);
+    const s2 = JSON.stringify(todos);
+    todoChanged = (s1 !== s2);
+    
+    const btnSave = $('#todoSaveBtn');
+    const btnCancel = $('#todoCancelBtn');
+    
+    if (todoChanged) {
+      btnSave.disabled = false;
+      btnSave.textContent = '儲存變更';
+      btnSave.style.background = '#2e9e5e'; // 綠色
+      btnSave.style.color = '#fff';
+      btnSave.style.borderColor = 'transparent';
+      btnCancel.style.display = 'inline-flex';
+    } else {
+      btnSave.disabled = true;
+      btnSave.textContent = '儲存變更';
+      btnSave.style.background = 'var(--hover)'; // 灰色
+      btnSave.style.color = 'var(--fg-dim)';
+      btnSave.style.borderColor = 'transparent';
+      btnCancel.style.display = 'none';
+    }
+  }
 
   function openTodoSettings() {
     todoDraft = JSON.parse(JSON.stringify(todos));
@@ -1077,6 +1102,7 @@
     });
     renderTagPool();
     renderSchedule();
+    checkTodoChanged();
     openModal('#todoModal');
   }
 
@@ -1127,6 +1153,7 @@
     input.value = '';
     renderTagPool();
     renderSchedule();
+    checkTodoChanged();
     input.focus();
   });
 
@@ -1144,6 +1171,7 @@
     });
     renderTagPool();
     renderSchedule();
+    checkTodoChanged();
   });
 
   $('#scheduleGrid').addEventListener('click', function (e) {
@@ -1156,16 +1184,25 @@
     if (i >= 0) arr.splice(i, 1);
     else arr.push(tagId);
     renderSchedule();
+    checkTodoChanged();
   });
 
   $('#todoSaveBtn').addEventListener('click', function () {
+    if (!todoChanged) return;
     todos = todoDraft;
-    todoDraft = null;
     save('todos');
     renderTodos();
     renderHome();
     closeModal('#todoModal');
     toast('已保存每週設定');
+  });
+
+  $('#todoCancelBtn').addEventListener('click', function () {
+    todoDraft = JSON.parse(JSON.stringify(todos));
+    renderTagPool();
+    renderSchedule();
+    checkTodoChanged();
+    toast('已撤銷變更');
   });
 
   $('#todoSettingsBtn').addEventListener('click', openTodoSettings);

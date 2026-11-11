@@ -436,6 +436,7 @@
   </div>
 </div>
 
+<!-- 每週必做設定彈窗 (重構按鈕) -->
 <div class="modal" id="todoModal">
   <div class="modal-card">
     <div class="modal-head">
@@ -445,6 +446,7 @@
       </div>
       <button class="x-btn" data-close="#todoModal" aria-label="關閉">×</button>
     </div>
+    
     <div class="tag-manager">
       <div class="tag-add-row">
         <input type="text" id="tagInput" placeholder="新增標籤（例如：運動、讀書）…" maxlength="30">
@@ -452,9 +454,13 @@
       </div>
       <div class="tag-pool" id="tagPool"></div>
     </div>
+
     <div class="schedule-grid" id="scheduleGrid"></div>
-    <div class="row" style="margin-top:16px;">
-      <button class="btn primary" id="todoSaveBtn" style="flex:1 1 auto;">保存設定</button>
+    
+    <!-- 底部按鈕區 -->
+    <div class="row" style="margin-top:20px; justify-content: flex-end;">
+      <button class="btn ghost" id="todoCancelBtn" style="display:none; color: #e5484d; border-color: rgba(229,72,77,.3);">取消變更</button>
+      <button class="btn" id="todoSaveBtn" disabled style="background: var(--hover); color: var(--fg-dim); border-color: transparent;">儲存變更</button>
     </div>
   </div>
 </div>

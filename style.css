@@ -399,7 +399,7 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
   border: 1px solid var(--panel-border);
   background: var(--hover); color: var(--fg);
   cursor: pointer; white-space: nowrap;
-  transition: background .2s var(--ease), transform .15s var(--ease), opacity .2s;
+  transition: background .2s var(--ease), transform .15s var(--ease), opacity .2s, color .2s, border-color .2s;
 }
 .btn:hover { background: var(--panel-border); }
 .btn:active { transform: scale(.97); }
@@ -408,7 +408,7 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
 .btn.ghost { background: transparent; color: var(--fg-dim); }
 .btn.ghost:hover { background: var(--hover); color: var(--fg); }
 .btn.danger { color: #e5484d; }
-.btn:disabled { opacity: .3; cursor: default; transform: none; }
+.btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
 .mini {
   width: 28px; height: 28px; flex: 0 0 auto;
@@ -1513,8 +1513,15 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
 
   .settings { width: calc(100vw - 24px); right: 12px; top: 66px; }
 
-  .modal { padding: 10px; align-items: flex-end; }
-  .modal-card { max-height: 90vh; border-radius: 24px 24px 0 0; padding: 20px; }
+  /* 彈窗修復：手機端居中並限制高度 */
+  .modal { padding: 16px; align-items: center; justify-content: center; }
+  .modal-card { 
+    max-height: 85vh; 
+    width: 100%;
+    border-radius: 20px; 
+    padding: 20px; 
+    margin: 0 auto;
+  }
   
   .mobile-nav {
     display: flex;
@@ -1592,4 +1599,5 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
   h1 { font-size: 24px; }
   .clock-time { font-size: 32px; }
   .stats { grid-template-columns: 1fr 1fr; }
+  .modal-card { padding: 16px; }
 }
