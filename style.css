@@ -1545,7 +1545,8 @@ input[type="radio"] {
   }
 
   .app {
-    padding: 76px 16px 20px;
+    padding: 16px !important;
+    padding-top: calc(76px + env(safe-area-inset-top)) !important;
     height: auto;
     min-height: 100vh;
     overflow: visible;
@@ -1814,11 +1815,13 @@ input[type="radio"] {
     max-width: calc(100% - 60px); /* 留 60px 給右邊的番茄鐘 */
   }
 
-    /* 4. 修正頂部導覽列（確保不被擠出螢幕） */
+    /* 4. 修正頂部導覽列（支援 iPhone 安全區域，避免毛玻璃遮擋內容） */
   .nav {
     display: grid !important;
     grid-template-columns: auto 1fr auto;
     padding: 0 12px !important;
+    padding-top: env(safe-area-inset-top) !important;
+    height: calc(60px + env(safe-area-inset-top)) !important;
     gap: 8px !important;
   }
   .nav-left { min-width: 0; }
