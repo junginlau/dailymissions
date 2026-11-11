@@ -1771,3 +1771,47 @@ input[type="radio"] {
   animation: fadeUp .4s var(--ease) both;
   margin-bottom: 4px;
 }
+
+/* ═══════════════ 手機版排版與 Bug 修正 ═══════════════ */
+@media (max-width: 768px) {
+  /* 修正每週必做排版 */
+  .today-layout { 
+    flex-direction: column; 
+    gap: 12px;
+  }
+  .tomorrow-col { 
+    flex: 1 1 auto; 
+  }
+  
+  /* 修正日曆跳轉選單 */
+  .cal-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .cal-jump-wrap {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .cal-jump-wrap input[type="date"] {
+    flex: 1 1 120px;
+    width: auto;
+    margin-bottom: 0;
+  }
+
+  /* 修正 Footer 位置與番茄鐘遮擋 */
+  .site-footer {
+    padding: 20px 80px 90px 16px; /* 右邊留 80px 給番茄鐘，底部留 90px 給導航列 */
+    text-align: left;
+  }
+
+  /* 番茄鐘按鈕微調 */
+  .pomo-fab {
+    width: 52px;
+    height: 52px;
+    font-size: 24px;
+    bottom: 80px; /* 稍微往上移，避免太貼近底部導航列 */
+  }
+}
