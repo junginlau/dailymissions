@@ -1814,19 +1814,22 @@ input[type="radio"] {
     max-width: calc(100% - 60px); /* 留 60px 給右邊的番茄鐘 */
   }
 
-  /* 4. 修正頂部導覽列（強制置中對齊） */
+    /* 4. 修正頂部導覽列（確保不被擠出螢幕） */
   .nav {
-    display: flex !important;
-    align-items: center;
-    justify-content: space-between !important;
-    padding: 0 16px !important;
+    display: grid !important;
+    grid-template-columns: auto 1fr auto;
+    padding: 0 12px !important;
+    gap: 8px !important;
   }
-  .nav-left { flex: 0 0 auto; justify-self: start; }
-  .nav-right { flex: 0 0 auto; justify-self: end; }
+  .nav-left { min-width: 0; }
+  .nav-right { min-width: 0; }
   .search-wrap {
-    flex: 1 1 auto;
-    margin: 0 12px !important;
-    max-width: none !important;
+    width: 100%;
+    max-width: none;
+    margin: 0 !important;
+  }
+  .logo-btn img {
+    width: 40px; /* 稍微縮小 Logo 避免佔用太多空間 */
   }
 
   /* 5. 修正底部導覽列（強制每個按鈕置中、不偏移） */
@@ -1854,5 +1857,14 @@ input[type="radio"] {
     font-size: 22px;
     bottom: 82px; 
     right: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .settings {
+    width: calc(100vw - 32px) !important;
+    right: 16px !important;
+    left: 16px !important;
+    max-height: 75vh;
   }
 }
