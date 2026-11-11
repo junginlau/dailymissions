@@ -262,7 +262,6 @@
   let bookmarks = LS.get('bookmarks', []);
   let countdowns= LS.get('countdowns', []);
 
-  // 記帳資料（若舊版是 expenses，自動轉為 ledger）
   let ledger = LS.get('ledger', null);
   if (!ledger) {
     const oldExp = LS.get('expenses', []);
@@ -316,6 +315,8 @@
   /* ═══════════════ 視圖切換 ═══════════════ */
   const views = $$('.view');
   const navBtns = $$('.nav-btn');
+  const mobileNavBtns = $$('.mobile-nav-btn');
+  const mobileMoreMenu = $('#mobileMoreMenu');
 
   function showView(name) {
     views.forEach(function (v) {
@@ -324,15 +325,59 @@
     navBtns.forEach(function (b) {
       b.classList.toggle('active', b.dataset.view === name);
     });
+    
+    mobileNavBtns.forEach(function (b) {
+      if (name === 'notes' || name === 'photos' || name === 'ledger') {
+        b.classList.toggle('active', b.dataset.view === 'more');
+      } else {
+        b.classList.toggle('active', b.dataset.view === name);
+      }
+    });
+    
+    if (name !== 'notes' && name !== 'photos' && name !== 'ledger') {
+      mobileMoreMenu.classList.remove('open');
+    }
+
     if (name === 'calendar') renderCalendar();
     if (name === 'home') renderHome();
     if (name === 'diary') renderDiaries();
     if (name === 'ledger') renderLedger();
+    
+    if (window.innerWidth <= 768) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
 
   $('#navLinks').addEventListener('click', function (e) {
     const btn = e.target.closest('.nav-btn');
     if (btn) showView(btn.dataset.view);
+  });
+
+  mobileNavBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const view = this.dataset.view;
+      if (view === 'more') {
+        mobileMoreMenu.classList.toggle('open');
+      } else {
+        showView(view);
+      }
+    });
+  });
+
+  mobileMoreMenu.addEventListener('click', function (e) {
+    const btn = e.target.closest('button');
+    if (btn) {
+      showView(btn.dataset.view);
+      mobileMoreMenu.classList.remove('open');
+    }
+  });
+
+  document.addEventListener('click', function (e) {
+    if (mobileMoreMenu.classList.contains('open') && 
+        !mobileMoreMenu.contains(e.target) && 
+        !e.target.closest('.mobile-nav-btn[data-view="more"]')) {
+      mobileMoreMenu.classList.remove('open');
+    }
   });
 
   $('#logoBtn').addEventListener('click', function () {
@@ -393,7 +438,10 @@
   
   function updateClock() {
     const now = new Date();
-    const timeStr = pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+    let timeStr = pad(now.getHours()) + ':' + pad(now.getMinutes());
+    if (window.innerWidth > 768) {
+      timeStr += ':' + pad(now.getSeconds());
+    }
     const days = ['日', '一', '二', '三', '四', '五', '六'];
     const dateStr = now.getFullYear() + ' 年 ' + (now.getMonth() + 1) + ' 月 ' + now.getDate() + ' 日 · 星期' + days[now.getDay()];
     $('#clockTime').textContent = timeStr;
@@ -401,6 +449,7 @@
   }
   setInterval(updateClock, 1000);
   updateClock();
+  window.addEventListener('resize', updateClock);
 
   function initWeather() {
     if (!navigator.geolocation) {
@@ -446,51 +495,65 @@
   ];
   $('#quoteText').textContent = QUOTES[Math.floor(Math.random() * QUOTES.length)];
 
-  // 倒數計時
+  // 最近的要事（自動輪播）
+  let cdInterval = null;
   function renderCountdowns() {
     const list = $('#countdownList');
-    if (!countdowns.length) {
-      list.innerHTML = '<div class="empty small" style="padding:6px 0;">還沒有倒數日，點右上角 ＋ 新增。</div>';
-      return;
+    if (cdInterval) {
+      clearInterval(cdInterval);
+      cdInterval = null;
     }
+
     const today = new Date();
     today.setHours(0,0,0,0);
-    
-    const sorted = countdowns.slice().sort(function (a, b) {
-      return new Date(a.date) - new Date(b.date);
+
+    // 抓取 events 中有事項的未來日期
+    let upcoming = [];
+    Object.keys(events).forEach(k => {
+      const target = new Date(k);
+      target.setHours(0,0,0,0);
+      if (target >= today && events[k].length > 0) {
+        upcoming.push({ date: k, title: events[k][0].title }); // 取第一件事的標題作為代表
+      }
     });
 
-    list.innerHTML = sorted.map(function (cd) {
+    // 按日期排序，取前 3 個
+    upcoming.sort((a, b) => new Date(a.date) - new Date(b.date));
+    upcoming = upcoming.slice(0, 3);
+
+    if (!upcoming.length) {
+      list.innerHTML = '<div class="empty small" style="padding:6px 0;">近期沒有要事。</div>';
+      return;
+    }
+
+    const html = upcoming.map(function (cd, index) {
       const target = new Date(cd.date);
       target.setHours(0,0,0,0);
       const diff = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
       let text = diff === 0 ? '就是今天！' : (diff > 0 ? '還有 ' + diff + ' 天' : '已過去 ' + Math.abs(diff) + ' 天');
       let urgentClass = (diff >= 0 && diff <= 3) ? ' urgent' : '';
-      return '<div class="cd-item">' +
+      return '<div class="cd-item" style="animation-delay: ' + (index * 6) + 's;">' +
         '<span class="cd-title">' + escapeHtml(cd.title) + '</span>' +
         '<span class="cd-days' + urgentClass + '">' + text + '</span>' +
       '</div>';
     }).join('');
+
+    list.innerHTML = html;
+
+    // 如果有多個，設置循環輪播（依靠 CSS 動畫，但若想讓 DOM 只顯示一個，可透過 JS 控制）
+    // 這裡使用 CSS animation 讓它們在時間軸上交錯出現。
+    if (upcoming.length > 1) {
+      // 調整動畫持續時間
+      const totalDuration = upcoming.length * 6;
+      $$('.cd-item', list).forEach(el => {
+        el.style.animationDuration = totalDuration + 's';
+      });
+    } else {
+      // 只有一個時，不需要淡出淡入
+      const el = $('.cd-item', list);
+      if (el) el.style.animation = 'none';
+    }
   }
-
-  $('#addCdBtn').addEventListener('click', function () {
-    $('#cdTitle').value = '';
-    $('#cdDate').value = todayKey();
-    openModal('#cdModal');
-    setTimeout(function () { $('#cdTitle').focus(); }, 80);
-  });
-
-  $('#cdSave').addEventListener('click', function () {
-    const title = $('#cdTitle').value.trim();
-    const date = $('#cdDate').value;
-    if (!title) { toast('請填寫事件名稱'); $('#cdTitle').focus(); return; }
-    if (!date) { toast('請選擇日期'); $('#cdDate').focus(); return; }
-    countdowns.push({ id: uid(), title: title, date: date });
-    save('countdowns');
-    renderCountdowns();
-    closeModal('#cdModal');
-    toast('已新增倒數日');
-  });
 
   // 統計
   function countTodayTags() {
@@ -675,7 +738,7 @@
     toast('已刪除目標');
   });
 
-  /* ═══════════════ 書籤 ═══════════════ */
+  /* ═══════════════ 書籤 (支援拖拽) ═══════════════ */
   let editingBmId = null;
 
   function faviconUrl(url) {
@@ -692,7 +755,7 @@
       let host = '';
       try { host = new URL(b.url).hostname; } catch (e) { host = ''; }
       const name = b.name || host || b.url;
-      return '<div class="bm-item" data-id="' + b.id + '" title="' + escapeHtml(name) + '">' +
+      return '<div class="bm-item" draggable="true" data-id="' + b.id + '" title="' + escapeHtml(name) + '">' +
         '<img class="bm-fav" src="' + faviconUrl(b.url) + '" alt="" ' +
              'onerror="this.style.visibility=\'hidden\'">' +
         '<span class="bm-name">' + escapeHtml(name) + '</span>' +
@@ -703,6 +766,46 @@
       '</div>';
     }).join('');
   }
+
+  // 拖拽排序邏輯
+  let dragSrcEl = null;
+
+  $('#bmList').addEventListener('dragstart', function (e) {
+    const item = e.target.closest('.bm-item');
+    if (!item) return;
+    dragSrcEl = item;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', item.dataset.id);
+    setTimeout(() => item.classList.add('dragging'), 0);
+  });
+
+  $('#bmList').addEventListener('dragover', function (e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const target = e.target.closest('.bm-item');
+    if (target && target !== dragSrcEl) {
+      const rect = target.getBoundingClientRect();
+      const next = (e.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
+      this.insertBefore(dragSrcEl, next && target.nextSibling || target);
+    }
+  });
+
+  $('#bmList').addEventListener('dragend', function (e) {
+    if (!dragSrcEl) return;
+    dragSrcEl.classList.remove('dragging');
+    dragSrcEl = null;
+
+    // 重新獲取 DOM 順序並更新資料
+    const newOrderIds = $$('.bm-item', $('#bmList')).map(el => el.dataset.id);
+    const newBookmarks = [];
+    newOrderIds.forEach(id => {
+      const b = bookmarks.find(x => x.id === id);
+      if (b) newBookmarks.push(b);
+    });
+    bookmarks = newBookmarks;
+    save('bookmarks');
+    toast('排序已保存');
+  });
 
   function normalizeUrl(raw) {
     let u = String(raw || '').trim();
@@ -1079,9 +1182,10 @@
         const key = y + '-' + pad(m + 1) + '-' + pad(dn);
         const list = events[key] || [];
         const isToday = key === tk;
+        // 以星星標記有事件的日期
+        let star = list.length > 0 ? ' ⭐' : '';
         html += '<button class="cal-cell' + (isToday ? ' today' : '') +
-                '" data-date="' + key + '">' + dn +
-                (list.length ? '<span class="dot"></span>' : '') +
+                '" data-date="' + key + '">' + dn + star +
                 '</button>';
       }
     }
@@ -1187,7 +1291,7 @@
     $('#eventCancelEdit').hidden = true;
     renderEventList();
     renderCalendar();
-    renderHome();
+    renderHome(); // 更新首頁的最近要事
     toast('已保存');
   });
 
@@ -1221,7 +1325,7 @@
       }
       renderEventList();
       renderCalendar();
-      renderHome();
+      renderHome(); // 更新首頁的最近要事
       toast('已刪除');
     } else if (btn.dataset.act === 'edit') {
       editingEventId = id;
@@ -1570,7 +1674,7 @@
     
     if (custom && custom > 0 && custom <= 180) {
       mins = custom;
-      $('#pomoPreset').value = ''; // 清除預設選擇
+      $('#pomoPreset').value = '';
     } else {
       mins = parseInt($('#pomoPreset').value, 10);
       if (!mins) mins = 25;
@@ -1611,7 +1715,6 @@
         osc.start(startTime);
         osc.stop(startTime + duration);
       };
-      // 播放雙音階鈴聲
       playNote(880, ctx.currentTime, 0.4);
       playNote(1046.50, ctx.currentTime + 0.15, 0.6);
       playNote(880, ctx.currentTime + 0.45, 0.4);
@@ -1639,7 +1742,7 @@
           pomoSeconds = 25 * 60;
           updatePomoDisplay();
           playBell();
-          toast('時間到！休息一下吧 🍅');
+          toast('時間到！休息一下吧 ⏰');
         }
       }, 1000);
     }
@@ -1755,7 +1858,7 @@
         if (data.goals) goals = data.goals;
         if (data.bookmarks) bookmarks = data.bookmarks;
         if (data.ledger) ledger = data.ledger;
-        else if (data.expenses) ledger = data.expenses.map(e => ({ ...e, type: 'expense' })); // 兼容舊版
+        else if (data.expenses) ledger = data.expenses.map(e => ({ ...e, type: 'expense' }));
         if (data.countdowns) countdowns = data.countdowns;
 
         ['todos', 'events', 'diaries', 'notes', 'photos', 'goals', 'bookmarks', 'ledger', 'countdowns'].forEach(save);
