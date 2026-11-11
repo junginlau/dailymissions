@@ -360,8 +360,6 @@
     const engine = $('#searchEngine').value;
     let url = '';
     if (engine === 'google') url = 'https://www.google.com/search?q=' + encodeURIComponent(q);
-    else if (engine === 'bing') url = 'https://www.bing.com/search?q=' + encodeURIComponent(q);
-    else if (engine === 'duck') url = 'https://duckduckgo.com/?q=' + encodeURIComponent(q);
     else if (engine === 'youtube') url = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q);
     window.open(url, '_blank', 'noopener');
   }

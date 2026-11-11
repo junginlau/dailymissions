@@ -1096,11 +1096,22 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
 }
 .photo {
   aspect-ratio: 1 / 1; border-radius: 16px; overflow: hidden;
-  border: none; padding: 0; cursor: pointer; background: var(--hover);
-  transition: transform .3s var(--ease);
+  border: 2px solid transparent;
+  padding: 0; cursor: pointer; background: var(--hover);
+  transition: transform .3s var(--ease), border-color .3s var(--ease), box-shadow .3s var(--ease), filter .3s var(--ease);
+  filter: grayscale(100%) opacity(0.7);
+  box-shadow: 0 4px 12px rgba(0,0,0,.1);
+  position: relative;
+  z-index: 1;
+}
+.photo:hover {
+  filter: grayscale(0%) opacity(1);
+  transform: scale(1.06) translateY(-2px);
+  border-color: var(--panel-border);
+  box-shadow: 0 12px 30px rgba(0,0,0,.3);
+  z-index: 2;
 }
 .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.photo:hover { transform: scale(1.03); }
 
 /* 彈窗 */
 .modal {
