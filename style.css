@@ -1772,9 +1772,9 @@ input[type="radio"] {
   margin-bottom: 4px;
 }
 
-/* ═══════════════ 手機版排版與 Bug 修正 ═══════════════ */
+/* ═══════════════ 手機版排版與 Bug 終極修正 ═══════════════ */
 @media (max-width: 768px) {
-  /* 修正每週必做排版 */
+  /* 1. 修正每週必做排版（變上下排列） */
   .today-layout { 
     flex-direction: column; 
     gap: 12px;
@@ -1783,7 +1783,7 @@ input[type="radio"] {
     flex: 1 1 auto; 
   }
   
-  /* 修正日曆跳轉選單 */
+  /* 2. 修正日曆跳轉選單（避免擠壓） */
   .cal-head {
     flex-direction: column;
     align-items: flex-start;
@@ -1801,17 +1801,50 @@ input[type="radio"] {
     margin-bottom: 0;
   }
 
-  /* 修正 Footer 位置與番茄鐘遮擋 */
+  /* 3. 修正 Footer 讓它保持一行，並避開番茄鐘 */
   .site-footer {
-    padding: 20px 80px 90px 16px; /* 右邊留 80px 給番茄鐘，底部留 90px 給導航列 */
+    padding: 16px 60px 90px 16px; /* 右邊留 60px，底部留 90px 給導覽列 */
     text-align: left;
+    font-size: 11px; /* 稍微縮小字體確保一行塞得下 */
+    white-space: nowrap; /* 強制不換行 */
+    overflow: hidden;
+    text-overflow: ellipsis; /* 如果真的太長就顯示... */
+    line-height: 1.5;
   }
 
-  /* 番茄鐘按鈕微調 */
+  /* 4. 修正頂部導覽列（防止按鈕飛出去） */
+  .nav {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 12px;
+  }
+  .nav-left {
+    flex: 0 0 auto;
+  }
+  .search-wrap {
+    flex: 1 1 auto;
+    margin: 0 8px;
+    max-width: none;
+  }
+  .nav-right {
+    flex: 0 0 auto;
+  }
+
+  /* 5. 修正底部導覽列（確保置中對齊） */
+  .mobile-nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  /* 6. 番茄鐘按鈕微調（往上移一點） */
   .pomo-fab {
-    width: 52px;
-    height: 52px;
-    font-size: 24px;
-    bottom: 80px; /* 稍微往上移，避免太貼近底部導航列 */
+    width: 50px;
+    height: 50px;
+    font-size: 22px;
+    bottom: 82px; 
   }
 }
