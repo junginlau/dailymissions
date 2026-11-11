@@ -239,7 +239,7 @@ body.lock { overflow: hidden; }
 .icon-btn.open { transform: rotate(90deg); color: var(--fg); }
 .icon-btn svg { width: 20px; height: 20px; }
 
-/* 設定面板 */
+/* 設定面板（增加霧化與不透明度，防止干擾） */
 .settings {
   position: absolute;
   top: 72px;
@@ -247,11 +247,11 @@ body.lock { overflow: hidden; }
   width: 300px;
   padding: 18px;
   border-radius: 20px;
-  background: var(--panel);
+  background: rgba(245, 247, 250, 0.85); /* 淺色模式：較高不透明度 */
   border: 1px solid var(--panel-border);
-  -webkit-backdrop-filter: blur(26px) saturate(180%);
-  backdrop-filter: blur(26px) saturate(180%);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, .14);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  backdrop-filter: blur(30px) saturate(180%);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, .18), inset 0 1px 0 rgba(255,255,255,0.5);
   opacity: 0;
   transform: translateY(-8px) scale(.96);
   transform-origin: top right;
@@ -259,8 +259,18 @@ body.lock { overflow: hidden; }
   transition: opacity .22s var(--ease), transform .22s var(--ease);
   max-height: 80vh;
   overflow-y: auto;
+  z-index: 200;
+}
+[data-theme="dark"] .settings,
+@media (prefers-color-scheme: dark) {
+  /* 在深色模式下，JS 會透過 JS 變數控制，這裡用 CSS 變數確保背景夠深 */
 }
 .settings.open { opacity: 1; transform: none; pointer-events: auto; }
+
+/* 利用 CSS 變數來動態調整設定面板背景 */
+.settings {
+  background: var(--panel-bg-solid);
+}
 
 .set-title {
   display: flex; align-items: center; justify-content: space-between;
@@ -1144,7 +1154,7 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
   width: min(620px, 100%);
   max-height: 86vh;
   overflow-y: auto;
-  background: var(--panel);
+  background: var(--panel-bg-solid); /* 使用實色背景 */
   border: 1px solid var(--panel-border);
   border-radius: 24px;
   padding: 22px;
@@ -1334,7 +1344,7 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
   width: 260px;
   padding: 18px;
   border-radius: 20px;
-  background: var(--panel);
+  background: var(--panel-bg-solid);
   border: 1px solid var(--panel-border);
   -webkit-backdrop-filter: blur(26px) saturate(180%);
   backdrop-filter: blur(26px) saturate(180%);
@@ -1513,7 +1523,6 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
 
   .settings { width: calc(100vw - 24px); right: 12px; top: 66px; }
 
-  /* 彈窗修復：手機端居中並限制高度 */
   .modal { padding: 16px; align-items: center; justify-content: center; }
   .modal-card { 
     max-height: 85vh; 
@@ -1552,10 +1561,11 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
   .mobile-nav-btn svg { width: 22px; height: 22px; }
   .mobile-nav-btn.active { color: var(--fg); }
   
+  /* 手機版「更多」選單（增加霧化與不透明度） */
   .mobile-more-menu {
     position: fixed;
     bottom: 74px; left: 16px; right: 16px;
-    background: var(--panel);
+    background: var(--panel-bg-solid);
     border: 1px solid var(--panel-border);
     border-radius: 16px;
     padding: 8px;
@@ -1568,6 +1578,8 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
     transform: translateY(10px);
     pointer-events: none;
     transition: opacity .2s, transform .2s;
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    backdrop-filter: blur(30px) saturate(180%);
   }
   .mobile-more-menu.open {
     opacity: 1;

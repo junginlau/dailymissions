@@ -191,6 +191,9 @@
     const light = bgL > 50;
     root.style.setProperty('--fg', 'hsl(220, 12%, ' + txL.toFixed(1) + '%)');
     root.style.setProperty('--fg-dim', 'hsla(220, 10%, ' + txL.toFixed(1) + '%, .62)');
+    
+    // 動態調整面板背景（高不透明度，防止底層干擾）
+    root.style.setProperty('--panel-bg-solid', light ? 'rgba(245, 247, 250, 0.92)' : 'rgba(25, 28, 36, 0.92)');
     root.style.setProperty('--panel', light ? 'rgba(255,255,255,.62)' : 'rgba(255,255,255,.09)');
     root.style.setProperty('--panel-border', light ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.15)');
     root.style.setProperty('--nav-bg', light ? 'rgba(255,255,255,.62)' : 'rgba(18,20,26,.55)');
