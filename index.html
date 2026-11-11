@@ -4,1146 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>我的空間</title>
-<style>
-  *, *::before, *::after { box-sizing: border-box; }
-  * { margin: 0; padding: 0; }
-
-  :root {
-    --fg: hsl(220, 12%, 20%);
-    --fg-dim: hsla(220, 10%, 20%, .6);
-    --panel: rgba(255, 255, 255, .62);
-    --panel-border: rgba(0, 0, 0, .08);
-    --nav-bg: rgba(255, 255, 255, .6);
-    --hover: rgba(0, 0, 0, .06);
-    --ink-inv: #fff;
-    --radius: 18px;
-    --ease: cubic-bezier(.22, .61, .36, 1);
-    --scroll-thumb: rgba(0, 0, 0, .28);
-    --scroll-thumb-hover: rgba(0, 0, 0, .48);
-  }
-
-  html, body { height: 100%; }
-
-  /* ═════ 全域滾動條 ═════ */
-  html {
-    scrollbar-width: thin;
-    scrollbar-color: var(--scroll-thumb) transparent;
-  }
-  ::-webkit-scrollbar { width: 10px; height: 10px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb {
-    background: var(--scroll-thumb);
-    border-radius: 999px;
-    border: 2px solid transparent;
-    background-clip: padding-box;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--scroll-thumb-hover);
-    border: 2px solid transparent;
-    background-clip: padding-box;
-  }
-  ::-webkit-scrollbar-corner { background: transparent; }
-
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC",
-                 "Hiragino Sans TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif;
-    color: var(--fg);
-    background: transparent;
-    overflow-x: hidden;
-    -webkit-font-smoothing: antialiased;
-    transition: color .3s var(--ease);
-
-    user-select: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    -webkit-touch-callout: none;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  input, textarea, select, [contenteditable="true"] {
-    user-select: text;
-    -webkit-user-select: text;
-    -moz-user-select: text;
-  }
-
-  img, svg { -webkit-user-drag: none; user-select: none; }
-  ::selection { background: transparent; }
-  input::selection, textarea::selection { background: rgba(120, 150, 255, .35); }
-
-  body.lock { overflow: hidden; }
-
-  /* ═════ 背景層 ═════ */
-  .bg-layer {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    background-color: hsl(220, 14%, 88%);
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    transition: background-color .35s var(--ease), filter .25s var(--ease);
-  }
-
-  /* ═════ 導覽列（Grid 佈局） ═════ */
-  .nav {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    height: 64px;
-    padding: 0 14px;
-    z-index: 100;
-    background: var(--nav-bg);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    backdrop-filter: blur(24px) saturate(180%);
-    border-bottom: 1px solid var(--panel-border);
-    transition: background .3s var(--ease), border-color .3s var(--ease);
-    
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    gap: 16px;
-  }
-
-  /* 左側：Logo + 導航按鈕 */
-  .nav-left {
-    display: flex;
-    align-items: center;
-    min-width: 0;
-    justify-self: start;
-  }
-
-  .logo-btn {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 4px;
-    margin-right: 8px;
-    border: none;
-    background: transparent;
-    border-radius: 14px;
-    cursor: pointer;
-    transition: background .2s var(--ease), transform .2s var(--ease);
-  }
-  .logo-btn:hover { background: var(--hover); }
-  .logo-btn:active { transform: scale(.94); }
-  .logo-btn img {
-    width: 50px;
-    height: auto;
-    display: block;
-    border-radius: 10px; /* 若圖片為方形，加上圓角會更好看 */
-  }
-
-  .nav-links {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    min-width: 0;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-  .nav-links::-webkit-scrollbar { display: none; }
-
-  .nav-btn {
-    flex: 0 0 auto;
-    font: inherit;
-    font-size: 14px;
-    font-weight: 500;
-    letter-spacing: .02em;
-    color: var(--fg-dim);
-    background: transparent;
-    border: none;
-    padding: 8px 14px;
-    border-radius: 999px;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background .2s var(--ease), color .2s var(--ease);
-  }
-  .nav-btn:hover { background: var(--hover); color: var(--fg); }
-  .nav-btn.active { background: var(--hover); color: var(--fg); }
-
-  /* 中間：搜尋欄（進一步加長） */
-  .search-form {
-    width: 100%;
-    max-width: 720px; 
-    min-width: 160px;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-self: center;
-  }
-  .search-form svg {
-    position: absolute;
-    left: 14px; 
-    top: 50%;
-    transform: translateY(-50%);
-    width: 16px; height: 16px;
-    color: var(--fg-dim);
-    pointer-events: none;
-  }
-  /* 提高權重避免被通用 input 樣式覆蓋 */
-  .search-form input[type="text"] {
-    width: 100%;
-    font: inherit;
-    font-size: 13px;
-    color: var(--fg);
-    background: var(--hover);
-    border: 1px solid transparent;
-    border-radius: 999px;
-    padding: 8px 14px 8px 38px; 
-    outline: none;
-    transition: background .2s var(--ease), border-color .2s var(--ease);
-  }
-  .search-form input[type="text"]::placeholder { color: var(--fg-dim); opacity: .75; }
-  .search-form input[type="text"]:focus {
-    background: transparent;
-    border-color: var(--fg-dim);
-  }
-
-  /* 右側：齒輪 */
-  .nav-right {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    justify-self: end;
-  }
-
-  .gear-btn {
-    flex: 0 0 auto;
-    width: 38px; height: 38px;
-    display: flex; align-items: center; justify-content: center;
-    border: none;
-    border-radius: 50%;
-    background: transparent;
-    color: var(--fg-dim);
-    cursor: pointer;
-    transition: background .2s var(--ease), color .2s var(--ease), transform .45s var(--ease);
-  }
-  .gear-btn:hover { background: var(--hover); color: var(--fg); }
-  .gear-btn.open { transform: rotate(90deg); color: var(--fg); }
-  .gear-btn svg { width: 20px; height: 20px; }
-
-  /* ═════ 設定面板 ═════ */
-  .settings {
-    position: absolute;
-    top: 72px;
-    right: 14px;
-    width: 280px;
-    padding: 18px;
-    border-radius: 20px;
-    background: var(--panel);
-    border: 1px solid var(--panel-border);
-    -webkit-backdrop-filter: blur(26px) saturate(180%);
-    backdrop-filter: blur(26px) saturate(180%);
-    box-shadow: 0 16px 48px rgba(0, 0, 0, .14);
-    opacity: 0;
-    transform: translateY(-8px) scale(.96);
-    transform-origin: top right;
-    pointer-events: none;
-    transition: opacity .22s var(--ease), transform .22s var(--ease);
-  }
-  .settings.open { opacity: 1; transform: none; pointer-events: auto; }
-
-  .set-title {
-    display: flex; align-items: center; justify-content: space-between;
-    font-size: 13px; font-weight: 600; letter-spacing: .04em;
-    color: var(--fg); margin-bottom: 12px;
-  }
-  .set-title span:last-child {
-    font-variant-numeric: tabular-nums; font-weight: 500; color: var(--fg-dim);
-  }
-
-  input[type="range"] {
-    -webkit-appearance: none; appearance: none;
-    width: 100%; height: 4px; border-radius: 4px;
-    background: var(--hover); outline: none; cursor: pointer; margin-bottom: 18px;
-  }
-  input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 16px; height: 16px; border-radius: 50%;
-    background: var(--fg); border: none;
-    box-shadow: 0 1px 6px rgba(0,0,0,.25);
-    transition: transform .15s var(--ease);
-  }
-  input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.15); }
-  input[type="range"]::-moz-range-thumb {
-    width: 16px; height: 16px; border-radius: 50%;
-    background: var(--fg); border: none; box-shadow: 0 1px 6px rgba(0,0,0,.25);
-  }
-
-  .set-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-  .set-btn {
-    flex: 1 1 auto; font: inherit; font-size: 13px; font-weight: 500;
-    padding: 9px 12px; border-radius: 12px;
-    border: 1px solid var(--panel-border);
-    background: var(--hover); color: var(--fg);
-    cursor: pointer; white-space: nowrap;
-    transition: background .2s var(--ease), transform .15s var(--ease);
-  }
-  .set-btn:hover { background: var(--panel-border); }
-  .set-btn:active { transform: scale(.97); }
-  .set-btn.ghost { color: var(--fg-dim); }
-  .set-btn.ghost:hover { color: var(--fg); }
-
-  .set-note {
-    margin-top: 14px; font-size: 11px; line-height: 1.6;
-    color: var(--fg-dim); opacity: .85;
-  }
-
-  /* ═════ 主內容 ═════ */
-  .app {
-    position: relative;
-    z-index: 1;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 100px 24px 90px;
-    min-height: 100vh;
-  }
-
-  .view { display: none; }
-  .view.active { display: block; animation: fadeUp .4s var(--ease) both; }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(12px); }
-    to   { opacity: 1; transform: none; }
-  }
-
-  h1 {
-    font-size: clamp(26px, 4.4vw, 38px);
-    font-weight: 700;
-    letter-spacing: -.02em;
-    line-height: 1.2;
-  }
-  .sub {
-    margin-top: 10px;
-    font-size: 15px;
-    line-height: 1.7;
-    color: var(--fg-dim);
-    font-weight: 400;
-  }
-
-  .card {
-    background: var(--panel);
-    border: 1px solid var(--panel-border);
-    border-radius: var(--radius);
-    padding: 18px;
-    -webkit-backdrop-filter: blur(18px) saturate(160%);
-    backdrop-filter: blur(18px) saturate(160%);
-  }
-
-  .grid { display: grid; gap: 14px; }
-  .grid.two   { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
-  .grid.three { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
-
-  .mt-24 { margin-top: 24px; }
-  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-
-  /* 表單元件 */
-  input[type="text"], input[type="date"], input[type="time"],
-  input[type="search"], textarea, select, .input {
-    font: inherit;
-    font-size: 14px;
-    color: var(--fg);
-    background: var(--hover);
-    border: 1px solid transparent;
-    border-radius: 12px;
-    padding: 10px 12px;
-    outline: none;
-    width: 100%;
-    transition: border-color .2s var(--ease), background .2s var(--ease);
-  }
-  input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus,
-  textarea:focus, select:focus, .input:focus {
-    border-color: var(--fg-dim);
-    background: transparent;
-  }
-  textarea { resize: vertical; min-height: 90px; line-height: 1.7; }
-  ::placeholder { color: var(--fg-dim); opacity: .7; }
-  select { appearance: none; -webkit-appearance: none; cursor: pointer; }
-  input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
-
-  .btn {
-    font: inherit; font-size: 14px; font-weight: 500;
-    padding: 10px 18px; border-radius: 12px;
-    border: 1px solid var(--panel-border);
-    background: var(--hover); color: var(--fg);
-    cursor: pointer; white-space: nowrap;
-    transition: background .2s var(--ease), transform .15s var(--ease), opacity .2s;
-  }
-  .btn:hover { background: var(--panel-border); }
-  .btn:active { transform: scale(.97); }
-  .btn.primary { background: var(--fg); color: var(--ink-inv); border-color: transparent; }
-  .btn.primary:hover { opacity: .86; }
-  .btn.ghost { background: transparent; color: var(--fg-dim); }
-  .btn.ghost:hover { background: var(--hover); color: var(--fg); }
-  .btn.danger { color: #e5484d; }
-  .btn:disabled { opacity: .3; cursor: default; transform: none; }
-
-  .mini {
-    width: 28px; height: 28px; flex: 0 0 auto;
-    border-radius: 9px; border: 1px solid var(--panel-border);
-    background: var(--hover); color: var(--fg);
-    cursor: pointer; font-size: 15px; line-height: 1;
-    display: inline-flex; align-items: center; justify-content: center;
-    transition: background .2s var(--ease), color .2s var(--ease), border-color .2s var(--ease);
-  }
-  .mini:hover { background: var(--panel-border); }
-  .mini:disabled { opacity: .3; cursor: default; }
-  .mini.del:hover { color: #e5484d; border-color: rgba(229,72,77,.45); }
-
-  .empty {
-    padding: 26px 10px; text-align: center;
-    font-size: 13px; color: var(--fg-dim); line-height: 1.7;
-  }
-  .empty.small { padding: 12px 6px; font-size: 12px; }
-
-  /* ═════ 首頁佈局（左內容 + 右書籤） ═════ */
-  .home-layout {
-    display: flex;
-    gap: 22px;
-    align-items: flex-start;
-  }
-  .home-main { flex: 1 1 auto; min-width: 0; }
-
-  .bookmarks {
-    flex: 0 0 210px;
-    position: sticky;
-    top: 84px;
-    max-height: calc(100vh - 110px);
-    display: flex;
-    flex-direction: column;
-  }
-  .bm-head {
-    flex: 0 0 auto;
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 8px; margin-bottom: 8px; padding: 0 2px;
-  }
-  .bm-title {
-    font-size: 11px; font-weight: 600;
-    letter-spacing: .12em; text-transform: uppercase;
-    color: var(--fg-dim);
-  }
-  .bm-list {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: auto;
-    display: flex; flex-direction: column; gap: 2px;
-    padding-right: 4px;
-  }
-
-  .bm-item {
-    position: relative;
-    display: flex; align-items: center; gap: 9px;
-    padding: 9px 10px;
-    border-radius: 10px;
-    cursor: pointer;
-    color: var(--fg);
-    transition: background .2s var(--ease), transform .2s var(--ease);
-  }
-  .bm-item::after {
-    content: '';
-    position: absolute;
-    left: 10px; right: 10px; bottom: 4px;
-    height: 1.5px;
-    background: var(--fg);
-    opacity: .38;
-    border-radius: 2px;
-    transform: scaleX(0);
-    transform-origin: left center;
-    transition: transform .3s var(--ease);
-    pointer-events: none;
-  }
-  .bm-item:hover {
-    background: var(--hover);
-    transform: translateX(2px);
-  }
-  .bm-item:hover::after { transform: scaleX(1); }
-
-  .bm-fav {
-    width: 16px; height: 16px; flex: 0 0 auto;
-    border-radius: 4px;
-    object-fit: contain;
-  }
-  .bm-name {
-    flex: 1 1 auto; min-width: 0;
-    font-size: 13px; font-weight: 500;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .bm-acts {
-    flex: 0 0 auto;
-    display: flex; gap: 2px;
-    opacity: 0;
-    transition: opacity .2s var(--ease);
-  }
-  .bm-item:hover .bm-acts { opacity: 1; }
-  .bm-act {
-    width: 20px; height: 20px;
-    border: none; border-radius: 6px;
-    background: transparent; color: var(--fg-dim);
-    font-size: 11px; line-height: 1; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: background .2s var(--ease), color .2s var(--ease);
-  }
-  .bm-act:hover { background: var(--panel-border); color: var(--fg); }
-  .bm-act.del:hover { color: #e5484d; }
-
-  /* ═════ 首頁統計 ═════ */
-  .stats { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
-  .stat {
-    flex: 1 1 120px; padding: 16px 18px; border-radius: 18px;
-    background: var(--panel); border: 1px solid var(--panel-border);
-    -webkit-backdrop-filter: blur(18px) saturate(160%);
-    backdrop-filter: blur(18px) saturate(160%);
-  }
-  .stat b {
-    display: block; font-size: 26px; font-weight: 700;
-    letter-spacing: -.02em; font-variant-numeric: tabular-nums;
-  }
-  .stat span { display: block; margin-top: 4px; font-size: 12px; color: var(--fg-dim); }
-
-  .shortcut {
-    text-align: left; font: inherit; cursor: pointer;
-    transition: transform .25s var(--ease);
-  }
-  .shortcut:hover { transform: translateY(-3px); }
-  .shortcut .k { font-size: 15px; font-weight: 600; color: var(--fg); }
-  .shortcut .d { margin-top: 6px; font-size: 13px; line-height: 1.6; color: var(--fg-dim); }
-  .shortcut .arrow {
-    margin-top: 14px; font-size: 13px; color: var(--fg-dim);
-    transition: transform .25s var(--ease);
-  }
-  .shortcut:hover .arrow { transform: translateX(4px); }
-
-  /* ═════ 目標 ═════ */
-  .goal-head {
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 10px; margin-bottom: 12px;
-  }
-  .goal-head h3 { font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
-  .goal-head .badge {
-    font-size: 12px; color: var(--fg-dim); background: var(--hover);
-    padding: 2px 10px; border-radius: 999px;
-    font-variant-numeric: tabular-nums;
-  }
-  .goal-list { display: flex; flex-direction: column; }
-  .goal-item {
-    display: flex; gap: 12px; align-items: flex-start;
-    padding: 12px 0; border-bottom: 1px solid var(--panel-border);
-  }
-  .goal-item:last-child { border-bottom: none; padding-bottom: 2px; }
-  .goal-chk {
-    width: 20px; height: 20px; flex: 0 0 auto;
-    border-radius: 7px; border: 1.5px solid var(--fg-dim);
-    background: transparent; cursor: pointer; position: relative;
-    margin-top: 2px;
-    transition: background .2s var(--ease), border-color .2s var(--ease), transform .15s var(--ease);
-  }
-  .goal-chk:hover { border-color: var(--fg); transform: scale(1.1); }
-  .goal-item.done .goal-chk {
-    background: var(--fg); border-color: var(--fg);
-  }
-  .goal-item.done .goal-chk::after {
-    content: '';
-    position: absolute; left: 5px; top: 1px;
-    width: 5px; height: 10px;
-    border-right: 2px solid var(--ink-inv);
-    border-bottom: 2px solid var(--ink-inv);
-    transform: rotate(45deg);
-  }
-  .goal-main { flex: 1 1 auto; min-width: 0; }
-  .goal-title {
-    font-size: 15px; font-weight: 600; line-height: 1.5;
-    word-break: break-word;
-    transition: color .2s var(--ease);
-  }
-  .goal-item.done .goal-title {
-    text-decoration: line-through;
-    text-decoration-thickness: 1px;
-    color: var(--fg-dim);
-  }
-  .goal-note {
-    margin-top: 4px; font-size: 13px; line-height: 1.7;
-    color: var(--fg-dim); white-space: pre-wrap; word-break: break-word;
-  }
-  .goal-acts { flex: 0 0 auto; display: flex; gap: 6px; margin-top: 1px; }
-
-  /* ═════ 每週必做 ═════ */
-  .today-layout {
-    display: flex;
-    gap: 16px;
-    align-items: flex-start;
-  }
-  .tomorrow-col { flex: 0 0 170px; min-width: 0; }
-  .today-col { flex: 1 1 auto; min-width: 0; }
-
-  .tomorrow-card { padding: 14px; }
-  .tomorrow-card h4 {
-    font-size: 12px; font-weight: 600; letter-spacing: .04em;
-    color: var(--fg-dim); margin-bottom: 10px;
-  }
-  .tomorrow-list { display: flex; flex-direction: column; gap: 4px; }
-  .tomorrow-tag {
-    font-size: 11px; color: var(--fg-dim);
-    padding: 3px 0; white-space: nowrap;
-    overflow: hidden; text-overflow: ellipsis;
-  }
-
-  .today-head {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 14px; gap: 10px;
-  }
-  .today-head h3 { font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
-  .today-head .badge {
-    font-size: 12px; color: var(--fg-dim); background: var(--hover);
-    padding: 2px 10px; border-radius: 999px;
-    font-variant-numeric: tabular-nums;
-  }
-  .today-list { display: flex; flex-direction: column; gap: 6px; }
-  .today-item {
-    display: flex; align-items: center; gap: 12px;
-    padding: 12px 14px; border-radius: 12px;
-    background: var(--hover); border: none;
-    font: inherit; font-size: 15px; color: var(--fg);
-    cursor: pointer; text-align: left;
-    transition: background .2s var(--ease);
-  }
-  .today-item:hover { background: var(--panel-border); }
-  .today-item .chk {
-    width: 20px; height: 20px; flex: 0 0 auto;
-    border-radius: 7px; border: 1.5px solid var(--fg-dim);
-    position: relative;
-    transition: background .2s var(--ease), border-color .2s var(--ease);
-  }
-  .today-item.done .chk { background: var(--fg); border-color: var(--fg); }
-  .today-item.done .chk::after {
-    content: '';
-    position: absolute; left: 5px; top: 1px;
-    width: 5px; height: 10px;
-    border-right: 2px solid var(--ink-inv);
-    border-bottom: 2px solid var(--ink-inv);
-    transform: rotate(45deg);
-  }
-  .today-item.done .label {
-    text-decoration: line-through;
-    color: var(--fg-dim);
-  }
-  .today-item .label { flex: 1 1 auto; word-break: break-word; }
-
-  /* ═════ 日曆（縮小版） ═════ */
-  #view-calendar.active {
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 140px);
-    min-height: 0;
-  }
-  #view-calendar > h1 { flex: 0 0 auto; }
-  #view-calendar > .sub { flex: 0 0 auto; }
-
-  .cal-container {
-    flex: 1 1 auto;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    margin-top: 16px;
-    max-width: 760px;
-    width: 100%;
-    align-self: center;
-  }
-  .cal-card {
-    flex: 1 1 auto;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    padding: 16px;
-  }
-
-  .cal-head {
-    flex: 0 0 auto;
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 10px; margin-bottom: 8px; flex-wrap: wrap;
-  }
-  .cal-nav {
-    display: flex; align-items: center; gap: 8px;
-  }
-  .cal-head .t { font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
-  
-  .cal-jump-wrap {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    color: var(--fg-dim);
-  }
-  .cal-jump-wrap input[type="date"] {
-    width: 130px;
-    padding: 4px 8px;
-    font-size: 12px;
-    border-radius: 8px;
-  }
-
-  .cal-tz {
-    flex: 0 0 auto;
-    font-size: 11px; color: var(--fg-dim); margin-bottom: 12px;
-    letter-spacing: .02em;
-  }
-  .cal-grid {
-    flex: 1 1 auto;
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    grid-template-rows: repeat(7, 1fr);
-    gap: 4px;
-    min-height: 0;
-  }
-  .cal-dow {
-    display: flex; align-items: center; justify-content: center;
-    font-size: 11px; font-weight: 600;
-    letter-spacing: .08em; color: var(--fg-dim);
-  }
-  .cal-cell {
-    position: relative;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 8px;
-    font: inherit; font-size: 13px;
-    font-variant-numeric: tabular-nums;
-    border: none; background: transparent; color: var(--fg);
-    cursor: pointer;
-    transition: background .18s var(--ease);
-  }
-  .cal-cell:hover { background: var(--hover); }
-  .cal-cell.muted { color: var(--fg-dim); opacity: .3; cursor: default; }
-  .cal-cell.muted:hover { background: transparent; }
-  .cal-cell.today { background: var(--fg); color: var(--ink-inv); font-weight: 700; }
-  .cal-cell .dot {
-    position: absolute; bottom: 4px; width: 4px; height: 4px;
-    border-radius: 50%; background: currentColor; opacity: .55;
-  }
-  .cal-cell.today .dot { background: var(--ink-inv); opacity: .9; }
-
-  /* ═════ 日記（固定不滾動） ═════ */
-  #view-diary.active {
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 190px);
-    height: calc(100dvh - 190px);
-    min-height: 0;
-  }
-  #view-diary > h1 { flex: 0 0 auto; }
-  #view-diary > .sub { flex: 0 0 auto; }
-
-  .diary-compose {
-    flex: 0 0 auto;
-    display: flex; flex-direction: column; gap: 10px;
-    margin-top: 20px;
-  }
-  .diary-compose .row select { flex: 1 1 130px; width: auto; }
-
-  .diary-viewer {
-    flex: 1 1 auto;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    margin-top: 14px;
-  }
-  .diary-toolbar {
-    flex: 0 0 auto;
-    display: flex; gap: 8px; align-items: center;
-    margin-bottom: 12px; flex-wrap: wrap;
-  }
-  .diary-toolbar input[type="date"] { flex: 1 1 180px; }
-
-  .diary-scroll {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: auto;
-    scroll-behavior: smooth;
-    padding-right: 6px;
-  }
-  .diary-scroll::-webkit-scrollbar { width: 8px; }
-  .diary-scroll::-webkit-scrollbar-track { background: transparent; }
-  .diary-scroll::-webkit-scrollbar-thumb {
-    background: var(--scroll-thumb);
-    border-radius: 999px;
-    border: 2px solid transparent;
-    background-clip: padding-box;
-  }
-  .diary-scroll::-webkit-scrollbar-thumb:hover {
-    background: var(--scroll-thumb-hover);
-    border: 2px solid transparent;
-    background-clip: padding-box;
-  }
-
-  .diary-card {
-    padding: 12px 10px; border-bottom: 1px solid var(--panel-border);
-    cursor: pointer; border-radius: 10px;
-    transition: background .2s var(--ease);
-  }
-  .diary-card:last-child { border-bottom: none; }
-  .diary-card:hover { background: var(--hover); }
-  .diary-meta {
-    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
-    font-size: 12px; color: var(--fg-dim);
-  }
-  .tag {
-    padding: 2px 9px; border-radius: 999px;
-    background: var(--hover); font-size: 11px; letter-spacing: .02em;
-  }
-  .diary-title {
-    margin-top: 6px; font-size: 15px; font-weight: 600;
-    letter-spacing: -.01em;
-  }
-  .diary-preview {
-    margin-top: 4px; font-size: 13px; line-height: 1.7;
-    color: var(--fg-dim);
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-  .lock-note {
-    font-size: 11px; color: var(--fg-dim); opacity: .8;
-    display: flex; align-items: center; gap: 6px; margin-top: 2px;
-  }
-
-  /* ═════ 筆記 ═════ */
-  .note {
-    text-align: left; font: inherit; cursor: pointer; display: flex;
-    flex-direction: column; gap: 8px; overflow: hidden;
-    transition: transform .25s var(--ease);
-  }
-  .note:hover { transform: translateY(-3px); }
-  .note-thumb {
-    height: 96px; border-radius: 12px; margin: -2px -2px 2px;
-    background-size: cover; background-position: center;
-  }
-  .note-h { font-size: 14px; font-weight: 600; color: var(--fg); }
-  .note-b {
-    font-size: 13px; line-height: 1.7; color: var(--fg-dim);
-    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
-    overflow: hidden; min-height: 1em;
-  }
-  .note-d { margin-top: auto; font-size: 11px; color: var(--fg-dim); opacity: .8; }
-
-  .add-card {
-    display: flex; align-items: center; justify-content: center;
-    min-height: 80px; border-radius: var(--radius);
-    border: 1px dashed var(--panel-border);
-    background: transparent; color: var(--fg-dim);
-    font: inherit; font-size: 15px; cursor: pointer;
-    transition: background .2s var(--ease), color .2s var(--ease), border-color .2s;
-  }
-  .add-card:hover { background: var(--hover); color: var(--fg); border-color: var(--fg-dim); }
-
-  .note-img-wrap { position: relative; border-radius: 14px; overflow: hidden; margin-bottom: 10px; }
-  .note-img-wrap img { width: 100%; display: block; }
-  .note-img-acts {
-    position: absolute; right: 8px; top: 8px; display: flex; gap: 6px;
-  }
-  .note-img-acts .mini {
-    background: rgba(0,0,0,.42); color: #fff; border-color: rgba(255,255,255,.22);
-    backdrop-filter: blur(8px);
-  }
-  .note-img-acts .mini:hover { background: rgba(0,0,0,.62); }
-
-  /* ═════ 照片庫 ═════ */
-  .photo-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 10px;
-  }
-  .photo {
-    aspect-ratio: 1 / 1; border-radius: 16px; overflow: hidden;
-    border: none; padding: 0; cursor: pointer; background: var(--hover);
-    transition: transform .3s var(--ease);
-  }
-  .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .photo:hover { transform: scale(1.03); }
-
-  /* ═════ 彈窗 ═════ */
-  .modal {
-    position: fixed; inset: 0; z-index: 1000;
-    display: none; align-items: center; justify-content: center;
-    padding: 20px;
-    background: rgba(10, 12, 16, .35);
-    -webkit-backdrop-filter: blur(22px) saturate(140%);
-    backdrop-filter: blur(22px) saturate(140%);
-  }
-  .modal.open { display: flex; }
-  .modal-card {
-    width: min(620px, 100%);
-    max-height: 86vh;
-    overflow-y: auto;
-    background: var(--panel);
-    border: 1px solid var(--panel-border);
-    border-radius: 24px;
-    padding: 22px;
-    -webkit-backdrop-filter: blur(30px) saturate(170%);
-    backdrop-filter: blur(30px) saturate(170%);
-    box-shadow: 0 24px 80px rgba(0, 0, 0, .28);
-    animation: pop .26s var(--ease);
-  }
-  .modal-card.narrow { width: min(400px, 100%); }
-  .modal-card::-webkit-scrollbar { width: 8px; }
-  .modal-card::-webkit-scrollbar-track { background: transparent; }
-  .modal-card::-webkit-scrollbar-thumb {
-    background: var(--scroll-thumb);
-    border-radius: 999px;
-    border: 2px solid transparent;
-    background-clip: padding-box;
-  }
-  .modal-card::-webkit-scrollbar-thumb:hover {
-    background: var(--scroll-thumb-hover);
-    border: 2px solid transparent;
-    background-clip: padding-box;
-  }
-
-  @keyframes pop {
-    from { opacity: 0; transform: translateY(14px) scale(.97); }
-    to   { opacity: 1; transform: none; }
-  }
-
-  .modal-head {
-    display: flex; align-items: flex-start; justify-content: space-between;
-    gap: 12px; margin-bottom: 16px;
-  }
-  .modal-head h3 { font-size: 17px; font-weight: 600; letter-spacing: -.01em; line-height: 1.4; }
-  .modal-head .sub2 { font-size: 12px; color: var(--fg-dim); margin-top: 3px; }
-
-  .x-btn {
-    flex: 0 0 auto; width: 32px; height: 32px; border-radius: 50%;
-    border: none; background: var(--hover); color: var(--fg-dim);
-    font-size: 18px; line-height: 1; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: background .2s var(--ease), color .2s var(--ease);
-  }
-  .x-btn:hover { background: var(--panel-border); color: var(--fg); }
-
-  /* 目標完成確認 */
-  .goal-confirm-icon {
-    font-size: 34px; line-height: 1;
-    margin-bottom: 14px;
-    display: block;
-  }
-  .goal-confirm-actions {
-    display: flex; gap: 10px; justify-content: flex-end;
-    margin-top: 20px; flex-wrap: wrap;
-  }
-  .goal-confirm-actions .btn { flex: 1 1 auto; }
-
-  /* 標籤管理 */
-  .tag-manager { margin-bottom: 18px; }
-  .tag-add-row { display: flex; gap: 8px; margin-bottom: 10px; }
-  .tag-add-row input { flex: 1 1 auto; }
-  .tag-add-row .btn { flex: 0 0 auto; }
-
-  .tag-pool { display: flex; flex-wrap: wrap; gap: 6px; }
-  .tag-chip {
-    display: inline-flex; align-items: center; gap: 4px;
-    padding: 5px 6px 5px 12px;
-    border-radius: 999px;
-    background: var(--hover);
-    font-size: 13px;
-  }
-  .chip-x {
-    width: 20px; height: 20px;
-    border-radius: 50%; border: none;
-    background: transparent; color: var(--fg-dim);
-    cursor: pointer; font-size: 13px; line-height: 1;
-    display: inline-flex; align-items: center; justify-content: center;
-    transition: background .2s, color .2s;
-  }
-  .chip-x:hover { background: var(--panel-border); color: #e5484d; }
-
-  /* 分配網格 */
-  .schedule-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 10px;
-  }
-  .sched-card {
-    padding: 12px;
-    border-radius: 14px;
-    background: var(--hover);
-  }
-  .sched-card h4 {
-    font-size: 12px; font-weight: 600; letter-spacing: .04em;
-    color: var(--fg-dim); margin-bottom: 8px;
-  }
-  .sched-tags { display: flex; flex-wrap: wrap; gap: 5px; }
-  .sched-tag {
-    font: inherit; font-size: 12px;
-    padding: 4px 10px; border-radius: 999px;
-    border: 1px solid var(--panel-border);
-    background: transparent; color: var(--fg-dim);
-    cursor: pointer;
-    transition: all .2s var(--ease);
-  }
-  .sched-tag.on {
-    background: var(--fg);
-    color: var(--ink-inv);
-    border-color: transparent;
-  }
-  .sched-tag:hover { border-color: var(--fg-dim); }
-
-  /* 事件列表 */
-  .event-list {
-    max-height: 230px; overflow-y: auto;
-    margin-bottom: 16px; padding-right: 4px;
-  }
-  .event-list::-webkit-scrollbar { width: 8px; }
-  .event-list::-webkit-scrollbar-track { background: transparent; }
-  .event-list::-webkit-scrollbar-thumb {
-    background: var(--scroll-thumb);
-    border-radius: 999px;
-    border: 2px solid transparent;
-    background-clip: padding-box;
-  }
-  .event-list::-webkit-scrollbar-thumb:hover {
-    background: var(--scroll-thumb-hover);
-    border: 2px solid transparent;
-    background-clip: padding-box;
-  }
-
-  .event-item {
-    display: flex; gap: 12px; align-items: flex-start;
-    padding: 11px 12px; border-radius: 14px;
-    background: var(--hover); margin-bottom: 8px;
-  }
-  .event-item:last-child { margin-bottom: 0; }
-  .ev-time {
-    flex: 0 0 auto; font-size: 12px; font-weight: 600;
-    color: var(--fg-dim); font-variant-numeric: tabular-nums;
-    padding-top: 2px; min-width: 42px;
-  }
-  .ev-main { flex: 1 1 auto; min-width: 0; }
-  .ev-title { font-size: 14px; font-weight: 600; line-height: 1.45; word-break: break-word; }
-  .ev-content {
-    margin-top: 3px; font-size: 13px; line-height: 1.65;
-    color: var(--fg-dim); white-space: pre-wrap; word-break: break-word;
-  }
-  .ev-acts { flex: 0 0 auto; display: flex; gap: 6px; }
-
-  .form-block {
-    border-top: 1px solid var(--panel-border);
-    padding-top: 16px; display: flex; flex-direction: column; gap: 10px;
-  }
-  .form-block .row { align-items: stretch; }
-  .form-block .row input[type="time"] { flex: 0 0 130px; }
-  .form-block .row .btn { flex: 1 1 auto; }
-
-  .diary-modal-body {
-    font-size: 15px; line-height: 1.9;
-    white-space: pre-wrap; word-break: break-word;
-  }
-
-  /* ═════ 光箱 ═════ */
-  .lightbox {
-    position: fixed; inset: 0; z-index: 1200;
-    display: none; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 18px; padding: 40px 24px;
-    background: rgba(8, 10, 14, .55);
-    -webkit-backdrop-filter: blur(30px) saturate(140%);
-    backdrop-filter: blur(30px) saturate(140%);
-  }
-  .lightbox.open { display: flex; }
-  .lightbox img {
-    max-width: min(900px, 90vw);
-    max-height: 70vh;
-    border-radius: 16px;
-    object-fit: contain;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, .4);
-    animation: pop .3s var(--ease);
-  }
-  .lightbox .caption {
-    background: transparent; border: none;
-    border-bottom: 1px solid transparent;
-    text-align: center; color: #fff; font-size: 13px;
-    width: min(600px, 80vw); padding: 6px;
-    opacity: .85; border-radius: 0;
-  }
-  .lightbox .caption::placeholder { color: rgba(255,255,255,.55); }
-  .lightbox .caption:focus {
-    opacity: 1; border-bottom-color: rgba(255,255,255,.4); background: transparent;
-  }
-  .lightbox .lb-acts { display: flex; gap: 10px; }
-  .lightbox .btn {
-    background: rgba(255,255,255,.12); color: #fff;
-    border-color: rgba(255,255,255,.18);
-    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-  }
-  .lightbox .btn:hover { background: rgba(255,255,255,.2); }
-  .lightbox .btn.danger { color: #ff8f8f; }
-  .lightbox .x-btn {
-    position: absolute; top: 18px; right: 18px;
-    background: rgba(255,255,255,.12); color: #fff;
-  }
-  .lightbox .x-btn:hover { background: rgba(255,255,255,.22); color: #fff; }
-
-  /* ═════ Toast ═════ */
-  .toast {
-    position: fixed; left: 50%; bottom: 32px;
-    transform: translateX(-50%) translateY(12px);
-    background: var(--fg); color: var(--ink-inv);
-    padding: 10px 20px; border-radius: 999px;
-    font-size: 13px; opacity: 0; pointer-events: none;
-    transition: opacity .28s var(--ease), transform .28s var(--ease);
-    z-index: 2000; max-width: 86vw; text-align: center;
-  }
-  .toast.show { opacity: 1; transform: translateX(-50%); }
-
-  /* ═════ 響應式 ═════ */
-  @media (max-width: 860px) {
-    .home-layout { flex-direction: column; }
-    .bookmarks {
-      position: static;
-      flex: 1 1 auto;
-      width: 100%;
-      max-height: none;
-    }
-    .bm-list { max-height: 230px; }
-  }
-
-  @media (max-width: 640px) {
-    .nav { padding: 0 8px; gap: 8px; }
-    .logo-btn { padding: 4px; margin-right: 2px; }
-    .nav-btn { padding: 8px 10px; font-size: 13px; }
-    .search-form { min-width: 100px; }
-    .search-form input[type="text"] {
-      padding: 7px 10px 7px 32px;
-      font-size: 12px;
-    }
-    .search-form svg {
-      left: 10px;
-      width: 14px; height: 14px;
-    }
-    .app { padding: 92px 16px 70px; }
-    .settings { width: calc(100vw - 24px); right: 12px; }
-    .modal { padding: 12px; }
-    .modal-card { padding: 18px; border-radius: 20px; }
-
-    #view-diary.active {
-      height: calc(100vh - 162px);
-      height: calc(100dvh - 162px);
-    }
-    #view-calendar.active {
-      height: calc(100vh - 150px);
-    }
-
-    .today-layout { flex-direction: column-reverse; }
-    .tomorrow-col { flex: 1 1 auto; width: 100%; }
-    .tomorrow-list { flex-direction: row; flex-wrap: wrap; gap: 8px; }
-    .tomorrow-tag {
-      background: var(--hover); padding: 3px 9px; border-radius: 999px;
-      max-width: 100%;
-    }
-
-    .ev-acts { flex-direction: column; }
-    .schedule-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
-    .diary-toolbar input[type="date"] { flex: 1 1 140px; }
-    .goal-acts { flex-direction: column; }
-    .goal-confirm-actions { flex-direction: column; }
-    .cal-head { flex-direction: column; align-items: flex-start; }
-    .cal-nav { width: 100%; justify-content: space-between; }
-  }
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -1162,20 +23,29 @@
       <button class="nav-btn" data-view="diary">日記</button>
       <button class="nav-btn" data-view="notes">筆記本</button>
       <button class="nav-btn" data-view="photos">照片庫</button>
+      <button class="nav-btn" data-view="ledger">記帳</button>
     </nav>
   </div>
 
-  <form class="search-form" id="searchForm" autocomplete="off" role="search">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-         stroke-linecap="round" aria-hidden="true">
-      <circle cx="11" cy="11" r="7"/>
-      <path d="m20 20-3.5-3.5"/>
-    </svg>
-    <input type="text" id="searchInput" placeholder="搜尋或輸入網址…" aria-label="搜尋">
-  </form>
+  <div class="search-wrap">
+    <select class="search-engine" id="searchEngine">
+      <option value="google">Google</option>
+      <option value="bing">Bing</option>
+      <option value="duck">DuckDuckGo</option>
+      <option value="youtube">YouTube</option>
+    </select>
+    <form class="search-form" id="searchForm" autocomplete="off" role="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"/>
+        <path d="m20 20-3.5-3.5"/>
+      </svg>
+      <input type="text" id="searchInput" placeholder="搜尋或輸入網址…" aria-label="搜尋">
+    </form>
+  </div>
 
   <div class="nav-right">
-    <button class="gear-btn" id="gearBtn" aria-label="設定" title="設定">
+    <button class="icon-btn" id="gearBtn" aria-label="設定" title="設定">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="3.2"/>
@@ -1190,9 +60,17 @@
       <span id="lumVal">55</span>
     </div>
     <input type="range" id="lumRange" min="0" max="100" step="1" value="55">
+    
     <div class="set-actions">
       <button class="set-btn" id="pickBg">插入背景圖片</button>
       <button class="set-btn ghost" id="clearBg">移除背景</button>
+    </div>
+    <div class="set-actions">
+      <button class="set-btn" id="themeToggle">切換深/淺色</button>
+    </div>
+    <div class="set-actions">
+      <button class="set-btn" id="exportBtn">匯出備份</button>
+      <button class="set-btn ghost" id="importBtn">匯入備份</button>
     </div>
     <div class="set-note">設定會自動記憶，下次開啟時自動套用。</div>
   </div>
@@ -1204,17 +82,33 @@
   <!-- 首頁 -->
   <section class="view active" id="view-home">
     <div class="home-layout">
-      <div class="home-main">
-        <h1>歡迎回來</h1>
-        <p class="sub">今天也慢慢來，一件一件把想做的事完成。</p>
+      
+      <!-- 左側主內容（內部滾動） -->
+      <div class="home-main scroll-box">
+        
+        <!-- 1. 時鐘 + 天氣 + 名言 -->
+        <div class="card clock-card">
+          <div class="clock-time" id="clockTime">00:00:00</div>
+          <div class="clock-date" id="clockDate">載入中…</div>
+          <div class="weather-info" id="weatherInfo">
+            <span class="weather-icon">⛅</span> 天氣載入中…
+          </div>
+          <div class="quote-divider"></div>
+          <div class="quote-widget" id="quoteText">
+            慢慢來，比較快。
+          </div>
+        </div>
 
+        <!-- 2. 統計四宮格 -->
         <div class="stats">
           <div class="stat"><b id="statTodo">0</b><span>今天必做</span></div>
           <div class="stat"><b id="statEvent">0</b><span>未來 7 天要事</span></div>
           <div class="stat"><b id="statDiary">0</b><span>日記篇數</span></div>
+          <div class="stat"><b id="statExpense">0</b><span>今日支出</span></div>
         </div>
 
-        <div class="card mt-24">
+        <!-- 3. 我的目標 -->
+        <div class="card goal-card">
           <div class="goal-head">
             <h3>我的目標 <span class="badge" id="goalBadge">0 / 0</span></h3>
             <button class="btn ghost" id="goalAddBtn" style="padding:6px 14px;font-size:13px;">＋ 新增目標</button>
@@ -1222,7 +116,8 @@
           <div class="goal-list" id="goalList"></div>
         </div>
 
-        <div class="grid two mt-24">
+        <!-- 4. 快捷入口 -->
+        <div class="shortcuts-grid">
           <button class="card shortcut" data-go="todo">
             <div class="k">每週必做</div>
             <div class="d">把這週最重要的事挑出來，先做那幾件。</div>
@@ -1246,13 +141,27 @@
         </div>
       </div>
 
-      <aside class="bookmarks" aria-label="書籤">
-        <div class="bm-head">
-          <span class="bm-title">書籤</span>
-          <button class="mini" id="bmAddBtn" title="新增書籤" aria-label="新增書籤">＋</button>
+      <!-- 右側邊欄：倒數計時 + 書籤（內部滾動） -->
+      <aside class="home-side scroll-box">
+        <!-- 倒數計時 -->
+        <div class="card countdown-card">
+          <div class="countdown-head">
+            <h3>倒數計時</h3>
+            <button class="mini" id="addCdBtn" title="新增紀念日">＋</button>
+          </div>
+          <div class="countdown-list" id="countdownList"></div>
         </div>
-        <div class="bm-list" id="bmList"></div>
+
+        <!-- 書籤 -->
+        <div class="card bookmarks" aria-label="書籤">
+          <div class="bm-head">
+            <span class="bm-title">書籤</span>
+            <button class="mini" id="bmAddBtn" title="新增書籤" aria-label="新增書籤">＋</button>
+          </div>
+          <div class="bm-list scroll-box" id="bmList"></div>
+        </div>
       </aside>
+
     </div>
   </section>
 
@@ -1261,17 +170,17 @@
     <h1>每週必做</h1>
     <p class="sub">今天該做的事，都在這裡。明天的事先放在旁邊。</p>
 
-    <div class="row mt-24" style="justify-content: flex-end;">
+    <div class="row" style="justify-content: flex-end; margin-top: 10px;">
       <button class="btn ghost" id="todoSettingsBtn" style="font-size:13px;">⚙ 設定標籤</button>
     </div>
 
-    <div class="today-layout mt-24">
+    <div class="today-layout">
       <aside class="tomorrow-col" id="tomorrowCol"></aside>
       <div class="today-col" id="todayCol"></div>
     </div>
   </section>
 
-  <!-- 日曆（縮小版） -->
+  <!-- 日曆 -->
   <section class="view" id="view-calendar">
     <h1>日曆</h1>
     <p class="sub">點選任何一天，記下那天的重要事項。</p>
@@ -1328,7 +237,7 @@
         <button class="btn ghost" id="diaryDatePickerBtn" style="flex:1 1 auto;">全部日記（點擊選擇日期）</button>
         <button class="btn ghost" id="diaryClearFilter" style="flex:0 0 auto;" hidden>清除篩選</button>
       </div>
-      <div class="diary-scroll" id="diaryList"></div>
+      <div class="diary-scroll scroll-box" id="diaryList"></div>
     </div>
   </section>
 
@@ -1337,8 +246,10 @@
     <h1>筆記本</h1>
     <p class="sub">想法很小的時候，就要先記下來。</p>
 
-    <div class="grid three mt-24" id="notesGrid"></div>
-    <button class="add-card mt-24" id="noteAdd" style="width:100%;">點擊這裡添加筆記</button>
+    <div class="notes-scroll scroll-box">
+      <div class="grid three" id="notesGrid"></div>
+    </div>
+    <button class="add-card" id="noteAdd">點擊這裡添加筆記</button>
   </section>
 
   <!-- 照片庫 -->
@@ -1346,15 +257,91 @@
     <h1>照片庫</h1>
     <p class="sub">把喜歡的光線留在這裡。</p>
 
-    <div class="row mt-24" style="margin-bottom:14px;">
+    <div class="photos-toolbar">
       <button class="btn primary" id="photoAdd">＋ 添加照片</button>
       <span style="font-size:12px;color:var(--fg-dim);">點擊照片可放大查看，下方可填寫標題。</span>
     </div>
 
-    <div class="photo-grid" id="photoGrid"></div>
+    <div class="photos-scroll scroll-box">
+      <div class="photo-grid" id="photoGrid"></div>
+    </div>
+  </section>
+
+  <!-- 記帳頁面 -->
+  <section class="view" id="view-ledger">
+    <h1>記帳</h1>
+    <p class="sub">隨手記下一筆，掌握每一分錢的流向。</p>
+
+    <div class="ledger-layout">
+      <!-- 新增表單 -->
+      <div class="card ledger-form-card">
+        <h3 style="font-size:16px;font-weight:600;">新增紀錄</h3>
+        <div class="ledger-form" style="display:flex;flex-direction:column;gap:12px;">
+          <select id="ledgerType">
+            <option value="expense">支出</option>
+            <option value="income">進帳</option>
+          </select>
+          <input type="number" id="ledgerAmount" placeholder="金額 (例如：150)" min="1" step="1">
+          <div class="row">
+            <select id="ledgerCategory">
+              <option value="飲食">飲食</option>
+              <option value="交通">交通</option>
+              <option value="購物">購物</option>
+              <option value="娛樂">娛樂</option>
+              <option value="薪資">薪資</option>
+              <option value="投資">投資</option>
+              <option value="其他">其他</option>
+            </select>
+            <input type="date" id="ledgerDate">
+          </div>
+          <input type="text" id="ledgerNote" placeholder="備註（選填，例如：午餐）" maxlength="50">
+          <button class="btn primary" id="ledgerAddBtn" style="margin-top:8px;">儲存這筆紀錄</button>
+        </div>
+      </div>
+
+      <!-- 列表與統計 -->
+      <div class="card ledger-list-card">
+        <div class="ledger-summary">
+          <div class="summary-item">
+            <span>本月支出</span>
+            <b style="color: var(--expense-color);">$<span id="monthExpenseTotal">0</span></b>
+          </div>
+          <div class="summary-item">
+            <span>本月進帳</span>
+            <b style="color: var(--income-color);">$<span id="monthIncomeTotal">0</span></b>
+          </div>
+          <div class="summary-item">
+            <span>本月結餘</span>
+            <b id="monthBalanceTotal">$0</b>
+          </div>
+        </div>
+        <div class="ledger-items scroll-box" id="ledgerList"></div>
+      </div>
+    </div>
   </section>
 
 </main>
+
+<!-- ══════════ 番茄鐘懸浮窗 ══════════ -->
+<button class="pomo-fab" id="pomoFab" title="番茄鐘">🍅</button>
+<div class="pomo-panel" id="pomoPanel">
+  <div class="pomo-time" id="pomoTime">25:00</div>
+  <div class="pomo-select-wrap">
+    <select id="pomoPreset">
+      <option value="15">15 分鐘</option>
+      <option value="25" selected>25 分鐘</option>
+      <option value="45">45 分鐘</option>
+      <option value="60">60 分鐘</option>
+    </select>
+    <input type="number" id="pomoCustom" min="1" max="180" placeholder="自訂">
+    <span>分</span>
+    <button class="btn ghost" id="pomoSetBtn" style="padding: 4px 8px; font-size: 12px;">設定</button>
+  </div>
+  <div class="pomo-actions">
+    <button class="btn primary" id="pomoStart">開始</button>
+    <button class="btn ghost" id="pomoReset">重置</button>
+  </div>
+</div>
 
 <!-- ══════════ 目標完成確認彈窗 ══════════ -->
 <div class="modal" id="goalConfirmModal">
@@ -1386,7 +373,11 @@
 
     <div style="display:flex;flex-direction:column;gap:10px;">
       <input type="text" id="goalTitle" placeholder="目標標題…" maxlength="80">
-      <textarea id="goalNote" placeholder="補充說明（選填）…" style="min-height:100px;"></textarea>
+      <textarea id="goalNote" placeholder="補充說明（選填）…" style="min-height:80px;"></textarea>
+      <div>
+        <label style="font-size:12px;color:var(--fg-dim);display:block;margin-bottom:6px;">進度：<span id="goalProgressVal">0</span>%</label>
+        <input type="range" id="goalProgress" min="0" max="100" value="0" style="margin-bottom:0;">
+      </div>
       <div class="row">
         <button class="btn primary" id="goalSave" style="flex:1 1 auto;">保存目標</button>
         <button class="btn ghost" id="goalDelete" style="flex:0 0 auto;">刪除</button>
@@ -1411,6 +402,26 @@
       <div class="row">
         <button class="btn primary" id="bmSave" style="flex:1 1 auto;">保存書籤</button>
         <button class="btn ghost" id="bmDelete" style="flex:0 0 auto;">刪除</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ 倒數計時彈窗 ══════════ -->
+<div class="modal" id="cdModal">
+  <div class="modal-card narrow">
+    <div class="modal-head">
+      <div>
+        <h3>新增倒數日</h3>
+        <div class="sub2">距離那天還有多久？</div>
+      </div>
+      <button class="x-btn" data-close="#cdModal" aria-label="關閉">×</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <input type="text" id="cdTitle" placeholder="事件名稱（例如：生日）" maxlength="40">
+      <input type="date" id="cdDate">
+      <div class="row">
+        <button class="btn primary" id="cdSave" style="flex:1 1 auto;">保存</button>
       </div>
     </div>
   </div>
@@ -1549,1431 +560,8 @@
 <input type="file" id="bgFileInput" accept="image/*" hidden>
 <input type="file" id="noteImgInput" accept="image/*" hidden>
 <input type="file" id="photoInput" accept="image/*" multiple hidden>
+<input type="file" id="importFileInput" accept="application/json" hidden>
 
-<script>
-(function () {
-  'use strict';
-
-  /* ═══════════════ 工具 ═══════════════ */
-  const $  = (s, r = document) => r.querySelector(s);
-  const $$ = (s, r = document) => Array.prototype.slice.call(r.querySelectorAll(s));
-
-  function uid() {
-    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  }
-  function pad(n) { return String(n).padStart(2, '0'); }
-  function dateKey(d) {
-    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-  }
-  function todayKey() { return dateKey(new Date()); }
-  function keyToDate(key) {
-    const p = key.split('-').map(Number);
-    return new Date(p[0], p[1] - 1, p[2]);
-  }
-  function fmtDateTime(d) {
-    return d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日 ' +
-           pad(d.getHours()) + ':' + pad(d.getMinutes());
-  }
-  function escapeHtml(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
-  }
-
-  /* 本地儲存 */
-  const STORAGE_OK = (function () {
-    try {
-      const k = '__test__';
-      localStorage.setItem(k, '1');
-      localStorage.removeItem(k);
-      return true;
-    } catch (e) { return false; }
-  })();
-
-  const LS = {
-    get(k, d) {
-      if (!STORAGE_OK) return d;
-      try {
-        const v = localStorage.getItem(k);
-        return v === null ? d : JSON.parse(v);
-      } catch (e) { return d; }
-    },
-    set(k, v) {
-      if (!STORAGE_OK) return false;
-      try { localStorage.setItem(k, JSON.stringify(v)); return true; }
-      catch (e) { return false; }
-    }
-  };
-
-  /* Toast */
-  let toastTimer = null;
-  function toast(msg) {
-    let el = document.querySelector('.toast');
-    if (!el) {
-      el = document.createElement('div');
-      el.className = 'toast';
-      document.body.appendChild(el);
-    }
-    el.textContent = msg;
-    el.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { el.classList.remove('show'); }, 2300);
-  }
-
-  /* 圖片壓縮 */
-  function compressImage(file, maxDim, quality) {
-    return new Promise(function (resolve, reject) {
-      if (!file || !file.type || file.type.indexOf('image/') !== 0) {
-        reject(new Error('not image')); return;
-      }
-      const reader = new FileReader();
-      reader.onload = function (ev) {
-        const img = new Image();
-        img.onload = function () {
-          let w = img.naturalWidth || img.width;
-          let h = img.naturalHeight || img.height;
-          if (w > maxDim || h > maxDim) {
-            const r = Math.min(maxDim / w, maxDim / h);
-            w = Math.round(w * r);
-            h = Math.round(h * r);
-          }
-          const c = document.createElement('canvas');
-          c.width = w; c.height = h;
-          const ctx = c.getContext('2d');
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, w, h);
-          ctx.drawImage(img, 0, 0, w, h);
-          let data = c.toDataURL('image/jpeg', quality);
-          resolve(data);
-        };
-        img.onerror = reject;
-        img.src = ev.target.result;
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
-  /* 彈窗控制 */
-  function openModal(sel) {
-    const m = $(sel);
-    if (!m) return;
-    m.classList.add('open');
-    document.body.classList.add('lock');
-  }
-  function closeModal(sel) {
-    const m = $(sel);
-    if (m) m.classList.remove('open');
-    if (!document.querySelector('.modal.open, .lightbox.open')) {
-      document.body.classList.remove('lock');
-    }
-  }
-
-  /* ═══════════════ 主題（亮度 + 背景 + 滾動條） ═══════════════ */
-  const root     = document.documentElement;
-  const bgLayer  = $('#bgLayer');
-  const DEFAULT_LUM = 55;
-  const state = { lum: DEFAULT_LUM, bg: null };
-
-  function getCookie(name) {
-    const m = document.cookie.match('(?:^|; )' + name + '=([^;]*)');
-    return m ? decodeURIComponent(m[1]) : null;
-  }
-  function setCookie(name, value) {
-    try {
-      document.cookie = name + '=' + encodeURIComponent(value) +
-                        '; path=/; max-age=31536000; SameSite=Lax';
-      return getCookie(name) !== null;
-    } catch (e) { return false; }
-  }
-  function delCookie(name) {
-    document.cookie = name + '=; path=/; max-age=0; SameSite=Lax';
-  }
-
-  function loadPrefs() {
-    let lum = NaN;
-    try {
-      const v = localStorage.getItem('lum');
-      if (v !== null) lum = parseFloat(v);
-    } catch (e) {}
-    if (isNaN(lum)) lum = parseFloat(getCookie('lum'));
-    if (!isNaN(lum)) state.lum = Math.min(100, Math.max(0, lum));
-    else state.lum = DEFAULT_LUM;
-
-    let bg = null;
-    try { bg = localStorage.getItem('bg'); } catch (e) {}
-    if (!bg) bg = getCookie('bg');
-    state.bg = bg || null;
-  }
-
-  function savePrefs() {
-    setCookie('lum', String(state.lum));
-    try { localStorage.setItem('lum', String(state.lum)); } catch (e) {}
-
-    if (state.bg) {
-      const ok = setCookie('bg', state.bg);
-      if (!ok) {
-        delCookie('bg');
-        try { localStorage.setItem('bg', state.bg); } catch (e) {}
-      } else {
-        try { localStorage.removeItem('bg'); } catch (e) {}
-      }
-    } else {
-      delCookie('bg');
-      try { localStorage.removeItem('bg'); } catch (e) {}
-    }
-  }
-
-  function applyTheme() {
-    const b = state.lum / 100;
-    const bgL = 12 + b * 76;
-    let txL;
-    if (bgL > 50) txL = Math.max(8, 100 - bgL - 32);
-    else          txL = Math.min(94, 100 - bgL + 32);
-
-    if (state.bg) {
-      bgLayer.style.backgroundImage = 'url("' + state.bg + '")';
-      bgLayer.style.backgroundColor = '#000';
-      bgLayer.style.filter = 'brightness(' + (0.35 + b * 1.0).toFixed(2) + ')';
-    } else {
-      bgLayer.style.backgroundImage = 'none';
-      bgLayer.style.filter = 'none';
-      bgLayer.style.backgroundColor = 'hsl(220, 14%, ' + bgL.toFixed(1) + '%)';
-    }
-
-    const light = bgL > 50;
-    root.style.setProperty('--fg', 'hsl(220, 12%, ' + txL.toFixed(1) + '%)');
-    root.style.setProperty('--fg-dim', 'hsla(220, 10%, ' + txL.toFixed(1) + '%, .62)');
-    root.style.setProperty('--panel', light ? 'rgba(255,255,255,.62)' : 'rgba(255,255,255,.09)');
-    root.style.setProperty('--panel-border', light ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.15)');
-    root.style.setProperty('--nav-bg', light ? 'rgba(255,255,255,.62)' : 'rgba(18,20,26,.55)');
-    root.style.setProperty('--hover', light ? 'rgba(0,0,0,.06)' : 'rgba(255,255,255,.10)');
-    root.style.setProperty('--ink-inv', light ? '#ffffff' : '#111318');
-    document.documentElement.style.colorScheme = light ? 'light' : 'dark';
-
-    /* 滾動條：跟隨文字亮度 */
-    const t = txL.toFixed(1);
-    root.style.setProperty('--scroll-thumb', 'hsla(220, 10%, ' + t + '%, .30)');
-    root.style.setProperty('--scroll-thumb-hover', 'hsla(220, 10%, ' + t + '%, .52)');
-
-    $('#lumRange').value = state.lum;
-    $('#lumVal').textContent = Math.round(state.lum);
-  }
-
-  /* ═══════════════ 每週必做資料 ═══════════════ */
-  const WEEKDAYS = [
-    { key: 'mon', label: '星期一' },
-    { key: 'tue', label: '星期二' },
-    { key: 'wed', label: '星期三' },
-    { key: 'thu', label: '星期四' },
-    { key: 'fri', label: '星期五' },
-    { key: 'sat', label: '星期六' },
-    { key: 'sun', label: '星期日' }
-  ];
-  const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-
-  function emptyTodoData() {
-    return {
-      tags: [],
-      schedule: { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] },
-      done: {}
-    };
-  }
-
-  function migrateTodos(raw) {
-    if (!raw) return emptyTodoData();
-    if (raw.tags && raw.schedule) {
-      WEEKDAYS.forEach(function (w) {
-        if (!Array.isArray(raw.schedule[w.key])) raw.schedule[w.key] = [];
-      });
-      if (!raw.done || typeof raw.done !== 'object') raw.done = {};
-      return raw;
-    }
-    const data = emptyTodoData();
-    const seen = {};
-    WEEKDAYS.forEach(function (w) {
-      const list = raw[w.key];
-      if (!Array.isArray(list)) return;
-      list.forEach(function (item) {
-        const name = (item && item.text || '').trim();
-        if (!name) return;
-        if (!seen[name]) {
-          seen[name] = { id: uid(), name: name };
-          data.tags.push(seen[name]);
-        }
-        data.schedule[w.key].push(seen[name].id);
-      });
-    });
-    return data;
-  }
-
-  let todos     = migrateTodos(LS.get('todos', null));
-  let events    = LS.get('events', {});
-  let diaries   = LS.get('diaries', []);
-  let notes     = LS.get('notes', []);
-  let photos    = LS.get('photos', []);
-  let goals     = LS.get('goals', []);
-  let bookmarks = LS.get('bookmarks', []);
-
-  if (!events || typeof events !== 'object' || Array.isArray(events)) events = {};
-  if (!Array.isArray(diaries)) diaries = [];
-  if (!Array.isArray(notes)) notes = [];
-  if (!Array.isArray(photos)) photos = [];
-  if (!Array.isArray(goals)) goals = [];
-  if (!Array.isArray(bookmarks)) bookmarks = [];
-
-  function save(key) {
-    const map = {
-      todos: todos, events: events, diaries: diaries,
-      notes: notes, photos: photos, goals: goals, bookmarks: bookmarks
-    };
-    const ok = LS.set(key, map[key]);
-    if (!ok) toast('儲存失敗，請檢查瀏覽器空間');
-    return ok;
-  }
-
-  function dayKeyOf(d) { return DAY_KEYS[d.getDay()]; }
-  function dayLabelOf(key) {
-    const map = { mon: '星期一', tue: '星期二', wed: '星期三', thu: '星期四',
-                  fri: '星期五', sat: '星期六', sun: '星期日' };
-    return map[key] || key;
-  }
-
-  function pruneDone() {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 60);
-    const minKey = dateKey(cutoff);
-    let changed = false;
-    Object.keys(todos.done || {}).forEach(function (k) {
-      if (k < minKey) { delete todos.done[k]; changed = true; }
-    });
-    if (changed) save('todos');
-  }
-
-  /* ═══════════════ 視圖切換 ═══════════════ */
-  const views = $$('.view');
-  const navBtns = $$('.nav-btn');
-
-  function showView(name) {
-    views.forEach(function (v) {
-      v.classList.toggle('active', v.id === 'view-' + name);
-    });
-    navBtns.forEach(function (b) {
-      b.classList.toggle('active', b.dataset.view === name);
-    });
-    if (name === 'calendar') renderCalendar();
-    if (name === 'home') { renderHome(); renderGoals(); renderBookmarks(); }
-    if (name === 'diary') renderDiaries();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  $('#navLinks').addEventListener('click', function (e) {
-    const btn = e.target.closest('.nav-btn');
-    if (btn) showView(btn.dataset.view);
-  });
-
-  $('#logoBtn').addEventListener('click', function () {
-    showView('home');
-    closeSettings();
-  });
-
-  $$('[data-go]').forEach(function (el) {
-    el.addEventListener('click', function () { showView(el.dataset.go); });
-  });
-
-  /* ═══════════════ 搜尋欄 ═══════════════ */
-  function doSearch(raw) {
-    const q = String(raw || '').trim();
-    if (!q) return;
-    if (/^https?:\/\//i.test(q)) {
-      window.open(q, '_blank', 'noopener');
-      return;
-    }
-    if (/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(q) && !/\s/.test(q)) {
-      window.open('https://' + q, '_blank', 'noopener');
-      return;
-    }
-    window.open('https://www.google.com/search?q=' + encodeURIComponent(q), '_blank', 'noopener');
-  }
-
-  $('#searchForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-    doSearch($('#searchInput').value);
-    $('#searchInput').value = '';
-    $('#searchInput').blur();
-  });
-
-  /* ═══════════════ 書籤 ═══════════════ */
-  let editingBmId = null;
-
-  function faviconUrl(url) {
-    return 'https://www.google.com/s2/favicons?sz=64&domain_url=' + encodeURIComponent(url);
-  }
-
-  function renderBookmarks() {
-    const list = $('#bmList');
-    if (!bookmarks.length) {
-      list.innerHTML = '<div class="empty small">還沒有書籤<br>點右上角 ＋ 新增</div>';
-      return;
-    }
-    list.innerHTML = bookmarks.map(function (b) {
-      let host = '';
-      try { host = new URL(b.url).hostname; } catch (e) { host = ''; }
-      const name = b.name || host || b.url;
-      return '<div class="bm-item" data-id="' + b.id + '" title="' + escapeHtml(name) + '">' +
-        '<img class="bm-fav" src="' + faviconUrl(b.url) + '" alt="" ' +
-             'onerror="this.style.visibility=\'hidden\'">' +
-        '<span class="bm-name">' + escapeHtml(name) + '</span>' +
-        '<div class="bm-acts">' +
-          '<button class="bm-act" data-act="edit" title="編輯" aria-label="編輯書籤">編</button>' +
-          '<button class="bm-act del" data-act="del" title="刪除" aria-label="刪除書籤">×</button>' +
-        '</div>' +
-      '</div>';
-    }).join('');
-  }
-
-  function normalizeUrl(raw) {
-    let u = String(raw || '').trim();
-    if (!u) return '';
-    if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
-    return u;
-  }
-
-  function openBmModal(id) {
-    editingBmId = id || null;
-    const b = id ? bookmarks.find(function (x) { return x.id === id; }) : null;
-    $('#bmModalTitle').textContent = b ? '編輯書籤' : '新增書籤';
-    $('#bmName').value = b ? b.name : '';
-    $('#bmUrl').value = b ? b.url : '';
-    $('#bmDelete').style.display = b ? '' : 'none';
-    openModal('#bmModal');
-    setTimeout(function () { $('#bmName').focus(); }, 80);
-  }
-
-  $('#bmAddBtn').addEventListener('click', function () { openBmModal(null); });
-
-  $('#bmList').addEventListener('click', function (e) {
-    const item = e.target.closest('.bm-item');
-    if (!item) return;
-    const id = item.dataset.id;
-    const b = bookmarks.find(function (x) { return x.id === id; });
-    if (!b) return;
-
-    const actBtn = e.target.closest('[data-act]');
-    if (actBtn) {
-      if (actBtn.dataset.act === 'del') {
-        bookmarks = bookmarks.filter(function (x) { return x.id !== id; });
-        save('bookmarks');
-        renderBookmarks();
-        toast('已刪除書籤');
-      } else if (actBtn.dataset.act === 'edit') {
-        openBmModal(id);
-      }
-      return;
-    }
-    window.open(b.url, '_blank', 'noopener');
-  });
-
-  $('#bmSave').addEventListener('click', function () {
-    let url = normalizeUrl($('#bmUrl').value);
-    let name = $('#bmName').value.trim();
-    if (!url) { toast('請填寫網址'); $('#bmUrl').focus(); return; }
-    if (!name) {
-      try { name = new URL(url).hostname; } catch (e) { name = url; }
-    }
-    if (editingBmId) {
-      const b = bookmarks.find(function (x) { return x.id === editingBmId; });
-      if (b) { b.name = name; b.url = url; }
-    } else {
-      bookmarks.push({ id: uid(), name: name, url: url });
-    }
-    save('bookmarks');
-    renderBookmarks();
-    closeModal('#bmModal');
-    toast('已保存書籤');
-  });
-
-  $('#bmDelete').addEventListener('click', function () {
-    if (!editingBmId) return;
-    bookmarks = bookmarks.filter(function (x) { return x.id !== editingBmId; });
-    save('bookmarks');
-    renderBookmarks();
-    closeModal('#bmModal');
-    toast('已刪除書籤');
-  });
-
-  /* ═══════════════ 首頁統計 ═══════════════ */
-  function countTodayTags() {
-    const tk = dayKeyOf(new Date());
-    return (todos.schedule[tk] || []).length;
-  }
-
-  function countUpcoming(days) {
-    const now = new Date();
-    let n = 0;
-    for (let i = 0; i < days; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
-      const list = events[dateKey(d)];
-      if (list) n += list.length;
-    }
-    return n;
-  }
-
-  function renderHome() {
-    $('#statTodo').textContent = countTodayTags();
-    $('#statEvent').textContent = countUpcoming(7);
-    $('#statDiary').textContent = diaries.length;
-  }
-
-  /* ═══════════════ 目標 ═══════════════ */
-  function renderGoals() {
-    const wrap = $('#goalList');
-    const badge = $('#goalBadge');
-
-    if (!goals.length) {
-      wrap.innerHTML = '<div class="empty small">還沒有目標，點右上角「新增目標」開始吧。</div>';
-      badge.textContent = '0 / 0';
-      return;
-    }
-
-    const doneCount = goals.filter(function (g) { return g.done; }).length;
-    badge.textContent = doneCount + ' / ' + goals.length;
-
-    wrap.innerHTML = goals.map(function (g) {
-      return '<div class="goal-item' + (g.done ? ' done' : '') + '" data-id="' + g.id + '">' +
-        '<button class="goal-chk" data-act="toggle" aria-label="標記完成"></button>' +
-        '<div class="goal-main">' +
-          '<div class="goal-title">' + escapeHtml(g.title) + '</div>' +
-          (g.note ? '<div class="goal-note">' + escapeHtml(g.note) + '</div>' : '') +
-        '</div>' +
-        '<div class="goal-acts">' +
-          '<button class="mini" data-act="edit" aria-label="編輯目標">編</button>' +
-          '<button class="mini del" data-act="del" aria-label="刪除目標">×</button>' +
-        '</div>' +
-      '</div>';
-    }).join('');
-  }
-
-  let editingGoalId = null;
-  let confirmGoalId = null;
-
-  const GOAL_CONFIRM_TEXTS = [
-    { title: '你真的完成這個目標了嗎？', sub: '你確定沒有偷懶嗎？問問自己的心。', icon: '🤔' },
-    { title: '確定完成了嗎？', sub: '別騙自己喔，誠實面對比較好。', icon: '👀' },
-    { title: '要標記為完成了？', sub: '回想一下，真的盡力了嗎？', icon: '🧐' },
-    { title: '這個目標真的達成了嗎？', sub: '再檢查一次，確認沒有僥倖。', icon: '🔍' },
-    { title: '完成目標？', sub: '你確定沒有偷懶嗎？再想三秒。', icon: '⏳' },
-    { title: '真的要打勾嗎？', sub: '騙得了別人，騙不了自己。', icon: '🙃' },
-    { title: '你盡力了嗎？', sub: '如果答案是「是」，那就放心勾選吧。', icon: '💪' }
-  ];
-
-  function openGoalConfirm(id) {
-    confirmGoalId = id;
-    const t = GOAL_CONFIRM_TEXTS[Math.floor(Math.random() * GOAL_CONFIRM_TEXTS.length)];
-    document.querySelector('.goal-confirm-icon').textContent = t.icon;
-    $('#goalConfirmTitle').textContent = t.title;
-    $('#goalConfirmSub').textContent = t.sub;
-    openModal('#goalConfirmModal');
-  }
-
-  $('#goalConfirmYes').addEventListener('click', function () {
-    if (!confirmGoalId) { closeModal('#goalConfirmModal'); return; }
-    const g = goals.find(function (x) { return x.id === confirmGoalId; });
-    if (g) {
-      g.done = true;
-      save('goals');
-      renderGoals();
-    }
-    confirmGoalId = null;
-    closeModal('#goalConfirmModal');
-    toast('恭喜完成目標！為自己鼓掌 👏');
-  });
-
-  $('#goalConfirmNo').addEventListener('click', function () {
-    confirmGoalId = null;
-    closeModal('#goalConfirmModal');
-    toast('繼續努力，你可以的 💪');
-  });
-
-  function openGoalModal(id) {
-    editingGoalId = id || null;
-    const g = id ? goals.find(function (x) { return x.id === id; }) : null;
-
-    $('#goalModalTitle').textContent = g ? '編輯目標' : '新增目標';
-    $('#goalTitle').value = g ? g.title : '';
-    $('#goalNote').value = g ? (g.note || '') : '';
-    $('#goalDelete').style.display = g ? '' : 'none';
-
-    openModal('#goalModal');
-    setTimeout(function () { $('#goalTitle').focus(); }, 80);
-  }
-
-  $('#goalAddBtn').addEventListener('click', function () { openGoalModal(null); });
-
-  $('#goalList').addEventListener('click', function (e) {
-    const btn = e.target.closest('[data-act]');
-    if (!btn) return;
-    const item = e.target.closest('.goal-item');
-    if (!item) return;
-    const id = item.dataset.id;
-    const g = goals.find(function (x) { return x.id === id; });
-    if (!g) return;
-
-    const act = btn.dataset.act;
-    if (act === 'toggle') {
-      if (!g.done) {
-        openGoalConfirm(id);
-      } else {
-        g.done = false;
-        save('goals');
-        renderGoals();
-      }
-    } else if (act === 'edit') {
-      openGoalModal(id);
-    } else if (act === 'del') {
-      goals = goals.filter(function (x) { return x.id !== id; });
-      save('goals');
-      renderGoals();
-      toast('已刪除目標');
-    }
-  });
-
-  $('#goalSave').addEventListener('click', function () {
-    const title = $('#goalTitle').value.trim();
-    if (!title) { toast('請填寫目標標題'); $('#goalTitle').focus(); return; }
-    const note = $('#goalNote').value.trim();
-
-    if (editingGoalId) {
-      const g = goals.find(function (x) { return x.id === editingGoalId; });
-      if (g) { g.title = title; g.note = note; }
-    } else {
-      goals.unshift({ id: uid(), title: title, note: note, done: false });
-    }
-
-    save('goals');
-    renderGoals();
-    closeModal('#goalModal');
-    toast('已保存目標');
-  });
-
-  $('#goalDelete').addEventListener('click', function () {
-    if (!editingGoalId) return;
-    goals = goals.filter(function (x) { return x.id !== editingGoalId; });
-    save('goals');
-    renderGoals();
-    closeModal('#goalModal');
-    toast('已刪除目標');
-  });
-
-  /* ═══════════════ 每週必做：主頁渲染 ═══════════════ */
-  function tagById(id) {
-    return todos.tags.find(function (t) { return t.id === id; }) || null;
-  }
-
-  function tagsForDay(dayKey) {
-    return (todos.schedule[dayKey] || [])
-      .map(tagById)
-      .filter(Boolean);
-  }
-
-  function renderTodos() {
-    const now = new Date();
-    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-    const todayDayKey = dayKeyOf(now);
-    const tomorrowDayKey = dayKeyOf(tomorrow);
-    const todayDateKey = dateKey(now);
-    const todayDone = Array.isArray(todos.done[todayDateKey]) ? todos.done[todayDateKey] : [];
-
-    const todayTags = tagsForDay(todayDayKey);
-    const tomorrowTags = tagsForDay(tomorrowDayKey);
-
-    const todayCol = $('#todayCol');
-    const doneCount = todayTags.filter(function (t) { return todayDone.indexOf(t.id) >= 0; }).length;
-    todayCol.innerHTML =
-      '<div class="card">' +
-        '<div class="today-head">' +
-          '<h3>今天 · ' + dayLabelOf(todayDayKey) + '</h3>' +
-          '<span class="badge">' +
-            (todayTags.length ? doneCount + ' / ' + todayTags.length : '—') +
-          '</span>' +
-        '</div>' +
-        '<div class="today-list">' +
-          (todayTags.length
-            ? todayTags.map(function (t) {
-                const done = todayDone.indexOf(t.id) >= 0;
-                return '<button class="today-item' + (done ? ' done' : '') +
-                       '" data-tag="' + t.id + '">' +
-                  '<span class="chk"></span>' +
-                  '<span class="label">' + escapeHtml(t.name) + '</span>' +
-                '</button>';
-              }).join('')
-            : '<div class="empty small">今天沒有安排，點右上角設定標籤。</div>') +
-        '</div>' +
-      '</div>';
-
-    const tomorrowCol = $('#tomorrowCol');
-    tomorrowCol.innerHTML =
-      '<div class="card tomorrow-card">' +
-        '<h4>明天 · ' + dayLabelOf(tomorrowDayKey) + '</h4>' +
-        '<div class="tomorrow-list">' +
-          (tomorrowTags.length
-            ? tomorrowTags.map(function (t) {
-                return '<span class="tomorrow-tag">' + escapeHtml(t.name) + '</span>';
-              }).join('')
-            : '<span class="empty small" style="padding:0;">—</span>') +
-        '</div>' +
-      '</div>';
-  }
-
-  $('#todayCol').addEventListener('click', function (e) {
-    const btn = e.target.closest('.today-item');
-    if (!btn) return;
-    const id = btn.dataset.tag;
-    const tk = dateKey(new Date());
-    if (!Array.isArray(todos.done[tk])) todos.done[tk] = [];
-    const arr = todos.done[tk];
-    const i = arr.indexOf(id);
-    if (i >= 0) arr.splice(i, 1);
-    else arr.push(id);
-    save('todos');
-    renderTodos();
-    renderHome();
-  });
-
-  /* ═══════════════ 每週必做：設定彈窗 ═══════════════ */
-  let todoDraft = null;
-
-  function openTodoSettings() {
-    todoDraft = JSON.parse(JSON.stringify(todos));
-    if (!todoDraft.tags) todoDraft.tags = [];
-    if (!todoDraft.schedule) todoDraft.schedule = emptyTodoData().schedule;
-    WEEKDAYS.forEach(function (w) {
-      if (!Array.isArray(todoDraft.schedule[w.key])) todoDraft.schedule[w.key] = [];
-    });
-    renderTagPool();
-    renderSchedule();
-    openModal('#todoModal');
-  }
-
-  function renderTagPool() {
-    const pool = $('#tagPool');
-    if (!todoDraft.tags.length) {
-      pool.innerHTML = '<div class="empty small" style="padding:6px 0;">還沒有標籤，先新增一個吧。</div>';
-      return;
-    }
-    pool.innerHTML = todoDraft.tags.map(function (t) {
-      return '<span class="tag-chip">' + escapeHtml(t.name) +
-        '<button class="chip-x" data-del-tag="' + t.id + '" aria-label="刪除標籤">×</button>' +
-      '</span>';
-    }).join('');
-  }
-
-  function renderSchedule() {
-    const grid = $('#scheduleGrid');
-    if (!todoDraft.tags.length) {
-      grid.innerHTML = '<div class="empty small" style="grid-column:1/-1;">先新增標籤，再分配到星期。</div>';
-      return;
-    }
-    grid.innerHTML = WEEKDAYS.map(function (w) {
-      const assigned = todoDraft.schedule[w.key] || [];
-      return '<div class="sched-card">' +
-        '<h4>' + w.label + '</h4>' +
-        '<div class="sched-tags">' +
-          todoDraft.tags.map(function (t) {
-            const on = assigned.indexOf(t.id) >= 0;
-            return '<button class="sched-tag' + (on ? ' on' : '') +
-                   '" data-toggle-day="' + w.key + '" data-tag="' + t.id + '">' +
-                   escapeHtml(t.name) + '</button>';
-          }).join('') +
-        '</div>' +
-      '</div>';
-    }).join('');
-  }
-
-  $('#tagAddBtn').addEventListener('click', function () {
-    const input = $('#tagInput');
-    const v = input.value.trim();
-    if (!v) { input.focus(); return; }
-    if (todoDraft.tags.some(function (t) { return t.name === v; })) {
-      toast('已經有同名標籤');
-      return;
-    }
-    todoDraft.tags.push({ id: uid(), name: v });
-    input.value = '';
-    renderTagPool();
-    renderSchedule();
-    input.focus();
-  });
-
-  $('#tagInput').addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') { e.preventDefault(); $('#tagAddBtn').click(); }
-  });
-
-  $('#tagPool').addEventListener('click', function (e) {
-    const btn = e.target.closest('[data-del-tag]');
-    if (!btn) return;
-    const id = btn.dataset.delTag;
-    todoDraft.tags = todoDraft.tags.filter(function (t) { return t.id !== id; });
-    WEEKDAYS.forEach(function (w) {
-      todoDraft.schedule[w.key] = todoDraft.schedule[w.key].filter(function (x) { return x !== id; });
-    });
-    renderTagPool();
-    renderSchedule();
-  });
-
-  $('#scheduleGrid').addEventListener('click', function (e) {
-    const btn = e.target.closest('[data-toggle-day]');
-    if (!btn) return;
-    const day = btn.dataset.toggleDay;
-    const tagId = btn.dataset.tag;
-    const arr = todoDraft.schedule[day];
-    const i = arr.indexOf(tagId);
-    if (i >= 0) arr.splice(i, 1);
-    else arr.push(tagId);
-    renderSchedule();
-  });
-
-  $('#todoSaveBtn').addEventListener('click', function () {
-    todos = todoDraft;
-    todoDraft = null;
-    save('todos');
-    renderTodos();
-    renderHome();
-    closeModal('#todoModal');
-    toast('已保存每週設定');
-  });
-
-  $('#todoSettingsBtn').addEventListener('click', openTodoSettings);
-
-  /* ═══════════════ 日曆 ═══════════════ */
-  const TIMEZONE = (function () {
-    try { return Intl.DateTimeFormat().resolvedOptions().timeZone || '本地時區'; }
-    catch (e) { return '本地時區'; }
-  })();
-
-  let calCursor = new Date();
-  calCursor.setDate(1);
-
-  function monthIndex(y, m) { return y * 12 + m; }
-
-  function renderCalendar() {
-    const y = calCursor.getFullYear();
-    const m = calCursor.getMonth();
-    const now = new Date();
-    const minIdx = monthIndex(now.getFullYear(), now.getMonth()) - 6;
-    const maxIdx = monthIndex(now.getFullYear(), now.getMonth()) + 12;
-    const curIdx = monthIndex(y, m);
-
-    $('#calTitle').textContent = y + ' 年 ' + (m + 1) + ' 月';
-    $('#calPrev').disabled = curIdx <= minIdx;
-    $('#calNext').disabled = curIdx >= maxIdx;
-    $('#calTz').textContent = '時區：' + TIMEZONE +
-      ' · 可記錄範圍：前 6 個月 ～ 後 12 個月';
-
-    // 如果沒有選過跳轉日期，預設顯示當前游標月份
-    if (!$('#calJumpDate').value) {
-      $('#calJumpDate').value = y + '-' + pad(m + 1) + '-01';
-    }
-
-    const firstDow = new Date(y, m, 1).getDay();
-    const daysInMonth = new Date(y, m + 1, 0).getDate();
-    const daysInPrev = new Date(y, m, 0).getDate();
-    const totalCells = Math.ceil((firstDow + daysInMonth) / 7) * 7;
-    const tk = todayKey();
-
-    let html = ['日', '一', '二', '三', '四', '五', '六'].map(function (d) {
-      return '<div class="cal-dow">' + d + '</div>';
-    }).join('');
-
-    for (let i = 0; i < totalCells; i++) {
-      const dn = i - firstDow + 1;
-      if (dn < 1) {
-        html += '<div class="cal-cell muted">' + (daysInPrev + dn) + '</div>';
-      } else if (dn > daysInMonth) {
-        html += '<div class="cal-cell muted">' + (dn - daysInMonth) + '</div>';
-      } else {
-        const key = y + '-' + pad(m + 1) + '-' + pad(dn);
-        const list = events[key] || [];
-        const isToday = key === tk;
-        html += '<button class="cal-cell' + (isToday ? ' today' : '') +
-                '" data-date="' + key + '">' + dn +
-                (list.length ? '<span class="dot"></span>' : '') +
-                '</button>';
-      }
-    }
-    $('#calGrid').innerHTML = html;
-  }
-
-  function shiftMonth(delta) {
-    const now = new Date();
-    const minIdx = monthIndex(now.getFullYear(), now.getMonth()) - 6;
-    const maxIdx = monthIndex(now.getFullYear(), now.getMonth()) + 12;
-    const cur = monthIndex(calCursor.getFullYear(), calCursor.getMonth());
-    const next = cur + delta;
-    if (next < minIdx || next > maxIdx) return;
-    calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() + delta, 1);
-    renderCalendar();
-  }
-
-  $('#calPrev').addEventListener('click', function () { shiftMonth(-1); });
-  $('#calNext').addEventListener('click', function () { shiftMonth(1); });
-  $('#calToday').addEventListener('click', function () {
-    calCursor = new Date();
-    calCursor.setDate(1);
-    $('#calJumpDate').value = todayKey();
-    renderCalendar();
-  });
-
-  $('#calJumpDate').addEventListener('change', function () {
-    const val = this.value;
-    if (!val) return;
-    const p = val.split('-');
-    calCursor = new Date(p[0], p[1] - 1, 1);
-    renderCalendar();
-    openEventModal(val);
-  });
-
-  $('#calGrid').addEventListener('click', function (e) {
-    const cell = e.target.closest('.cal-cell[data-date]');
-    if (cell) openEventModal(cell.dataset.date);
-  });
-
-  /* ═══════════════ 事件彈窗 ═══════════════ */
-  let eventDateKey = null;
-  let editingEventId = null;
-
-  function openEventModal(key) {
-    eventDateKey = key;
-    editingEventId = null;
-    const d = keyToDate(key);
-    const week = '日一二三四五六'[d.getDay()];
-    $('#eventDateTitle').textContent =
-      d.getFullYear() + ' 年 ' + (d.getMonth() + 1) + ' 月 ' + d.getDate() + ' 日 · 星期' + week;
-
-    $('#eventForm').reset();
-    $('#eventSubmit').textContent = '保存要事';
-    $('#eventCancelEdit').hidden = true;
-
-    renderEventList();
-    openModal('#eventModal');
-    setTimeout(function () { $('#evTitle').focus(); }, 80);
-  }
-
-  function renderEventList() {
-    const wrap = $('#eventList');
-    const list = events[eventDateKey] || [];
-    if (!list.length) {
-      wrap.innerHTML = '<div class="empty small">這天還沒有要事。</div>';
-      return;
-    }
-    wrap.innerHTML = list.map(function (ev) {
-      return '<div class="event-item" data-id="' + ev.id + '">' +
-        (ev.time ? '<div class="ev-time">' + escapeHtml(ev.time) + '</div>' : '') +
-        '<div class="ev-main">' +
-          '<div class="ev-title">' + escapeHtml(ev.title) + '</div>' +
-          (ev.content ? '<div class="ev-content">' + escapeHtml(ev.content) + '</div>' : '') +
-        '</div>' +
-        '<div class="ev-acts">' +
-          '<button class="mini" data-act="edit">編</button>' +
-          '<button class="mini del" data-act="del">×</button>' +
-        '</div>' +
-      '</div>';
-    }).join('');
-  }
-
-  $('#eventForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-    const title = $('#evTitle').value.trim();
-    if (!title) { $('#evTitle').focus(); return; }
-    const time = $('#evTime').value;
-    const content = $('#evContent').value.trim();
-
-    if (!events[eventDateKey]) events[eventDateKey] = [];
-
-    if (editingEventId) {
-      const ev = events[eventDateKey].find(function (x) { return x.id === editingEventId; });
-      if (ev) { ev.title = title; ev.time = time; ev.content = content; }
-    } else {
-      events[eventDateKey].push({ id: uid(), title: title, time: time, content: content });
-    }
-
-    save('events');
-    $('#eventForm').reset();
-    editingEventId = null;
-    $('#eventSubmit').textContent = '保存要事';
-    $('#eventCancelEdit').hidden = true;
-    renderEventList();
-    renderCalendar();
-    renderHome();
-    toast('已保存');
-  });
-
-  $('#eventCancelEdit').addEventListener('click', function () {
-    editingEventId = null;
-    $('#eventForm').reset();
-    $('#eventSubmit').textContent = '保存要事';
-    $('#eventCancelEdit').hidden = true;
-    $('#evTitle').focus();
-  });
-
-  $('#eventList').addEventListener('click', function (e) {
-    const btn = e.target.closest('[data-act]');
-    if (!btn) return;
-    const item = e.target.closest('.event-item');
-    if (!item) return;
-    const id = item.dataset.id;
-    const list = events[eventDateKey] || [];
-    const ev = list.find(function (x) { return x.id === id; });
-    if (!ev) return;
-
-    if (btn.dataset.act === 'del') {
-      events[eventDateKey] = list.filter(function (x) { return x.id !== id; });
-      if (!events[eventDateKey].length) delete events[eventDateKey];
-      save('events');
-      if (editingEventId === id) {
-        editingEventId = null;
-        $('#eventForm').reset();
-        $('#eventSubmit').textContent = '保存要事';
-        $('#eventCancelEdit').hidden = true;
-      }
-      renderEventList();
-      renderCalendar();
-      renderHome();
-      toast('已刪除');
-    } else if (btn.dataset.act === 'edit') {
-      editingEventId = id;
-      $('#evTitle').value = ev.title;
-      $('#evTime').value = ev.time || '';
-      $('#evContent').value = ev.content || '';
-      $('#eventSubmit').textContent = '更新要事';
-      $('#eventCancelEdit').hidden = false;
-      $('#evTitle').focus();
-    }
-  });
-
-  function pruneEvents() {
-    const now = new Date();
-    const minKey = dateKey(new Date(now.getFullYear(), now.getMonth() - 6, 1));
-    const maxKey = dateKey(new Date(now.getFullYear(), now.getMonth() + 13, 0));
-    let changed = false;
-    Object.keys(events).forEach(function (k) {
-      if (k < minKey || k > maxKey) { delete events[k]; changed = true; }
-    });
-    if (changed) save('events');
-  }
-
-  /* ═══════════════ 日記 ═══════════════ */
-  let diaryFilterDate = '';
-
-  function renderDiaries() {
-    let list = diaries.slice().sort(function (a, b) { return b.createdAt - a.createdAt; });
-    if (diaryFilterDate) {
-      list = list.filter(function (d) {
-        return dateKey(new Date(d.createdAt)) === diaryFilterDate;
-      });
-    }
-
-    const wrap = $('#diaryList');
-    if (!list.length) {
-      wrap.innerHTML = '<div class="empty">' +
-        (diaryFilterDate ? '這天還沒有日記。' : '還沒有日記，從上面開始寫第一篇吧。') +
-        '</div>';
-      return;
-    }
-
-    wrap.innerHTML = list.map(function (d) {
-      const dt = new Date(d.createdAt);
-      return '<div class="diary-card" data-id="' + d.id + '">' +
-        '<div class="diary-meta">' +
-          '<span>' + fmtDateTime(dt) + '</span>' +
-          (d.weather ? '<span class="tag">' + escapeHtml(d.weather) + '</span>' : '') +
-          (d.mood ? '<span class="tag">' + escapeHtml(d.mood) + '</span>' : '') +
-        '</div>' +
-        '<div class="diary-title">' + escapeHtml(d.title) + '</div>' +
-        '<div class="diary-preview">' + escapeHtml(d.content) + '</div>' +
-      '</div>';
-    }).join('');
-  }
-
-  $('#diaryList').addEventListener('click', function (e) {
-    const card = e.target.closest('.diary-card[data-id]');
-    if (card) openDiaryModal(card.dataset.id);
-  });
-
-  function openDiaryModal(id) {
-    const d = diaries.find(function (x) { return x.id === id; });
-    if (!d) return;
-    const dt = new Date(d.createdAt);
-    $('#diaryModalTitle').textContent = d.title;
-    $('#diaryModalMeta').innerHTML =
-      fmtDateTime(dt) +
-      (d.weather ? ' · ' + escapeHtml(d.weather) : '') +
-      (d.mood ? ' · ' + escapeHtml(d.mood) : '');
-    $('#diaryModalBody').textContent = d.content;
-    openModal('#diaryModal');
-  }
-
-  $('#diarySave').addEventListener('click', function () {
-    const title = $('#diaryTitle').value.trim();
-    const content = $('#diaryContent').value.trim();
-    if (!title) { toast('請填寫標題'); $('#diaryTitle').focus(); return; }
-    if (!content) { toast('請填寫內文'); $('#diaryContent').focus(); return; }
-
-    diaries.push({
-      id: uid(),
-      title: title,
-      weather: $('#diaryWeather').value,
-      mood: $('#diaryMood').value,
-      content: content,
-      createdAt: Date.now()
-    });
-    save('diaries');
-
-    $('#diaryTitle').value = '';
-    $('#diaryContent').value = '';
-    $('#diaryWeather').value = '';
-    $('#diaryMood').value = '';
-
-    renderDiaries();
-    renderHome();
-    toast('已保存，日記永久保留且不可修改');
-  });
-
-  $('#diaryDatePickerBtn').addEventListener('click', function () {
-    $('#diaryDateInput').value = diaryFilterDate || todayKey();
-    openModal('#diaryDateModal');
-  });
-
-  $('#diaryDateConfirm').addEventListener('click', function () {
-    const val = $('#diaryDateInput').value;
-    if (val) {
-      diaryFilterDate = val;
-      $('#diaryDatePickerBtn').textContent = '日記日期：' + val;
-      $('#diaryClearFilter').hidden = false;
-      renderDiaries();
-    }
-    closeModal('#diaryDateModal');
-  });
-
-  $('#diaryClearFilter').addEventListener('click', function () {
-    diaryFilterDate = '';
-    $('#diaryDatePickerBtn').textContent = '全部日記（點擊選擇日期）';
-    $('#diaryClearFilter').hidden = true;
-    renderDiaries();
-  });
-
-  /* ═══════════════ 筆記本 ═══════════════ */
-  function renderNotes() {
-    const grid = $('#notesGrid');
-    if (!notes.length) {
-      grid.innerHTML = ''; // 清空，依賴下方的「點擊這裡添加筆記」按鈕
-      return;
-    }
-    grid.innerHTML = notes.map(function (n) {
-      const excerpt = (n.content || '').replace(/\s+/g, ' ').slice(0, 70);
-      return '<button class="card note" data-id="' + n.id + '">' +
-        (n.image ? '<div class="note-thumb" style="background-image:url(\'' + n.image + '\')"></div>' : '') +
-        '<div class="note-h">' + escapeHtml(n.title || '無標題') + '</div>' +
-        '<div class="note-b">' + escapeHtml(excerpt) + '</div>' +
-        '<div class="note-d">' + escapeHtml(n.date || '') + '</div>' +
-      '</button>';
-    }).join('');
-  }
-
-  let editingNoteId = null;
-  let noteImageData = null;
-
-  function updateNoteImagePreview() {
-    const wrap = $('#noteImgWrap');
-    if (noteImageData) {
-      $('#noteImgPreview').src = noteImageData;
-      wrap.hidden = false;
-    } else {
-      $('#noteImgPreview').removeAttribute('src');
-      wrap.hidden = true;
-    }
-  }
-
-  function openNoteModal(id) {
-    editingNoteId = id || null;
-    const n = id ? notes.find(function (x) { return x.id === id; }) : null;
-
-    $('#noteModalTitle').textContent = n ? '編輯筆記' : '新增筆記';
-    $('#noteTitle').value = n ? (n.title || '') : '';
-    $('#noteDate').value = n ? (n.date || todayKey()) : todayKey();
-    $('#noteContent').value = n ? (n.content || '') : '';
-    noteImageData = n ? (n.image || null) : null;
-    updateNoteImagePreview();
-    $('#noteDelete').style.display = n ? '' : 'none';
-
-    openModal('#noteModal');
-    setTimeout(function () { $('#noteTitle').focus(); }, 80);
-  }
-
-  $('#noteAdd').addEventListener('click', function () { openNoteModal(null); });
-
-  $('#notesGrid').addEventListener('click', function (e) {
-    const card = e.target.closest('.note[data-id]');
-    if (card) openNoteModal(card.dataset.id);
-  });
-
-  $('#noteImgPick').addEventListener('click', function () { $('#noteImgInput').click(); });
-
-  $('#noteImgInput').addEventListener('change', function (e) {
-    const file = e.target.files && e.target.files[0];
-    e.target.value = '';
-    if (!file) return;
-    toast('正在處理圖片…');
-    compressImage(file, 1200, 0.75).then(function (data) {
-      noteImageData = data;
-      updateNoteImagePreview();
-    }).catch(function () {
-      toast('圖片處理失敗');
-    });
-  });
-
-  $('#noteImgClear').addEventListener('click', function () {
-    noteImageData = null;
-    updateNoteImagePreview();
-  });
-
-  $('#noteSave').addEventListener('click', function () {
-    const title = $('#noteTitle').value.trim();
-    const content = $('#noteContent').value.trim();
-    const date = $('#noteDate').value;
-
-    if (!title && !content && !noteImageData) {
-      toast('筆記還是空的'); return;
-    }
-
-    if (editingNoteId) {
-      const n = notes.find(function (x) { return x.id === editingNoteId; });
-      if (n) {
-        n.title = title;
-        n.content = content;
-        n.date = date;
-        n.image = noteImageData;
-      }
-    } else {
-      notes.unshift({
-        id: uid(),
-        title: title,
-        content: content,
-        date: date,
-        image: noteImageData
-      });
-    }
-
-    save('notes');
-    renderNotes();
-    closeModal('#noteModal');
-    toast('已保存');
-  });
-
-  $('#noteDelete').addEventListener('click', function () {
-    if (!editingNoteId) return;
-    notes = notes.filter(function (x) { return x.id !== editingNoteId; });
-    save('notes');
-    renderNotes();
-    closeModal('#noteModal');
-    toast('已刪除筆記');
-  });
-
-  /* ═══════════════ 照片庫 ═══════════════ */
-  function renderPhotos() {
-    const grid = $('#photoGrid');
-    if (!photos.length) {
-      grid.innerHTML = '<div class="empty" style="grid-column:1/-1;">還沒有照片，點「添加照片」上傳。</div>';
-      return;
-    }
-    grid.innerHTML = photos.map(function (p) {
-      return '<button class="photo" data-id="' + p.id + '">' +
-        '<img src="' + p.src + '" alt="">' +
-      '</button>';
-    }).join('');
-  }
-
-  $('#photoAdd').addEventListener('click', function () { $('#photoInput').click(); });
-
-  $('#photoInput').addEventListener('change', function (e) {
-    const files = Array.prototype.slice.call(e.target.files || []);
-    e.target.value = '';
-    if (!files.length) return;
-
-    toast('正在處理 ' + files.length + ' 張圖片…');
-    let done = 0;
-    const tasks = files.map(function (f) {
-      return compressImage(f, 1600, 0.72).then(function (src) {
-        photos.push({ id: uid(), src: src, title: '' });
-        done++;
-      }).catch(function () {});
-    });
-
-    Promise.all(tasks).then(function () {
-      save('photos');
-      renderPhotos();
-      toast(done > 0 ? '已添加 ' + done + ' 張照片' : '圖片處理失敗');
-    });
-  });
-
-  $('#photoGrid').addEventListener('click', function (e) {
-    const btn = e.target.closest('.photo[data-id]');
-    if (btn) openLightbox(btn.dataset.id);
-  });
-
-  let lightboxId = null;
-
-  function openLightbox(id) {
-    const p = photos.find(function (x) { return x.id === id; });
-    if (!p) return;
-    lightboxId = id;
-    $('#lightboxImg').src = p.src;
-    $('#lightboxCaption').value = p.title || '';
-    $('#lightbox').classList.add('open');
-    document.body.classList.add('lock');
-  }
-
-  function closeLightbox() {
-    $('#lightbox').classList.remove('open');
-    lightboxId = null;
-    if (!document.querySelector('.modal.open, .lightbox.open')) {
-      document.body.classList.remove('lock');
-    }
-  }
-
-  $('#lightboxClose').addEventListener('click', closeLightbox);
-
-  $('#lightbox').addEventListener('click', function (e) {
-    if (e.target.id === 'lightbox') closeLightbox();
-  });
-
-  $('#lightboxCaption').addEventListener('input', function () {
-    if (!lightboxId) return;
-    const p = photos.find(function (x) { return x.id === lightboxId; });
-    if (p) { p.title = $('#lightboxCaption').value; save('photos'); }
-  });
-
-  $('#lightboxDel').addEventListener('click', function () {
-    if (!lightboxId) return;
-    photos = photos.filter(function (x) { return x.id !== lightboxId; });
-    save('photos');
-    renderPhotos();
-    closeLightbox();
-    toast('已刪除照片');
-  });
-
-  /* ═══════════════ 設定面板 ═══════════════ */
-  const settings = $('#settings');
-  const gearBtn = $('#gearBtn');
-
-  function openSettings() {
-    settings.classList.add('open');
-    gearBtn.classList.add('open');
-  }
-  function closeSettings() {
-    settings.classList.remove('open');
-    gearBtn.classList.remove('open');
-  }
-
-  gearBtn.addEventListener('click', function (e) {
-    e.stopPropagation();
-    if (settings.classList.contains('open')) closeSettings();
-    else openSettings();
-  });
-
-  document.addEventListener('click', function (e) {
-    if (settings.classList.contains('open') &&
-        !settings.contains(e.target) && !gearBtn.contains(e.target)) {
-      closeSettings();
-    }
-  });
-
-  document.addEventListener('keydown', function (e) {
-    if (e.key !== 'Escape') return;
-    closeSettings();
-    $$('.modal.open').forEach(function (m) { closeModal('#' + m.id); });
-    if ($('#lightbox').classList.contains('open')) closeLightbox();
-  });
-
-  $('#lumRange').addEventListener('input', function () {
-    state.lum = parseFloat(this.value);
-    applyTheme();
-    savePrefs();
-  });
-
-  $('#pickBg').addEventListener('click', function () { $('#bgFileInput').click(); });
-
-  $('#clearBg').addEventListener('click', function () {
-    state.bg = null;
-    applyTheme();
-    savePrefs();
-    toast('已移除背景圖片');
-  });
-
-  $('#bgFileInput').addEventListener('change', function (e) {
-    const file = e.target.files && e.target.files[0];
-    e.target.value = '';
-    if (!file) return;
-    toast('正在處理背景圖片…');
-    compressImage(file, 1600, 0.8).then(function (data) {
-      state.bg = data;
-      applyTheme();
-      savePrefs();
-      toast('背景已套用');
-    }).catch(function () {
-      toast('圖片處理失敗');
-    });
-  });
-
-  window.addEventListener('dragover', function (e) { e.preventDefault(); });
-  window.addEventListener('drop', function (e) {
-    e.preventDefault();
-    const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-    if (!file || !file.type || file.type.indexOf('image/') !== 0) return;
-    toast('正在處理背景圖片…');
-    compressImage(file, 1600, 0.8).then(function (data) {
-      state.bg = data;
-      applyTheme();
-      savePrefs();
-      toast('背景已套用');
-    }).catch(function () {});
-  });
-
-  $$('[data-close]').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      closeModal(btn.dataset.close);
-    });
-  });
-
-  $$('.modal').forEach(function (m) {
-    m.addEventListener('click', function (e) {
-      if (e.target === m) closeModal('#' + m.id);
-    });
-  });
-
-  /* ═══════════════ 初始化 ═══════════════ */
-  if (!STORAGE_OK) {
-    setTimeout(function () {
-      toast('⚠️ 瀏覽器儲存空間不可用，資料將不會保留');
-    }, 900);
-  }
-
-  loadPrefs();
-  applyTheme();
-  pruneEvents();
-  pruneDone();
-
-  renderTodos();
-  renderCalendar();
-  renderDiaries();
-  renderNotes();
-  renderPhotos();
-  renderGoals();
-  renderBookmarks();
-  renderHome();
-  showView('home');
-
-})();
-</script>
+<script src="script.js"></script>
 </body>
 </html>
