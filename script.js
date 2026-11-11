@@ -456,6 +456,7 @@
       cdInterval = null;
     }
 
+    if (name === 'todo') checkUnfinishedTasks();
     if (name === 'calendar') renderCalendar();
     if (name === 'home') renderHome();
     if (name === 'diary') renderDiaries();
@@ -735,7 +736,30 @@
     return Math.round(total);
   }
 
-  function renderHome() {
+    function renderHome() {
+    // 首次使用引導
+    if (!LS.get('onboarded', false)) {
+      const homeMain = document.querySelector('.home-main');
+      if (homeMain && !document.getElementById('welcomeCard')) {
+        const card = document.createElement('div');
+        card.id = 'welcomeCard';
+        card.className = 'card welcome-card';
+        card.innerHTML = `
+          <div style="font-weight:600; margin-bottom:6px;">歡迎來到我的空間 👋</div>
+          <div style="font-size:13px; line-height:1.6; color:var(--fg-dim); margin-bottom:10px;">
+            所有資料都存在你的瀏覽器裡，不會上傳。從「每週必做」開始安排今天，或直接點任何分頁探索。<br>
+            記得定期用右上角齒輪匯出備份！
+          </div>
+          <button class="btn primary" id="welcomeCloseBtn" style="font-size:12px; padding:6px 12px;">開始使用</button>
+        `;
+        homeMain.prepend(card);
+        document.getElementById('welcomeCloseBtn').addEventListener('click', () => {
+          LS.set('onboarded', true);
+          card.remove();
+        });
+      }
+    }
+
     $('#statTodo').textContent = countTodayTags();
     $('#statEvent').textContent = countUpcoming(7);
     $('#statDiary').textContent = diaries.length;
@@ -1314,6 +1338,38 @@
         '</div>' +
       '</div>';
     }).join('');
+  }
+
+    function checkUnfinishedTasks() {
+    // 當天只提示一次
+    const today = todayKey();
+    if (LS.get('lastTodoCheck', '') === today) return;
+    
+    // 檢查昨天
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yKey = dayKeyOf(yesterday);
+    const yDateKey = dateKey(yesterday);
+    
+    const yTags = tagsForDay(yKey);
+    const yDone = Array.isArray(todos.done[yDateKey]) ? todos.done[yDateKey] : [];
+    const unfinishedCount = yTags.filter(t => yDone.indexOf(t.id) < 0).length;
+    
+    if (unfinishedCount > 0) {
+      LS.set('lastTodoCheck', today);
+      const msgs = [
+        `還想蒙混過關？昨天有 ${unfinishedCount} 件事在等你。`,
+        `昨天的 ${unfinishedCount} 件事，假裝沒看到嗎？`,
+        `逃避雖可恥但有用……不過這裡有 ${unfinishedCount} 件事沒做完。`
+      ];
+      const msg = msgs[Math.floor(Math.random() * msgs.length)];
+      
+      // 用 Toast 顯示，但停留久一點
+      toast(msg);
+      // 如果要更強烈，可以考慮自訂一個小彈窗，這裡先用 Toast 替代。
+    } else {
+      LS.set('lastTodoCheck', today);
+    }
   }
 
   $('#tagAddBtn').addEventListener('click', function () {

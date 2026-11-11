@@ -1762,3 +1762,12 @@ input[type="radio"] {
 }
 
 #view-about.active { overflow-y: auto; padding-right: 6px; }
+
+/* 首次歡迎卡片 */
+.welcome-card {
+  border: 1px solid var(--panel-border);
+  background: var(--panel);
+  box-shadow: 0 8px 24px rgba(0,0,0,.15);
+  animation: fadeUp .4s var(--ease) both;
+  margin-bottom: 4px;
+}
