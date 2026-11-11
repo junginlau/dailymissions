@@ -497,6 +497,9 @@
 
   // 最近的要事（自動輪播）
   let cdInterval = null;
+  let cdIndex = 0;
+  let cdListData = [];
+
   function renderCountdowns() {
     const list = $('#countdownList');
     if (cdInterval) {
@@ -507,52 +510,83 @@
     const today = new Date();
     today.setHours(0,0,0,0);
 
-    // 抓取 events 中有事項的未來日期
     let upcoming = [];
     Object.keys(events).forEach(k => {
       const target = new Date(k);
       target.setHours(0,0,0,0);
       if (target >= today && events[k].length > 0) {
-        upcoming.push({ date: k, title: events[k][0].title }); // 取第一件事的標題作為代表
+        upcoming.push({ date: k, title: events[k][0].title });
       }
     });
 
-    // 按日期排序，取前 3 個
     upcoming.sort((a, b) => new Date(a.date) - new Date(b.date));
-    upcoming = upcoming.slice(0, 3);
+    cdListData = upcoming.slice(0, 3);
 
-    if (!upcoming.length) {
+    if (!cdListData.length) {
       list.innerHTML = '<div class="empty small" style="padding:6px 0;">近期沒有要事。</div>';
       return;
     }
 
-    const html = upcoming.map(function (cd, index) {
+    // 如果只有一個，直接顯示，不需要輪播
+    if (cdListData.length === 1) {
+      const cd = cdListData[0];
       const target = new Date(cd.date);
       target.setHours(0,0,0,0);
       const diff = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
-      let text = diff === 0 ? '就是今天！' : (diff > 0 ? '還有 ' + diff + ' 天' : '已過去 ' + Math.abs(diff) + ' 天');
+      let text = diff === 0 ? '就是今天！' : '還有 ' + diff + ' 天';
       let urgentClass = (diff >= 0 && diff <= 3) ? ' urgent' : '';
-      return '<div class="cd-item" style="animation-delay: ' + (index * 6) + 's;">' +
+      list.innerHTML = '<div class="cd-item" style="animation:none;">' +
         '<span class="cd-title">' + escapeHtml(cd.title) + '</span>' +
         '<span class="cd-days' + urgentClass + '">' + text + '</span>' +
       '</div>';
-    }).join('');
-
-    list.innerHTML = html;
-
-    // 如果有多個，設置循環輪播（依靠 CSS 動畫，但若想讓 DOM 只顯示一個，可透過 JS 控制）
-    // 這裡使用 CSS animation 讓它們在時間軸上交錯出現。
-    if (upcoming.length > 1) {
-      // 調整動畫持續時間
-      const totalDuration = upcoming.length * 6;
-      $$('.cd-item', list).forEach(el => {
-        el.style.animationDuration = totalDuration + 's';
-      });
-    } else {
-      // 只有一個時，不需要淡出淡入
-      const el = $('.cd-item', list);
-      if (el) el.style.animation = 'none';
+      return;
     }
+
+    // 如果有多個，進行輪播
+    cdIndex = 0;
+    function updateCdDisplay() {
+      const cd = cdListData[cdIndex];
+      const target = new Date(cd.date);
+      target.setHours(0,0,0,0);
+      const diff = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+      let text = diff === 0 ? '就是今天！' : '還有 ' + diff + ' 天';
+      let urgentClass = (diff >= 0 && diff <= 3) ? ' urgent' : '';
+      
+      list.innerHTML = '<div class="cd-item" style="animation: none; opacity: 1; transform: none;">' +
+        '<span class="cd-title">' + escapeHtml(cd.title) + '</span>' +
+        '<span class="cd-days' + urgentClass + '">' + text + '</span>' +
+      '</div>';
+    }
+
+    updateCdDisplay();
+
+    cdInterval = setInterval(function () {
+      cdIndex = (cdIndex + 1) % cdListData.length;
+      
+      // 淡出
+      const item = list.querySelector('.cd-item');
+      if (item) {
+        item.style.transition = 'opacity 0.5s, transform 0.5s';
+        item.style.opacity = '0';
+        item.style.transform = 'translateY(5px)';
+      }
+      
+      setTimeout(function () {
+        updateCdDisplay();
+        // 淡入
+        const newItem = list.querySelector('.cd-item');
+        if (newItem) {
+          newItem.style.transition = 'opacity 0.5s, transform 0.5s';
+          newItem.style.opacity = '0';
+          newItem.style.transform = 'translateY(-5px)';
+          // 強制重繪
+          void newItem.offsetWidth;
+          newItem.style.opacity = '1';
+          newItem.style.transform = 'translateY(0)';
+        }
+      }, 500);
+      
+    }, 4000); // 每 4 秒切換一次
   }
 
   // 統計
@@ -786,7 +820,10 @@
     if (target && target !== dragSrcEl) {
       const rect = target.getBoundingClientRect();
       const next = (e.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
-      this.insertBefore(dragSrcEl, next && target.nextSibling || target);
+      // 確保不會抓錯
+      if (dragSrcEl.parentNode === this) {
+        this.insertBefore(dragSrcEl, next && target.nextSibling || target);
+      }
     }
   });
 
