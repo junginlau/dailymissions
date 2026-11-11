@@ -23,6 +23,7 @@
       <button class="nav-btn" data-view="notes">筆記本</button>
       <button class="nav-btn" data-view="photos">照片庫</button>
       <button class="nav-btn" data-view="ledger">記帳</button>
+      <button class="nav-btn" data-view="about">關於本站</button>
     </nav>
   </div>
 
@@ -57,7 +58,7 @@
       <span id="lumVal">55</span>
     </div>
     <input type="range" id="lumRange" min="0" max="100" step="1" value="55">
-    
+
     <div class="set-actions">
       <button class="set-btn" id="pickBg">插入背景圖片</button>
       <button class="set-btn ghost" id="clearBg">移除背景</button>
@@ -68,6 +69,9 @@
     <div class="set-actions">
       <button class="set-btn" id="exportBtn">匯出備份</button>
       <button class="set-btn ghost" id="importBtn">匯入備份</button>
+    </div>
+    <div class="set-actions" style="margin-top: 16px;">
+      <button class="set-btn" id="clearAllBtn" style="color: #e5484d; border-color: rgba(229,72,77,.3);">清除所有資料</button>
     </div>
     <div class="set-note">設定會自動記憶，下次開啟時自動套用。</div>
   </div>
@@ -130,14 +134,12 @@
       </div>
 
       <aside class="home-side scroll-box">
-        <!-- 最近的要事（原倒數計時） -->
         <div class="card countdown-card">
           <div class="countdown-head">
             <h3>最近的要事</h3>
           </div>
           <div class="countdown-list" id="countdownList"></div>
         </div>
-        <!-- 書籤 -->
         <div class="card bookmarks" aria-label="書籤">
           <div class="bm-head">
             <span class="bm-title">書籤（可拖拽排序）</span>
@@ -302,6 +304,64 @@
     </div>
   </section>
 
+  <!-- 關於本站 -->
+  <section class="view" id="view-about">
+    <h1>關於本站</h1>
+    <p class="sub">一個極簡、高效且充滿個人風格的數位生活儀表板。</p>
+
+    <div class="about-layout mt-24">
+      <div class="card about-card">
+        <h3>📝 專案簡介</h3>
+        <p>這個網站最初是為了打造一個「個人數位首頁」而誕生。它結合了搜尋引擎、書籤、待辦事項、日曆、日記、筆記、照片庫與記帳功能。所有資料皆儲存於瀏覽器本地端，無需註冊，隨開即用。</p>
+      </div>
+
+      <div class="card about-card">
+        <h3>👨‍💻 開發者與技術棧</h3>
+        <p>本專案由 <a href="https://github.com/junginlau" target="_blank" class="link">junginlau</a> 開發與維護。</p>
+        <p>使用原生 HTML、CSS 與 JavaScript 打造，無任何外部框架依賴（Zero Dependencies），保持極致輕量。</p>
+        <ul>
+          <li>前端樣式：Vanilla CSS (Glassmorphism, Grid/Flexbox)</li>
+          <li>資料儲存：LocalStorage、IndexedDB（照片與音效）與 Cookie</li>
+          <li>外部服務：Open-Meteo API（天氣）、Google Favicon API（書籤圖示）</li>
+        </ul>
+      </div>
+
+      <div class="card about-card" style="border-color: #e5484d;">
+        <h3 style="color: #e5484d;">⚠️ 資料隱私與備份聲明</h3>
+        <p>本站不會將您的任何資料上傳至伺服器。所有資料僅保存在您當前的瀏覽器中。</p>
+        <p><strong>請注意：</strong>如果您清理了瀏覽器快取，或更換了裝置，資料將會遺失。強烈建議您定期點擊右上角的「設定」-&gt;「匯出備份」，將資料保存為 JSON 檔案。</p>
+        <p><strong>外部連線揭露：</strong>書籤圖示透過 Google Favicon API 取得，會將書籤網域傳送給 Google；天氣功能會將您的粗略地理位置傳送給 Open-Meteo。其餘資料皆不外傳。</p>
+        <button class="btn primary" id="aboutExportBtn" style="margin-top: 10px; background: #e5484d; border-color: transparent;">立即匯出備份</button>
+      </div>
+
+      <div class="card about-card">
+        <h3>⌨️ 實用快捷鍵</h3>
+        <ul>
+          <li><kbd>/</kbd> 快速聚焦搜尋欄</li>
+          <li><kbd>n</kbd> 在首頁或筆記本頁快速新增筆記</li>
+          <li><kbd>Esc</kbd> 關閉所有彈窗與面板</li>
+        </ul>
+      </div>
+
+      <div class="card about-card">
+        <h3>💡 功能清單</h3>
+        <ul>
+          <li>自訂背景與深淺色切換</li>
+          <li>每週必做（支援拖拽與標籤）</li>
+          <li>日曆（支援星星標記與快速跳轉）</li>
+          <li>日記（永久保存）</li>
+          <li>筆記本與照片庫（自動壓縮，照片存於 IndexedDB）</li>
+          <li>記帳（支援收支與統計）</li>
+          <li>番茄鐘（自訂時間與鈴聲，支援上傳自訂音效）</li>
+          <li>資料備份匯出／匯入（含版本驗證）</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div>© 2024 <a href="https://github.com/junginlau" target="_blank">junginlau</a>. 資料儲存於本地端，建議定期備份。</div>
+  </footer>
 </main>
 
 <!-- ══════════ 手機版底部導覽列 ══════════ -->
@@ -328,31 +388,72 @@
   </button>
 </nav>
 
-<!-- 手機版「更多」彈出選單 -->
 <div class="mobile-more-menu" id="mobileMoreMenu">
   <button data-view="notes">筆記本</button>
   <button data-view="photos">照片庫</button>
   <button data-view="ledger">記帳</button>
+  <button data-view="about">關於本站</button>
 </div>
 
 <!-- ══════════ 番茄鐘懸浮窗 ══════════ -->
-<button class="pomo-fab" id="pomoFab" title="番茄鐘">⏰</button>
+<button class="pomo-fab" id="pomoFab" title="番茄鐘">🍅</button>
 <div class="pomo-panel" id="pomoPanel">
   <div class="pomo-time" id="pomoTime">25:00</div>
-  <div class="pomo-select-wrap">
+    <div class="pomo-select-wrap">
     <select id="pomoPreset">
       <option value="15">15 分鐘</option>
       <option value="25" selected>25 分鐘</option>
       <option value="45">45 分鐘</option>
       <option value="60">60 分鐘</option>
     </select>
-    <input type="number" id="pomoCustom" min="1" max="180" placeholder="自訂">
-    <span>分</span>
+    <input type="number" id="pomoCustom" min="5" max="10800" placeholder="自訂">
+    <span>秒</span>
     <button class="btn ghost" id="pomoSetBtn" style="padding: 4px 8px; font-size: 12px;">設定</button>
+  </div>
+  <div class="pomo-volume-wrap" style="width:100%;display:flex;align-items:center;gap:6px;font-size:12px;">
+    <span>🔊</span>
+    <input type="range" id="pomoVolume" min="0" max="100" step="1" value="70" style="flex:1;margin:0;">
+    <span id="pomoVolumeVal" style="min-width:28px;text-align:right;font-variant-numeric:tabular-nums;">70</span>
   </div>
   <div class="pomo-actions">
     <button class="btn primary" id="pomoStart">開始</button>
     <button class="btn ghost" id="pomoReset">重置</button>
+  </div>
+  <button class="btn ghost" id="pomoSoundBtn" style="width: 100%; font-size: 12px; padding: 6px; margin-top: 4px;">🔔 設定鈴聲</button>
+</div>
+
+<!-- 鈴聲設定彈窗 -->
+<div class="modal" id="soundModal">
+  <div class="modal-card narrow">
+    <div class="modal-head">
+      <div>
+        <h3>番茄鐘鈴聲設定</h3>
+        <div class="sub2">選擇一個你喜歡的提醒音效</div>
+      </div>
+      <button class="x-btn" data-close="#soundModal" aria-label="關閉">×</button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+        <input type="radio" name="soundType" value="synth" checked>
+        <span>預設合成音（雙音階）</span>
+      </label>
+
+      <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+        <input type="radio" name="soundType" value="custom">
+        <span>上傳自訂音效（支援 MP3, WAV）</span>
+      </label>
+
+      <div style="display:flex; flex-direction:column; gap:8px; padding-left: 24px;">
+        <input type="file" id="soundFileInput" accept="audio/*" style="display:none;">
+        <button class="btn ghost" id="soundFilePick" style="align-self:flex-start;">＋ 選擇音訊檔案</button>
+        <span id="soundFileName" style="font-size:12px; color:var(--fg-dim);">尚未選擇檔案</span>
+      </div>
+
+      <div class="row" style="margin-top:8px; justify-content: flex-end;">
+        <button class="btn primary" id="soundSaveBtn" style="flex:1 1 auto;">儲存設定</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -436,7 +537,6 @@
   </div>
 </div>
 
-<!-- 每週必做設定彈窗 (重構按鈕) -->
 <div class="modal" id="todoModal">
   <div class="modal-card">
     <div class="modal-head">
@@ -446,7 +546,7 @@
       </div>
       <button class="x-btn" data-close="#todoModal" aria-label="關閉">×</button>
     </div>
-    
+
     <div class="tag-manager">
       <div class="tag-add-row">
         <input type="text" id="tagInput" placeholder="新增標籤（例如：運動、讀書）…" maxlength="30">
@@ -456,8 +556,7 @@
     </div>
 
     <div class="schedule-grid" id="scheduleGrid"></div>
-    
-    <!-- 底部按鈕區 -->
+
     <div class="row" style="margin-top:20px; justify-content: flex-end;">
       <button class="btn ghost" id="todoCancelBtn" style="display:none; color: #e5484d; border-color: rgba(229,72,77,.3);">取消變更</button>
       <button class="btn" id="todoSaveBtn" disabled style="background: var(--hover); color: var(--fg-dim); border-color: transparent;">儲存變更</button>

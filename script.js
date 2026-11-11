@@ -26,6 +26,8 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
+  function isNonEmptyString(v) { return typeof v === 'string' && v.length > 0; }
+  function isArray(v) { return Array.isArray(v); }
 
   /* 本地儲存 */
   const STORAGE_OK = (function () {
@@ -49,8 +51,85 @@
       if (!STORAGE_OK) return false;
       try { localStorage.setItem(k, JSON.stringify(v)); return true; }
       catch (e) { return false; }
+    },
+    remove(k) {
+      if (!STORAGE_OK) return;
+      try { localStorage.removeItem(k); } catch (e) {}
     }
   };
+
+  /* ═══════════════ IndexedDB（照片與音效本體） ═══════════════ */
+  const IDB = (function () {
+    const DB_NAME = 'my_space_db';
+    const DB_VERSION = 1;
+    const STORES = ['photos', 'audio'];
+    let dbPromise = null;
+
+    function open() {
+      if (dbPromise) return dbPromise;
+      dbPromise = new Promise(function (resolve, reject) {
+        if (!('indexedDB' in window)) { reject(new Error('no idb')); return; }
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = function (e) {
+          const db = e.target.result;
+          STORES.forEach(function (name) {
+            if (!db.objectStoreNames.contains(name)) {
+              db.createObjectStore(name, { keyPath: 'id' });
+            }
+          });
+        };
+        req.onsuccess = function () { resolve(req.result); };
+        req.onerror = function () { reject(req.error); };
+      });
+      return dbPromise;
+    }
+
+    function tx(store, mode) {
+      return open().then(function (db) {
+        return db.transaction(store, mode).objectStore(store);
+      });
+    }
+
+    return {
+      available() { return 'indexedDB' in window; },
+      put(store, obj) {
+        return tx(store, 'readwrite').then(function (s) {
+          return new Promise(function (resolve, reject) {
+            const r = s.put(obj);
+            r.onsuccess = function () { resolve(true); };
+            r.onerror = function () { reject(r.error); };
+          });
+        });
+      },
+      get(store, id) {
+        return tx(store, 'readonly').then(function (s) {
+          return new Promise(function (resolve, reject) {
+            const r = s.get(id);
+            r.onsuccess = function () { resolve(r.result || null); };
+            r.onerror = function () { reject(r.error); };
+          });
+        });
+      },
+      getAll(store) {
+        return tx(store, 'readonly').then(function (s) {
+          return new Promise(function (resolve, reject) {
+            const r = s.getAll();
+            r.onsuccess = function () { resolve(r.result || []); };
+            r.onerror = function () { reject(r.error); };
+          });
+        });
+      },
+      del(store, id) {
+        return tx(store, 'readwrite').then(function (s) {
+          return new Promise(function (resolve, reject) {
+            const r = s.delete(id);
+            r.onsuccess = function () { resolve(true); };
+            r.onerror = function () { reject(r.error); };
+          });
+        });
+      }
+    };
+  })();
 
   /* Toast */
   let toastTimer = null;
@@ -90,8 +169,7 @@
           ctx.fillStyle = '#ffffff';
           ctx.fillRect(0, 0, w, h);
           ctx.drawImage(img, 0, 0, w, h);
-          let data = c.toDataURL('image/jpeg', quality);
-          resolve(data);
+          resolve(c.toDataURL('image/jpeg', quality));
         };
         img.onerror = reject;
         img.src = ev.target.result;
@@ -191,8 +269,7 @@
     const light = bgL > 50;
     root.style.setProperty('--fg', 'hsl(220, 12%, ' + txL.toFixed(1) + '%)');
     root.style.setProperty('--fg-dim', 'hsla(220, 10%, ' + txL.toFixed(1) + '%, .62)');
-    
-    // 動態調整面板背景（高不透明度，防止底層干擾）
+
     root.style.setProperty('--panel-bg-solid', light ? 'rgba(245, 247, 250, 0.92)' : 'rgba(25, 28, 36, 0.92)');
     root.style.setProperty('--panel', light ? 'rgba(255,255,255,.62)' : 'rgba(255,255,255,.09)');
     root.style.setProperty('--panel-border', light ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.15)');
@@ -260,10 +337,20 @@
   let events    = LS.get('events', {});
   let diaries   = LS.get('diaries', []);
   let notes     = LS.get('notes', []);
-  let photos    = LS.get('photos', []);
   let goals     = LS.get('goals', []);
   let bookmarks = LS.get('bookmarks', []);
   let countdowns= LS.get('countdowns', []);
+
+  // 照片 metadata（id/title/order），本體存 IndexedDB
+  let photoMeta = LS.get('photoMeta', null);
+  // 舊資料遷移：photos 陣列含 src
+  const legacyPhotos = LS.get('photos', null);
+  let needsLegacyPhotoMigration = false;
+  if (!photoMeta && Array.isArray(legacyPhotos) && legacyPhotos.length) {
+    needsLegacyPhotoMigration = true;
+    photoMeta = legacyPhotos.map(function (p) { return { id: p.id, title: p.title || '' }; });
+  }
+  if (!Array.isArray(photoMeta)) photoMeta = [];
 
   let ledger = LS.get('ledger', null);
   if (!ledger) {
@@ -271,7 +358,7 @@
     if (oldExp.length) {
       ledger = oldExp.map(e => ({ ...e, type: 'expense' }));
       LS.set('ledger', ledger);
-      try { localStorage.removeItem('expenses'); } catch(e) {}
+      LS.remove('expenses');
     } else {
       ledger = [];
     }
@@ -280,21 +367,40 @@
   if (!events || typeof events !== 'object' || Array.isArray(events)) events = {};
   if (!Array.isArray(diaries)) diaries = [];
   if (!Array.isArray(notes)) notes = [];
-  if (!Array.isArray(photos)) photos = [];
   if (!Array.isArray(goals)) goals = [];
   if (!Array.isArray(bookmarks)) bookmarks = [];
   if (!Array.isArray(ledger)) ledger = [];
   if (!Array.isArray(countdowns)) countdowns = [];
 
   function save(key) {
+    if (key === 'photoMeta') {
+      const ok = LS.set('photoMeta', photoMeta);
+      if (!ok) toast('照片清單儲存失敗');
+      return ok;
+    }
     const map = {
       todos: todos, events: events, diaries: diaries,
-      notes: notes, photos: photos, goals: goals, bookmarks: bookmarks,
+      notes: notes, goals: goals, bookmarks: bookmarks,
       ledger: ledger, countdowns: countdowns
     };
     const ok = LS.set(key, map[key]);
     if (!ok) toast('儲存失敗，請檢查瀏覽器空間');
     return ok;
+  }
+
+  // 舊照片遷移到 IndexedDB
+  function migrateLegacyPhotos() {
+    if (!needsLegacyPhotoMigration || !IDB.available()) {
+      needsLegacyPhotoMigration = false;
+      return Promise.resolve();
+    }
+    return Promise.all(legacyPhotos.map(function (p) {
+      return IDB.put('photos', { id: p.id, src: p.src }).catch(function () {});
+    })).then(function () {
+      LS.remove('photos');
+      LS.set('photoMeta', photoMeta);
+      needsLegacyPhotoMigration = false;
+    });
   }
 
   function dayKeyOf(d) { return DAY_KEYS[d.getDay()]; }
@@ -321,31 +427,41 @@
   const mobileNavBtns = $$('.mobile-nav-btn');
   const mobileMoreMenu = $('#mobileMoreMenu');
 
+  let currentView = 'home';
+
   function showView(name) {
+    currentView = name;
     views.forEach(function (v) {
       v.classList.toggle('active', v.id === 'view-' + name);
     });
     navBtns.forEach(function (b) {
       b.classList.toggle('active', b.dataset.view === name);
     });
-    
+
     mobileNavBtns.forEach(function (b) {
-      if (name === 'notes' || name === 'photos' || name === 'ledger') {
+      if (name === 'notes' || name === 'photos' || name === 'ledger' || name === 'about') {
         b.classList.toggle('active', b.dataset.view === 'more');
       } else {
         b.classList.toggle('active', b.dataset.view === name);
       }
     });
-    
-    if (name !== 'notes' && name !== 'photos' && name !== 'ledger') {
+
+    if (name !== 'notes' && name !== 'photos' && name !== 'ledger' && name !== 'about') {
       mobileMoreMenu.classList.remove('open');
+    }
+
+    // 離開首頁時停止倒數輪播
+    if (name !== 'home' && cdInterval) {
+      clearInterval(cdInterval);
+      cdInterval = null;
     }
 
     if (name === 'calendar') renderCalendar();
     if (name === 'home') renderHome();
     if (name === 'diary') renderDiaries();
     if (name === 'ledger') renderLedger();
-    
+    if (name === 'photos') renderPhotos();
+
     if (window.innerWidth <= 768) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -376,8 +492,8 @@
   });
 
   document.addEventListener('click', function (e) {
-    if (mobileMoreMenu.classList.contains('open') && 
-        !mobileMoreMenu.contains(e.target) && 
+    if (mobileMoreMenu.classList.contains('open') &&
+        !mobileMoreMenu.contains(e.target) &&
         !e.target.closest('.mobile-nav-btn[data-view="more"]')) {
       mobileMoreMenu.classList.remove('open');
     }
@@ -404,7 +520,7 @@
       window.open('https://' + q, '_blank', 'noopener');
       return;
     }
-    
+
     const engine = $('#searchEngine').value;
     let url = '';
     if (engine === 'google') url = 'https://www.google.com/search?q=' + encodeURIComponent(q);
@@ -427,18 +543,19 @@
     if (e.key === '/') {
       e.preventDefault();
       $('#searchInput').focus();
-    } else if (e.key === 'n' || e.key === 'N') {
+    } else if ((e.key === 'n' || e.key === 'N') && (currentView === 'home' || currentView === 'notes')) {
       e.preventDefault();
       openNoteModal(null);
     } else if (e.key === 'Escape') {
       closeSettings();
+      $('#pomoPanel').classList.remove('open');
       $$('.modal.open').forEach(function (m) { closeModal('#' + m.id); });
       if ($('#lightbox').classList.contains('open')) closeLightbox();
     }
   });
 
   /* ═══════════════ 首頁 Widgets ═══════════════ */
-  
+
   function updateClock() {
     const now = new Date();
     let timeStr = pad(now.getHours()) + ':' + pad(now.getMinutes());
@@ -475,7 +592,7 @@
           else if (code >= 71 && code <= 77) icon = '❄️';
           else if (code >= 80 && code <= 82) icon = '🌦️';
           else if (code >= 95) icon = '⛈️';
-          
+
           $('#weatherInfo').innerHTML = '<span class="weather-icon">' + icon + '</span> ' + w.temperature + '°C · 風速 ' + w.windspeed + ' km/h';
         })
         .catch(() => {
@@ -498,10 +615,36 @@
   ];
   $('#quoteText').textContent = QUOTES[Math.floor(Math.random() * QUOTES.length)];
 
-  // 最近的要事（自動輪播）
+  // 最近的要事（取最近 3 筆，依日期+時間排序，自動輪播）
   let cdInterval = null;
   let cdIndex = 0;
   let cdListData = [];
+
+  function collectUpcomingEvents() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const list = [];
+    Object.keys(events).forEach(function (k) {
+      const target = new Date(k);
+      target.setHours(0, 0, 0, 0);
+      if (target < today) return;
+      (events[k] || []).forEach(function (ev) {
+        list.push({
+          date: k,
+          time: ev.time || '',
+          title: ev.title
+        });
+      });
+    });
+    list.sort(function (a, b) {
+      if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+      if (!a.time && !b.time) return 0;
+      if (!a.time) return -1;
+      if (!b.time) return 1;
+      return a.time < b.time ? -1 : (a.time > b.time ? 1 : 0);
+    });
+    return list.slice(0, 3);
+  }
 
   function renderCountdowns() {
     const list = $('#countdownList');
@@ -510,85 +653,61 @@
       cdInterval = null;
     }
 
-    const today = new Date();
-    today.setHours(0,0,0,0);
-
-    let upcoming = [];
-    Object.keys(events).forEach(k => {
-      const target = new Date(k);
-      target.setHours(0,0,0,0);
-      if (target >= today && events[k].length > 0) {
-        upcoming.push({ date: k, title: events[k][0].title });
-      }
-    });
-
-    upcoming.sort((a, b) => new Date(a.date) - new Date(b.date));
-    cdListData = upcoming.slice(0, 3);
+    cdListData = collectUpcomingEvents();
 
     if (!cdListData.length) {
       list.innerHTML = '<div class="empty small" style="padding:6px 0;">近期沒有要事。</div>';
       return;
     }
 
-    // 如果只有一個，直接顯示
-    if (cdListData.length === 1) {
-      const cd = cdListData[0];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    function buildItem(cd) {
       const target = new Date(cd.date);
-      target.setHours(0,0,0,0);
+      target.setHours(0, 0, 0, 0);
       const diff = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
       let text = diff === 0 ? '就是今天！' : '還有 ' + diff + ' 天';
-      let urgentClass = (diff >= 0 && diff <= 3) ? ' urgent' : '';
-      list.innerHTML = '<div class="cd-item" style="animation:none;">' +
-        '<span class="cd-title">' + escapeHtml(cd.title) + '</span>' +
+      const urgentClass = (diff >= 0 && diff <= 3) ? ' urgent' : '';
+      const d = keyToDate(cd.date);
+      const dateLabel = (d.getMonth() + 1) + '/' + d.getDate();
+      const timeStr = cd.time ? ' ' + cd.time : '';
+      return '<div class="cd-item">' +
+        '<span class="cd-title">' + escapeHtml(cd.title) +
+          ' <span class="cd-date">' + dateLabel + timeStr + '</span>' +
+        '</span>' +
         '<span class="cd-days' + urgentClass + '">' + text + '</span>' +
       '</div>';
+    }
+
+    if (cdListData.length === 1) {
+      list.innerHTML = buildItem(cdListData[0]);
       return;
     }
 
-    // 如果有多個，進行輪播
     cdIndex = 0;
-    function updateCdDisplay() {
-      const cd = cdListData[cdIndex];
-      const target = new Date(cd.date);
-      target.setHours(0,0,0,0);
-      const diff = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
-      let text = diff === 0 ? '就是今天！' : '還有 ' + diff + ' 天';
-      let urgentClass = (diff >= 0 && diff <= 3) ? ' urgent' : '';
-      
-      list.innerHTML = '<div class="cd-item" style="animation: none; opacity: 1; transform: none;">' +
-        '<span class="cd-title">' + escapeHtml(cd.title) + '</span>' +
-        '<span class="cd-days' + urgentClass + '">' + text + '</span>' +
-      '</div>';
-    }
-
-    updateCdDisplay();
+    list.innerHTML = buildItem(cdListData[0]);
 
     cdInterval = setInterval(function () {
       cdIndex = (cdIndex + 1) % cdListData.length;
-      
-      // 淡出
       const item = list.querySelector('.cd-item');
       if (item) {
-        item.style.transition = 'opacity 0.5s, transform 0.5s';
+        item.style.transition = 'opacity .5s, transform .5s';
         item.style.opacity = '0';
         item.style.transform = 'translateY(5px)';
       }
-      
       setTimeout(function () {
-        updateCdDisplay();
-        // 淡入
+        list.innerHTML = buildItem(cdListData[cdIndex]);
         const newItem = list.querySelector('.cd-item');
         if (newItem) {
-          newItem.style.transition = 'opacity 0.5s, transform 0.5s';
+          newItem.style.transition = 'opacity .5s, transform .5s';
           newItem.style.opacity = '0';
           newItem.style.transform = 'translateY(-5px)';
-          // 強制重繪
           void newItem.offsetWidth;
           newItem.style.opacity = '1';
           newItem.style.transform = 'translateY(0)';
         }
       }, 500);
-      
     }, 4000);
   }
 
@@ -613,15 +732,15 @@
     ledger.forEach(item => {
       if (item.date === tk && item.type === 'expense') total += item.amount;
     });
-    return total;
+    return Math.round(total);
   }
 
   function renderHome() {
     $('#statTodo').textContent = countTodayTags();
     $('#statEvent').textContent = countUpcoming(7);
     $('#statDiary').textContent = diaries.length;
-    $('#statExpense').textContent = getTodayExpense();
-    
+    $('#statExpense').textContent = '$' + getTodayExpense();
+
     renderCountdowns();
     renderGoals();
     renderBookmarks();
@@ -775,7 +894,7 @@
     toast('已刪除目標');
   });
 
-  /* ═══════════════ 書籤 (支援拖拽) ═══════════════ */
+  /* ═══════════════ 書籤（Pointer 拖拽，支援手機） ═══════════════ */
   let editingBmId = null;
 
   function faviconUrl(url) {
@@ -792,7 +911,8 @@
       let host = '';
       try { host = new URL(b.url).hostname; } catch (e) { host = ''; }
       const name = b.name || host || b.url;
-      return '<div class="bm-item" draggable="true" data-id="' + b.id + '" title="' + escapeHtml(name) + '">' +
+      return '<div class="bm-item" data-id="' + b.id + '" title="' + escapeHtml(name) + '">' +
+        '<span class="bm-drag-handle">⠿</span>' +
         '<img class="bm-fav" src="' + faviconUrl(b.url) + '" alt="" ' +
              'onerror="this.style.visibility=\'hidden\'">' +
         '<span class="bm-name">' + escapeHtml(name) + '</span>' +
@@ -804,46 +924,98 @@
     }).join('');
   }
 
-  // 拖拽排序邏輯
-  let dragSrcEl = null;
+  // Pointer-based 拖拽排序
+  (function initBookmarkDrag() {
+    const listEl = $('#bmList');
+    let dragging = null;
+    let startY = 0;
+    let placeholder = null;
+    let pointerOffsetY = 0;
+    let pointerId = null;
 
-  $('#bmList').addEventListener('dragstart', function (e) {
-    const item = e.target.closest('.bm-item');
-    if (!item) return;
-    dragSrcEl = item;
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', item.dataset.id);
-    setTimeout(() => item.classList.add('dragging'), 0);
-  });
+    function getItemUnder(clientY) {
+      const items = $$('.bm-item', listEl).filter(function (el) { return el !== dragging; });
+      for (let i = 0; i < items.length; i++) {
+        const r = items[i].getBoundingClientRect();
+        if (clientY < r.top + r.height / 2) return items[i];
+      }
+      return null;
+    }
 
-  $('#bmList').addEventListener('dragover', function (e) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    const target = e.target.closest('.bm-item');
-    if (target && target !== dragSrcEl) {
-      const rect = target.getBoundingClientRect();
-      const next = (e.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
-      if (dragSrcEl.parentNode === this) {
-        this.insertBefore(dragSrcEl, next && target.nextSibling || target);
+    listEl.addEventListener('pointerdown', function (e) {
+      const handle = e.target.closest('.bm-drag-handle');
+      if (!handle) return;
+      const item = e.target.closest('.bm-item');
+      if (!item) return;
+      e.preventDefault();
+
+      dragging = item;
+      pointerId = e.pointerId;
+      startY = e.clientY;
+      pointerOffsetY = e.clientY - item.getBoundingClientRect().top;
+
+      placeholder = document.createElement('div');
+      placeholder.className = 'bm-placeholder';
+      placeholder.style.height = item.offsetHeight + 'px';
+      item.parentNode.insertBefore(placeholder, item);
+
+      item.classList.add('dragging');
+      item.style.position = 'fixed';
+      item.style.width = item.offsetWidth + 'px';
+      item.style.left = item.getBoundingClientRect().left + 'px';
+      item.style.top = (e.clientY - pointerOffsetY) + 'px';
+      item.style.zIndex = '999';
+      item.style.pointerEvents = 'none';
+
+      try { handle.setPointerCapture(pointerId); } catch (err) {}
+    });
+
+    listEl.addEventListener('pointermove', function (e) {
+      if (!dragging || e.pointerId !== pointerId) return;
+      e.preventDefault();
+      dragging.style.top = (e.clientY - pointerOffsetY) + 'px';
+
+      const before = getItemUnder(e.clientY);
+      if (before) {
+        listEl.insertBefore(placeholder, before);
+      } else {
+        listEl.appendChild(placeholder);
+      }
+    });
+
+    function finishDrag() {
+      if (!dragging) return;
+      dragging.classList.remove('dragging');
+      dragging.style.position = '';
+      dragging.style.width = '';
+      dragging.style.left = '';
+      dragging.style.top = '';
+      dragging.style.zIndex = '';
+      dragging.style.pointerEvents = '';
+      if (placeholder && placeholder.parentNode) {
+        placeholder.parentNode.insertBefore(dragging, placeholder);
+        placeholder.remove();
+      }
+      placeholder = null;
+      dragging = null;
+      pointerId = null;
+
+      const newOrderIds = $$('.bm-item', listEl).map(function (el) { return el.dataset.id; });
+      const newBookmarks = [];
+      newOrderIds.forEach(function (id) {
+        const b = bookmarks.find(function (x) { return x.id === id; });
+        if (b) newBookmarks.push(b);
+      });
+      if (newBookmarks.length === bookmarks.length) {
+        bookmarks = newBookmarks;
+        save('bookmarks');
+        toast('排序已保存');
       }
     }
-  });
 
-  $('#bmList').addEventListener('dragend', function (e) {
-    if (!dragSrcEl) return;
-    dragSrcEl.classList.remove('dragging');
-    dragSrcEl = null;
-
-    const newOrderIds = $$('.bm-item', $('#bmList')).map(el => el.dataset.id);
-    const newBookmarks = [];
-    newOrderIds.forEach(id => {
-      const b = bookmarks.find(x => x.id === id);
-      if (b) newBookmarks.push(b);
-    });
-    bookmarks = newBookmarks;
-    save('bookmarks');
-    toast('排序已保存');
-  });
+    listEl.addEventListener('pointerup', finishDrag);
+    listEl.addEventListener('pointercancel', finishDrag);
+  })();
 
   function normalizeUrl(raw) {
     let u = String(raw || '').trim();
@@ -920,22 +1092,22 @@
     if (!$('#ledgerDate').value) {
       $('#ledgerDate').value = todayKey();
     }
-    
+
     const now = new Date();
     const thisMonth = now.getFullYear() + '-' + pad(now.getMonth() + 1);
     const monthItems = ledger.filter(item => item.date.startsWith(thisMonth));
-    
+
     let totalExpense = 0;
     let totalIncome = 0;
     monthItems.forEach(item => {
       if (item.type === 'income') totalIncome += item.amount;
       else totalExpense += item.amount;
     });
-    
+
     const balance = totalIncome - totalExpense;
-    $('#monthExpenseTotal').textContent = totalExpense;
-    $('#monthIncomeTotal').textContent = totalIncome;
-    $('#monthBalanceTotal').textContent = balance;
+    $('#monthExpenseTotal').textContent = Math.round(totalExpense);
+    $('#monthIncomeTotal').textContent = Math.round(totalIncome);
+    $('#monthBalanceTotal').textContent = '$' + Math.round(balance);
     $('#monthBalanceTotal').style.color = balance >= 0 ? 'var(--income-color)' : 'var(--expense-color)';
 
     const listWrap = $('#ledgerList');
@@ -972,10 +1144,10 @@
 
     ledger.push({ id: uid(), type: type, amount: amount, category: category, date: date, note: note });
     save('ledger');
-    
+
     $('#ledgerAmount').value = '';
     $('#ledgerNote').value = '';
-    
+
     renderLedger();
     renderHome();
     toast('已新增紀錄');
@@ -1075,21 +1247,21 @@
     const s1 = JSON.stringify(todoDraft);
     const s2 = JSON.stringify(todos);
     todoChanged = (s1 !== s2);
-    
+
     const btnSave = $('#todoSaveBtn');
     const btnCancel = $('#todoCancelBtn');
-    
+
     if (todoChanged) {
       btnSave.disabled = false;
       btnSave.textContent = '儲存變更';
-      btnSave.style.background = '#2e9e5e'; // 綠色
+      btnSave.style.background = '#2e9e5e';
       btnSave.style.color = '#fff';
       btnSave.style.borderColor = 'transparent';
       btnCancel.style.display = 'inline-flex';
     } else {
       btnSave.disabled = true;
       btnSave.textContent = '儲存變更';
-      btnSave.style.background = 'var(--hover)'; // 灰色
+      btnSave.style.background = 'var(--hover)';
       btnSave.style.color = 'var(--fg-dim)';
       btnSave.style.borderColor = 'transparent';
       btnCancel.style.display = 'none';
@@ -1259,14 +1431,21 @@
         const key = y + '-' + pad(m + 1) + '-' + pad(dn);
         const list = events[key] || [];
         const isToday = key === tk;
-        // 以星星標記有事件的日期
-        let star = list.length > 0 ? ' ⭐' : '';
+        const star = list.length > 0 ? ' ⭐' : '';
         html += '<button class="cal-cell' + (isToday ? ' today' : '') +
                 '" data-date="' + key + '">' + dn + star +
                 '</button>';
       }
     }
     $('#calGrid').innerHTML = html;
+  }
+
+  function inCalendarRange(date) {
+    const now = new Date();
+    const minIdx = monthIndex(now.getFullYear(), now.getMonth()) - 6;
+    const maxIdx = monthIndex(now.getFullYear(), now.getMonth()) + 12;
+    const idx = monthIndex(date.getFullYear(), date.getMonth());
+    return idx >= minIdx && idx <= maxIdx;
   }
 
   function shiftMonth(delta) {
@@ -1292,8 +1471,14 @@
   $('#calJumpDate').addEventListener('change', function () {
     const val = this.value;
     if (!val) return;
-    const p = val.split('-');
-    calCursor = new Date(p[0], p[1] - 1, 1);
+    const p = val.split('-').map(Number);
+    const target = new Date(p[0], p[1] - 1, 1);
+    if (!inCalendarRange(target)) {
+      toast('僅支援前 6 個月～後 12 個月內的日期');
+      this.value = todayKey();
+      return;
+    }
+    calCursor = target;
     renderCalendar();
     openEventModal(val);
   });
@@ -1368,7 +1553,7 @@
     $('#eventCancelEdit').hidden = true;
     renderEventList();
     renderCalendar();
-    renderHome(); // 更新首頁的最近要事
+    renderHome();
     toast('已保存');
   });
 
@@ -1402,7 +1587,7 @@
       }
       renderEventList();
       renderCalendar();
-      renderHome(); // 更新首頁的最近要事
+      renderHome();
       toast('已刪除');
     } else if (btn.dataset.act === 'edit') {
       editingEventId = id;
@@ -1530,7 +1715,7 @@
   function renderNotes() {
     const grid = $('#notesGrid');
     if (!notes.length) {
-      grid.innerHTML = ''; 
+      grid.innerHTML = '';
       return;
     }
     grid.innerHTML = notes.map(function (n) {
@@ -1643,18 +1828,40 @@
     toast('已刪除筆記');
   });
 
-  /* ═══════════════ 照片庫 ═══════════════ */
+  /* ═══════════════ 照片庫（IndexedDB） ═══════════════ */
+  const photoCache = {}; // id -> dataURL，用於渲染
+
+  function loadPhotoSrc(id) {
+    if (photoCache[id]) return Promise.resolve(photoCache[id]);
+    if (!IDB.available()) return Promise.resolve(null);
+    return IDB.get('photos', id).then(function (rec) {
+      if (rec && rec.src) {
+        photoCache[id] = rec.src;
+        return rec.src;
+      }
+      return null;
+    }).catch(function () { return null; });
+  }
+
   function renderPhotos() {
     const grid = $('#photoGrid');
-    if (!photos.length) {
+    if (!photoMeta.length) {
       grid.innerHTML = '<div class="empty" style="grid-column:1/-1;">還沒有照片，點「添加照片」上傳。</div>';
       return;
     }
-    grid.innerHTML = photos.map(function (p) {
+    // 先渲染佔位，再逐張載入
+    grid.innerHTML = photoMeta.map(function (p) {
       return '<button class="photo" data-id="' + p.id + '">' +
-        '<img src="' + p.src + '" alt="">' +
+        '<img alt="" data-photo="' + p.id + '">' +
       '</button>';
     }).join('');
+
+    photoMeta.forEach(function (p) {
+      loadPhotoSrc(p.id).then(function (src) {
+        const img = grid.querySelector('img[data-photo="' + p.id + '"]');
+        if (img && src) img.src = src;
+      });
+    });
   }
 
   $('#photoAdd').addEventListener('click', function () { $('#photoInput').click(); });
@@ -1664,17 +1871,26 @@
     e.target.value = '';
     if (!files.length) return;
 
+    if (!IDB.available()) {
+      toast('此瀏覽器不支援 IndexedDB，無法儲存照片');
+      return;
+    }
+
     toast('正在處理 ' + files.length + ' 張圖片…');
     let done = 0;
     const tasks = files.map(function (f) {
       return compressImage(f, 1600, 0.72).then(function (src) {
-        photos.push({ id: uid(), src: src, title: '' });
-        done++;
+        const id = uid();
+        return IDB.put('photos', { id: id, src: src }).then(function () {
+          photoCache[id] = src;
+          photoMeta.push({ id: id, title: '' });
+          done++;
+        });
       }).catch(function () {});
     });
 
     Promise.all(tasks).then(function () {
-      save('photos');
+      save('photoMeta');
       renderPhotos();
       toast(done > 0 ? '已添加 ' + done + ' 張照片' : '圖片處理失敗');
     });
@@ -1688,13 +1904,16 @@
   let lightboxId = null;
 
   function openLightbox(id) {
-    const p = photos.find(function (x) { return x.id === id; });
-    if (!p) return;
+    const meta = photoMeta.find(function (x) { return x.id === id; });
+    if (!meta) return;
     lightboxId = id;
-    $('#lightboxImg').src = p.src;
-    $('#lightboxCaption').value = p.title || '';
-    $('#lightbox').classList.add('open');
-    document.body.classList.add('lock');
+    loadPhotoSrc(id).then(function (src) {
+      if (!src) { toast('照片載入失敗'); return; }
+      $('#lightboxImg').src = src;
+      $('#lightboxCaption').value = meta.title || '';
+      $('#lightbox').classList.add('open');
+      document.body.classList.add('lock');
+    });
   }
 
   function closeLightbox() {
@@ -1713,14 +1932,17 @@
 
   $('#lightboxCaption').addEventListener('input', function () {
     if (!lightboxId) return;
-    const p = photos.find(function (x) { return x.id === lightboxId; });
-    if (p) { p.title = $('#lightboxCaption').value; save('photos'); }
+    const meta = photoMeta.find(function (x) { return x.id === lightboxId; });
+    if (meta) { meta.title = $('#lightboxCaption').value; save('photoMeta'); }
   });
 
   $('#lightboxDel').addEventListener('click', function () {
     if (!lightboxId) return;
-    photos = photos.filter(function (x) { return x.id !== lightboxId; });
-    save('photos');
+    const id = lightboxId;
+    photoMeta = photoMeta.filter(function (x) { return x.id !== id; });
+    delete photoCache[id];
+    save('photoMeta');
+    if (IDB.available()) IDB.del('photos', id).catch(function () {});
     renderPhotos();
     closeLightbox();
     toast('已刪除照片');
@@ -1735,6 +1957,20 @@
   const pomoPanel = $('#pomoPanel');
   const pomoFab = $('#pomoFab');
 
+  let audioCtx = null;
+  let customAudioData = null; // 從 IndexedDB 載入
+  let soundType = LS.get('pomoSoundType', 'synth');
+  let pomoVolume = LS.get('pomoVolume', 70); // 0~100
+  let pomoBaseSeconds = 25 * 60; // 使用者設定的基準秒數
+
+  // 載入自訂音效
+  function loadCustomAudio() {
+    if (!IDB.available()) return Promise.resolve();
+    return IDB.get('audio', 'pomo').then(function (rec) {
+      if (rec && rec.data) customAudioData = rec.data;
+    }).catch(function () {});
+  }
+
   function updatePomoDisplay() {
     const m = Math.floor(pomoSeconds / 60);
     const s = pomoSeconds % 60;
@@ -1745,19 +1981,20 @@
     pomoPanel.classList.toggle('open');
   });
 
-  $('#pomoSetBtn').addEventListener('click', function () {
+    $('#pomoSetBtn').addEventListener('click', function () {
     let custom = parseInt($('#pomoCustom').value, 10);
-    let mins = 25;
-    
-    if (custom && custom > 0 && custom <= 180) {
-      mins = custom;
+    let secs;
+
+    if (custom && custom >= 5 && custom <= 10800) {
+      secs = custom;
       $('#pomoPreset').value = '';
     } else {
-      mins = parseInt($('#pomoPreset').value, 10);
-      if (!mins) mins = 25;
+      const mins = parseInt($('#pomoPreset').value, 10) || 25;
+      secs = mins * 60;
     }
-    
-    pomoSeconds = mins * 60;
+
+    pomoBaseSeconds = secs;
+    pomoSeconds = secs;
     clearInterval(pomoInterval);
     pomoRunning = false;
     $('#pomoStart').textContent = '開始';
@@ -1765,9 +2002,11 @@
     $('#pomoCustom').value = '';
   });
 
-  $('#pomoPreset').addEventListener('change', function () {
+    $('#pomoPreset').addEventListener('change', function () {
     if (this.value) {
-      pomoSeconds = parseInt(this.value, 10) * 60;
+      const secs = parseInt(this.value, 10) * 60;
+      pomoBaseSeconds = secs;
+      pomoSeconds = secs;
       clearInterval(pomoInterval);
       pomoRunning = false;
       $('#pomoStart').textContent = '開始';
@@ -1776,39 +2015,118 @@
     }
   });
 
-  function playBell() {
+  function initAudio() {
+    if (!audioCtx) {
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      } catch (e) {}
+    }
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  }
+
+    function playBell() {
+    const vol = Math.max(0, Math.min(1, pomoVolume / 100));
+    if (soundType === 'custom' && customAudioData) {
+      try {
+        const audio = new Audio(customAudioData);
+        audio.volume = vol;
+        audio.play().catch(function () {});
+      } catch (e) {}
+      return;
+    }
+    if (!audioCtx) initAudio();
+    if (!audioCtx) return;
     try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
       const playNote = (freq, startTime, duration) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
         osc.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(audioCtx.destination);
         osc.type = 'sine';
         osc.frequency.value = freq;
         gain.gain.setValueAtTime(0, startTime);
-        gain.gain.linearRampToValueAtTime(0.5, startTime + 0.05);
+        gain.gain.linearRampToValueAtTime(0.5 * vol, startTime + 0.05);
         gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
         osc.start(startTime);
         osc.stop(startTime + duration);
       };
-      playNote(880, ctx.currentTime, 0.4);
-      playNote(1046.50, ctx.currentTime + 0.15, 0.6);
-      playNote(880, ctx.currentTime + 0.45, 0.4);
-      playNote(1046.50, ctx.currentTime + 0.6, 0.8);
-    } catch (e) {
-      console.log('無法播放鈴聲');
-    }
+      playNote(880, audioCtx.currentTime, 0.4);
+      playNote(1046.50, audioCtx.currentTime + 0.15, 0.6);
+      playNote(880, audioCtx.currentTime + 0.45, 0.4);
+      playNote(1046.50, audioCtx.currentTime + 0.6, 0.8);
+    } catch (e) {}
   }
 
+  function updateSoundUI() {
+    $$('input[name="soundType"]').forEach(function (r) {
+      r.checked = (r.value === soundType);
+    });
+    $('#soundFileName').textContent = customAudioData ? '已載入自訂音效' : '尚未選擇檔案';
+  }
+
+  $('#pomoSoundBtn').addEventListener('click', function () {
+    updateSoundUI();
+    openModal('#soundModal');
+  });
+
+  $('#soundFilePick').addEventListener('click', function () {
+    $('#soundFileInput').click();
+  });
+
+  $('#soundFileInput').addEventListener('change', function (e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    if (file.size > 1024 * 1024) {
+      toast('音訊檔案過大，請選擇 1MB 以下的檔案');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+      customAudioData = ev.target.result;
+      $('#soundFileName').textContent = file.name;
+      $$('input[name="soundType"]').forEach(function (r) {
+        if (r.value === 'custom') r.checked = true;
+      });
+      toast('音訊已載入，請點擊儲存');
+    };
+    reader.readAsDataURL(file);
+  });
+
+  $('#soundSaveBtn').addEventListener('click', function () {
+    const selected = $('input[name="soundType"]:checked').value;
+    if (selected === 'custom' && !customAudioData) {
+      toast('請先上傳音訊檔案');
+      return;
+    }
+    soundType = selected;
+    LS.set('pomoSoundType', soundType);
+
+    if (IDB.available()) {
+      if (customAudioData) {
+        IDB.put('audio', { id: 'pomo', data: customAudioData }).catch(function () {});
+      } else {
+        IDB.del('audio', 'pomo').catch(function () {});
+      }
+    }
+
+    closeModal('#soundModal');
+    toast('鈴聲設定已儲存');
+    initAudio();
+    playBell();
+  });
+
   $('#pomoStart').addEventListener('click', function () {
+    initAudio();
     if (pomoRunning) {
       clearInterval(pomoInterval);
       pomoRunning = false;
       this.textContent = '繼續';
+      $('#pomoFab').classList.remove('running');
     } else {
       pomoRunning = true;
       this.textContent = '暫停';
+      $('#pomoFab').classList.add('running');
       pomoInterval = setInterval(function () {
         pomoSeconds--;
         updatePomoDisplay();
@@ -1816,24 +2134,36 @@
           clearInterval(pomoInterval);
           pomoRunning = false;
           $('#pomoStart').textContent = '開始';
-          pomoSeconds = 25 * 60;
+          $('#pomoFab').classList.remove('running');
+          pomoSeconds = pomoBaseSeconds;
           updatePomoDisplay();
           playBell();
-          toast('時間到！休息一下吧 ⏰');
+          if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+          toast('時間到！休息一下吧 🍅');
         }
       }, 1000);
     }
   });
 
-  $('#pomoReset').addEventListener('click', function () {
+    $('#pomoReset').addEventListener('click', function () {
     clearInterval(pomoInterval);
     pomoRunning = false;
-    pomoSeconds = 25 * 60;
+    pomoSeconds = pomoBaseSeconds;
     updatePomoDisplay();
     $('#pomoStart').textContent = '開始';
-    $('#pomoPreset').value = '25';
-    $('#pomoCustom').value = '';
+    $('#pomoFab').classList.remove('running');
   });
+
+  function updateVolumeUI() {
+      $('#pomoVolume').value = pomoVolume;
+      $('#pomoVolumeVal').textContent = pomoVolume;
+    }
+    $('#pomoVolume').addEventListener('input', function () {
+      pomoVolume = parseInt(this.value, 10);
+      $('#pomoVolumeVal').textContent = pomoVolume;
+      LS.set('pomoVolume', pomoVolume);
+    });
+  updateVolumeUI();
 
   updatePomoDisplay();
 
@@ -1900,20 +2230,92 @@
     toast(state.lum > 50 ? '已切換為淺色模式' : '已切換為深色模式');
   });
 
-  $('#exportBtn').addEventListener('click', function () {
-    const data = {
-      todos: todos, events: events, diaries: diaries, notes: notes, photos: photos,
-      goals: goals, bookmarks: bookmarks, ledger: ledger, countdowns: countdowns
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'my_space_backup_' + todayKey() + '.json';
-    a.click();
-    URL.revokeObjectURL(url);
-    toast('備份檔案已下載');
+  const BACKUP_VERSION = 2;
+
+  function exportData() {
+    // 照片與音效需從 IndexedDB 取出
+    const exportPhotos = photoMeta.map(function (m) {
+      return loadPhotoSrc(m.id).then(function (src) {
+        return { id: m.id, title: m.title || '', src: src || '' };
+      });
+    });
+    Promise.all(exportPhotos).then(function (photosData) {
+      const data = {
+        version: BACKUP_VERSION,
+        exportedAt: new Date().toISOString(),
+        todos: todos, events: events, diaries: diaries, notes: notes,
+        photos: photosData, goals: goals, bookmarks: bookmarks,
+        ledger: ledger, countdowns: countdowns,
+        prefs: { lum: state.lum, bg: state.bg },
+        pomoSoundType: soundType
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'my_space_backup_' + todayKey() + '.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      toast('備份檔案已下載（含照片本體）');
+    });
+  }
+
+  $('#exportBtn').addEventListener('click', exportData);
+  $('#aboutExportBtn').addEventListener('click', exportData);
+
+  $('#clearAllBtn').addEventListener('click', function () {
+    const confirm1 = confirm('⚠️ 警告：這將永久刪除您所有的筆記、日記、照片與設定！\n\n您確定要清除所有資料嗎？');
+    if (!confirm1) return;
+    const confirm2 = confirm('最後確認：您是否已經匯出備份？\n如果沒有，請先點擊取消並匯出備份。');
+    if (!confirm2) return;
+
+    try { localStorage.clear(); } catch (e) {}
+    document.cookie.split(';').forEach(function (c) {
+      document.cookie = c.replace(/^ +/, '').replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/');
+    });
+    if (IDB.available()) {
+      ['photos', 'audio'].forEach(function (store) {
+        IDB.getAll(store).then(function (rows) {
+          rows.forEach(function (r) { IDB.del(store, r.id).catch(function () {}); });
+        }).catch(function () {});
+      });
+    }
+
+    toast('資料已清除，正在重新整理…');
+    setTimeout(function () { location.reload(); }, 1500);
   });
+
+  function validateBackup(data) {
+    if (!data || typeof data !== 'object') return '檔案格式錯誤';
+    if (data.version != null && typeof data.version !== 'number') return '版本號格式錯誤';
+    const checks = [
+      ['todos', function (v) { return v && typeof v === 'object' && !Array.isArray(v); }],
+      ['events', function (v) { return v && typeof v === 'object' && !Array.isArray(v); }],
+      ['diaries', isArray],
+      ['notes', isArray],
+      ['photos', isArray],
+      ['goals', isArray],
+      ['bookmarks', isArray],
+      ['ledger', isArray],
+      ['countdowns', isArray]
+    ];
+    for (let i = 0; i < checks.length; i++) {
+      const key = checks[i][0];
+      const fn = checks[i][1];
+      if (data[key] !== undefined && !fn(data[key])) {
+        return '欄位 ' + key + ' 格式錯誤';
+      }
+    }
+    if (data.photos) {
+      for (let i = 0; i < data.photos.length; i++) {
+        const p = data.photos[i];
+        if (!p || !isNonEmptyString(p.id) || typeof p.src !== 'string') {
+          return '照片資料格式錯誤';
+        }
+      }
+    }
+    return null;
+  }
 
   $('#importBtn').addEventListener('click', function () {
     $('#importFileInput').click();
@@ -1923,22 +2325,61 @@
     const file = e.target.files && e.target.files[0];
     e.target.value = '';
     if (!file) return;
+    if (file.size > 60 * 1024 * 1024) {
+      toast('備份檔案過大（超過 60MB）');
+      return;
+    }
     const reader = new FileReader();
     reader.onload = function (ev) {
+      let data;
       try {
-        const data = JSON.parse(ev.target.result);
-        if (data.todos) todos = data.todos;
-        if (data.events) events = data.events;
-        if (data.diaries) diaries = data.diaries;
-        if (data.notes) notes = data.notes;
-        if (data.photos) photos = data.photos;
-        if (data.goals) goals = data.goals;
-        if (data.bookmarks) bookmarks = data.bookmarks;
-        if (data.ledger) ledger = data.ledger;
-        else if (data.expenses) ledger = data.expenses.map(e => ({ ...e, type: 'expense' }));
-        if (data.countdowns) countdowns = data.countdowns;
+        data = JSON.parse(ev.target.result);
+      } catch (err) {
+        toast('備份檔案解析失敗');
+        return;
+      }
+      const err = validateBackup(data);
+      if (err) { toast('備份驗證失敗：' + err); return; }
+      if (!confirm('確定要匯入備份嗎？這將覆蓋目前所有資料。')) return;
 
-        ['todos', 'events', 'diaries', 'notes', 'photos', 'goals', 'bookmarks', 'ledger', 'countdowns'].forEach(save);
+      if (data.todos) todos = migrateTodos(data.todos);
+      if (data.events) events = data.events;
+      if (data.diaries) diaries = data.diaries;
+      if (data.notes) notes = data.notes;
+      if (data.goals) goals = data.goals;
+      if (data.bookmarks) bookmarks = data.bookmarks;
+      if (data.countdowns) countdowns = data.countdowns;
+      if (data.ledger) ledger = data.ledger;
+      else if (data.expenses) ledger = data.expenses.map(function (x) { return Object.assign({}, x, { type: 'expense' }); });
+
+      // 照片：寫入 IndexedDB
+      photoMeta = [];
+      const photoWrites = (data.photos || []).map(function (p) {
+        photoMeta.push({ id: p.id, title: p.title || '' });
+        if (IDB.available() && p.src) {
+          photoCache[p.id] = p.src;
+          return IDB.put('photos', { id: p.id, src: p.src }).catch(function () {});
+        }
+        return Promise.resolve();
+      });
+
+      // 設定
+      if (data.prefs) {
+        if (typeof data.prefs.lum === 'number') state.lum = Math.min(100, Math.max(0, data.prefs.lum));
+        if (typeof data.prefs.bg === 'string') state.bg = data.prefs.bg || null;
+        applyTheme();
+        savePrefs();
+      }
+      if (data.pomoSoundType === 'synth' || data.pomoSoundType === 'custom') {
+        soundType = data.pomoSoundType;
+        LS.set('pomoSoundType', soundType);
+      }
+
+      Promise.all(photoWrites).then(function () {
+        ['todos', 'events', 'diaries', 'notes', 'goals', 'bookmarks', 'ledger', 'countdowns'].forEach(save);
+        save('photoMeta');
+        pruneEvents();
+        pruneDone();
 
         renderTodos();
         renderCalendar();
@@ -1952,9 +2393,7 @@
 
         toast('備份匯入成功！');
         closeSettings();
-      } catch (err) {
-        toast('備份檔案解析失敗');
-      }
+      });
     };
     reader.readAsText(file);
   });
@@ -1983,13 +2422,16 @@
   pruneEvents();
   pruneDone();
 
-  renderTodos();
-  renderCalendar();
-  renderDiaries();
-  renderNotes();
-  renderPhotos();
-  renderLedger();
-  renderHome();
-  showView('home');
+  // 舊照片遷移
+  migrateLegacyPhotos().then(loadCustomAudio).then(function () {
+    renderTodos();
+    renderCalendar();
+    renderDiaries();
+    renderNotes();
+    renderPhotos();
+    renderLedger();
+    renderHome();
+    showView('home');
+  });
 
 })();
