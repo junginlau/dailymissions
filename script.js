@@ -949,8 +949,10 @@
     updatePomoUI();
   }
 
-  pomoTimeDisplay.addEventListener('click', function () {
+   pomoTimeDisplay.addEventListener('click', function (e) {
+    e.stopPropagation();
     if (pomoState !== 'idle') return;
+    
     const h = Math.floor(pomoRemaining / 3600);
     const m = Math.floor((pomoRemaining % 3600) / 60);
     const s = pomoRemaining % 60;
@@ -984,13 +986,18 @@
   $('#pomoInpM').addEventListener('change', function() { this.value = pad(Math.min(99, Math.max(0, parseInt(this.value,10)||0))); pomoTimeDisplay.textContent = formatPomoTime(getInputSecs()); });
   $('#pomoInpS').addEventListener('change', function() { this.value = pad(Math.min(99, Math.max(0, parseInt(this.value,10)||0))); pomoTimeDisplay.textContent = formatPomoTime(getInputSecs()); });
 
-  // 點擊編輯器外部或按 Enter 關閉並儲存
-  document.addEventListener('click', function(e) {
-    if (pomoEditor.classList.contains('active') && !pomoEditor.contains(e.target) && !pomoTimeDisplay.contains(e.target)) {
+  // 關閉編輯器並儲存
+  function closePomoEditor() {
+    if (pomoEditor.classList.contains('active')) {
       savePomoSettings();
       pomoEditor.classList.remove('active');
       pomoTimeDisplay.style.display = 'flex';
     }
+  }
+
+  // 點擊編輯器內的空白處不觸發任何事，避免冒泡
+  pomoEditor.addEventListener('click', function(e) {
+    e.stopPropagation();
   });
 
   function startPomoTimer() {
@@ -1013,10 +1020,11 @@
 
   pomoBtnLeft.addEventListener('click', function() {
     initAudio();
+    
+    // 如果編輯器開著，先關閉並儲存
     if (pomoEditor.classList.contains('active')) {
-      savePomoSettings();
-      pomoEditor.classList.remove('active');
-      pomoTimeDisplay.style.display = 'flex';
+      closePomoEditor();
+      return; // 這一下點擊只負責關閉編輯器，不啟動計時
     }
     
     if (pomoState === 'idle') {
@@ -1032,12 +1040,13 @@
   });
 
   pomoBtnRight.addEventListener('click', function() {
-    clearInterval(pomoInterval);
+    // 如果編輯器開著，先關閉並儲存
     if (pomoEditor.classList.contains('active')) {
-      savePomoSettings();
-      pomoEditor.classList.remove('active');
-      pomoTimeDisplay.style.display = 'flex';
+      closePomoEditor();
+      return;
     }
+    
+    clearInterval(pomoInterval);
     
     if (pomoState === 'idle') {
       // 重置為 00:00:00
