@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>隱私權政策 - 我的空間 (My Space)</title>
 <style>
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", sans-serif; line-height: 1.7; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #333; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", sans-serif; line-height: 1.8; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #333; }
   h1 { font-size: 24px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
   h2 { font-size: 18px; margin-top: 30px; color: #111; }
   p, li { font-size: 15px; color: #555; }
@@ -22,16 +22,16 @@
   <strong>核心承諾：</strong>「我的空間 (My Space)」是一個開源、無廣告的個人數位儀表板。我們不擁有、也不營運任何用來收集您資料的後端伺服器。您的資料由您自己完全掌控。
 </div>
 
-<h2>1. 資料儲存與收集</h2>
+<h2>1. 資料收集與儲存</h2>
 <p>本應用程式預設將您的所有資料（包含待辦事項、日曆、日記、筆記、照片、記帳紀錄等）儲存在您當前使用的瀏覽器本地端（LocalStorage 與 IndexedDB）。<strong>我們不會將這些資料上傳至任何由開發者控制的伺服器，也不會用於廣告或 AI 訓練。</strong></p>
 
-<h2>2. Google Drive 雲端備份 (Google API 權限)</h2>
+<h2>2. Google Drive 雲端備份 (Google API 權限與資料使用)</h2>
 <p>本應用程式提供選用的「Google 雲端備份」功能。當您主動登入並點擊「上傳備份」時：</p>
 <ul>
   <li>本應用程式會向 Google 請求 <code>https://www.googleapis.com/auth/drive.appdata</code> 權限。</li>
   <li>此權限<strong>僅允許</strong>本應用程式存取您 Google Drive 中的專屬隱藏資料夾（<code>appDataFolder</code>）。</li>
   <li>本應用程式<strong>無法</strong>讀取、修改或刪除您 Google 雲端硬碟中的其他任何檔案。</li>
-  <li>開發者本人無法檢視、存取或取得您備份在雲端的任何資料。備份資料僅在您的 Google 帳號與您的瀏覽器之間直接傳輸。</li>
+  <li><strong>資料使用方式：</strong>我們僅使用此權限來儲存與讀取本應用程式產生的 JSON 備份檔。開發者本人無法檢視、存取或取得您備份在雲端的任何資料。備份資料僅在您的 Google 帳號與您的瀏覽器之間直接傳輸。</li>
 </ul>
 
 <h2>3. 外部 API 與資料傳輸揭露</h2>
@@ -42,13 +42,16 @@
   <li><strong>書籤圖示</strong>：透過 <code>Google Favicon API</code> 取得。會將您書籤的網域傳送給 Google。</li>
 </ul>
 
-<h2>4. AI 內容生成聲明 (Google API NCI Policy)</h2>
+<h2>4. 資料分享與轉移</h2>
+<p>我們<strong>絕對不會</strong>將您的個人資料出售、出租或分享給任何第三方廣告商或資料仲介商。</p>
+
+<h2>5. AI 內容生成聲明 (Google API NCI Policy)</h2>
 <p>本應用程式僅使用 Google API 進行身分驗證（Google Identity）與雲端檔案儲存（Google Drive API）。本應用程式<strong>絕對不使用</strong> Google API 來生成、儲存或傳播任何未經同意的親密影像（Non-Consensual Intimate Imagery, NCI），亦不涉及任何生成式 AI 的不當使用。</p>
 
-<h2>5. 資料刪除</h2>
+<h2>6. 資料刪除</h2>
 <p>您可以隨時透過設定面板中的「清除所有資料」按鈕，一鍵刪除瀏覽器本地端的所有紀錄。若您曾使用 Google 雲端備份，也可以直接在 Google Drive 的隱藏應用程式資料區中刪除該備份檔。</p>
 
-<h2>6. 聯絡方式</h2>
+<h2>7. 聯絡方式</h2>
 <p>本專案為開源專案。如有任何隱私權相關疑問，請透過 GitHub 專案頁面（<a href="https://github.com/junginlau/dailymissions">junginlau/dailymissions</a>）提出 Issue 與開發者聯繫。</p>
 
 </body>
