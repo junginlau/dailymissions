@@ -18,8 +18,12 @@
 </head>
 <body>
 
-<noscript>您的瀏覽器不支援 JavaScript，請開啟以使用完整功能。</noscript>
-<div style="display:none;">我的空間 (My Space) - 個人數位儀表板。提供待辦、日記、記帳與 Google Drive 雲端備份。</div>
+<body>
+<!-- [NEW] 給 Google 爬蟲看的純文字宣告 -->
+<div style="display: none;">
+  <h1>我的空間 (My Space) - 個人數位儀表板</h1>
+  <p>這是一個極簡的個人數位生活儀表板。提供待辦事項、日記、記帳、筆記與 Google Drive 雲端備份功能。本應用程式完全免費且開源，所有資料預設儲存於使用者瀏覽器端。本服務不使用 Google API 生成未經同意的親密影像 (NCI)。</p>
+</div>
 
 <div class="update-banner" id="updateBanner" hidden>
   <span class="update-banner-text">✨ 有新版本可用</span>
@@ -384,11 +388,13 @@
     </div>
   </section>
 
-    <footer class="site-footer">
+  <footer class="site-footer">
     <div>© <span id="copyrightYear">2026</span> <a href="https://github.com/junginlau" target="_blank">junginlau</a>. 資料儲存於本地端，建議定期備份。</div>
-    <div style="margin-top: 8px; font-size: 11px;">
-      <a href="./privacy.html" style="margin-right: 12px;">隱私權政策</a>
-      <a href="./terms.html">服務條款</a>
+    <div style="margin-top: 4px; font-size: 10px; line-height: 1.5; opacity: 0.8;">
+      提供待辦、日記、記帳與 Google Drive 備份。不使用 Google API 生成未經同意的親密影像 (NCI)。
+      <br>
+      <a href="./privacy.html" style="text-decoration: underline; margin-right: 8px;">隱私權政策</a>
+      <a href="./terms.html" style="text-decoration: underline;">服務條款</a>
     </div>
   </footer>
 </main>
