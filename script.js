@@ -473,6 +473,58 @@
     if (btn) showView(btn.dataset.view);
   });
 
+  // 處理平板/縮小視窗的「...」選單
+  const navMoreBtn = $('#navMoreBtn');
+  const navMoreMenu = $('#navMoreMenu');
+
+  if (navMoreBtn && navMoreMenu) {
+    // 點擊「...」按鈕
+    navMoreBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // 檢查選單目前是不是開著的
+      const isOpen = navMoreMenu.style.display === 'flex';
+      
+      if (isOpen) {
+        navMoreMenu.style.display = 'none';
+      } else {
+        // 強制設定樣式，無視所有 CSS 干擾
+        navMoreMenu.style.display = 'flex';
+        navMoreMenu.style.position = 'fixed'; // 使用 fixed 無視容器裁切
+        navMoreMenu.style.top = '60px'; // 固定在頂部下方
+        navMoreMenu.style.left = '20px'; // 靠左
+        navMoreMenu.style.flexDirection = 'column';
+        navMoreMenu.style.background = 'var(--panel-bg-solid)';
+        navMoreMenu.style.border = '1px solid var(--panel-border)';
+        navMoreMenu.style.borderRadius = '12px';
+        navMoreMenu.style.padding = '8px';
+        navMoreMenu.style.zIndex = '99999';
+        navMoreMenu.style.boxShadow = '0 10px 30px rgba(0,0,0,.3)';
+        navMoreMenu.style.gap = '4px';
+      }
+    });
+
+    // 點擊選單內的選項
+    navMoreMenu.addEventListener('click', function (e) {
+      const btn = e.target.closest('button');
+      if (btn) {
+        e.stopPropagation();
+        showView(btn.dataset.view);
+        navMoreMenu.style.display = 'none';
+      }
+    });
+
+    // 點擊畫面其他地方關閉選單
+    document.addEventListener('click', function (e) {
+      if (navMoreMenu.style.display === 'flex' && 
+          !navMoreMenu.contains(e.target) && 
+          e.target !== navMoreBtn) {
+        navMoreMenu.style.display = 'none';
+      }
+    });
+  }
+
   mobileNavBtns.forEach(function (btn) {
     btn.addEventListener('click', function () {
       const view = this.dataset.view;
@@ -935,10 +987,10 @@
       let host = '';
       try { host = new URL(b.url).hostname; } catch (e) { host = ''; }
       const name = b.name || host || b.url;
-      return '<div class="bm-item" data-id="' + b.id + '" title="' + escapeHtml(name) + '">' +
+              return '<div class="bm-item" data-id="' + b.id + '" title="' + escapeHtml(name) + '">' +
         '<span class="bm-drag-handle">⠿</span>' +
         '<img class="bm-fav" src="' + faviconUrl(b.url) + '" alt="" ' +
-             'onerror="this.style.visibility=\'hidden\'">' +
+             'onerror="this.style.display=\'none\'">' +
         '<span class="bm-name">' + escapeHtml(name) + '</span>' +
         '<div class="bm-acts">' +
           '<button class="bm-act" data-act="edit" title="編輯" aria-label="編輯書籤">編</button>' +

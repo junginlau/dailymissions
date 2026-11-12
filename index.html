@@ -22,6 +22,20 @@
     <button class="logo-btn" id="logoBtn" aria-label="回到首頁" title="回到首頁">
       <img src="https://raw.githubusercontent.com/junginlau/photoshub/main/cssyellow.png" alt="Logo">
     </button>
+        <!-- 平板/縮小視窗專用的「...」下拉選單 -->
+    <div class="nav-more-wrap" id="navMoreWrap" style="position: relative; display: none;">
+      <button class="nav-btn" id="navMoreBtn" style="font-size: 20px; font-weight: bold; padding: 4px 12px;">選單</button>
+      <div class="nav-more-menu" id="navMoreMenu" style="display: none; position: absolute; top: 100%; left: 0; background: var(--panel-bg-solid); border: 1px solid var(--panel-border); border-radius: 12px; padding: 8px; z-index: 9999; box-shadow: 0 10px 30px rgba(0,0,0,.2); min-width: 120px; flex-direction: column; gap: 4px;">
+        <button data-view="todo" class="nav-btn" style="text-align: left; padding: 10px;">每週必做</button>
+        <button data-view="calendar" class="nav-btn" style="text-align: left; padding: 10px;">日曆</button>
+        <button data-view="diary" class="nav-btn" style="text-align: left; padding: 10px;">日記</button>
+        <button data-view="notes" class="nav-btn" style="text-align: left; padding: 10px;">筆記本</button>
+        <button data-view="photos" class="nav-btn" style="text-align: left; padding: 10px;">照片庫</button>
+        <button data-view="ledger" class="nav-btn" style="text-align: left; padding: 10px;">記帳</button>
+        <button data-view="about" class="nav-btn" style="text-align: left; padding: 10px;">關於本站</button>
+      </div>
+    </div>
+
     <nav class="nav-links" id="navLinks">
       <button class="nav-btn" data-view="todo">每週必做</button>
       <button class="nav-btn" data-view="calendar">日曆</button>
