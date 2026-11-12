@@ -485,28 +485,31 @@
     wrap.innerHTML = ledgerCategories.map(function(cat) { return '<button class="tag-chip-ledger" type="button" data-cat="' + escapeHtml(cat) + '">' + escapeHtml(cat) + '</button>'; }).join('');
   }
 
-  const ledgerTagsWrap = $('#ledgerTags');
-  const ledgerCategoryInp = $('#ledgerCategory');
-  
-  // 點擊輸入框顯示選單
-  ledgerCategoryInp.addEventListener('focus', function() {
-    renderLedgerTags();
-    ledgerTagsWrap.classList.add('open');
-  });
+  (function bindLedgerDropdown() {
+    const wrap = $('#ledgerTags');
+    const inp = $('#ledgerCategory');
+    if (!wrap || !inp || wrap.dataset.bound) return;
+    
+    wrap.dataset.bound = '1';
+    inp.dataset.bound = '1';
 
-  // 點擊標籤填入輸入框並收起選單
-  ledgerTagsWrap.addEventListener('click', function(e) {
-    const btn = e.target.closest('.tag-chip-ledger'); if (!btn) return;
-    ledgerCategoryInp.value = btn.dataset.cat;
-    ledgerTagsWrap.classList.remove('open');
-  });
+    inp.addEventListener('focus', function() {
+      renderLedgerTags();
+      wrap.classList.add('open');
+    });
 
-  // 點擊外部收起選單
-  document.addEventListener('click', function(e) {
-    if (ledgerTagsWrap.classList.contains('open') && !ledgerCategoryInp.contains(e.target) && !ledgerTagsWrap.contains(e.target)) {
-      ledgerTagsWrap.classList.remove('open');
-    }
-  });
+    wrap.addEventListener('click', function(e) {
+      const btn = e.target.closest('.tag-chip-ledger'); if (!btn) return;
+      inp.value = btn.dataset.cat;
+      wrap.classList.remove('open');
+    });
+
+    document.addEventListener('click', function(e) {
+      if (wrap.classList.contains('open') && !inp.contains(e.target) && !wrap.contains(e.target)) {
+        wrap.classList.remove('open');
+      }
+    });
+  })();
 
   function renderLedger() {
     if (!$('#ledgerDate').value) $('#ledgerDate').value = todayKey();
@@ -1084,6 +1087,13 @@
   updateVolumeUI();
 
   $('#pomoFab').addEventListener('click', function () { $('#pomoPanel').classList.toggle('open'); });
+
+  // 全域點擊：點擊編輯器與時間顯示以外的地方，安全收起並儲存
+  document.addEventListener('click', function(e) {
+    if (pomoEditor.classList.contains('active') && !pomoEditor.contains(e.target) && !pomoTimeDisplay.contains(e.target)) {
+      closePomoEditor();
+    }
+  });
 
   const settings = $('#settings'); const gearBtn = $('#gearBtn');
   function openSettings() { settings.classList.add('open'); gearBtn.classList.add('open'); }
