@@ -150,8 +150,14 @@
   if (!photoMeta && Array.isArray(legacyPhotos) && legacyPhotos.length) { needsLegacyPhotoMigration = true; photoMeta = legacyPhotos.map(function (p) { return { id: p.id, title: p.title || '' }; }); }
   if (!Array.isArray(photoMeta)) photoMeta = [];
 
-    // 匯率快取（以 TWD 為基準，預設值防止 API 失敗）
+  // 匯率快取（以 TWD 為基準，預設值防止 API 失敗）
   let exchangeRates = { TWD: 1, USD: 32, JPY: 0.22, HKD: 4.1, EUR: 35, GBP: 41, CNY: 4.4 };
+  
+  // 主要顯示貨幣設定（預設 HKD）
+  let mainCurrency = LS.get('mainCurrency', 'HKD');
+
+  // 幣別符號對應表
+  const currencySymbols = { TWD: 'NT$', USD: '$', JPY: '¥', HKD: 'HK$', EUR: '€', GBP: '£', CNY: '¥' };
   
   function fetchExchangeRates() {
     fetch('https://open.er-api.com/v6/latest/TWD')
@@ -316,7 +322,16 @@
 
   function countTodayTags() { const tk = dayKeyOf(new Date()); return (todos.schedule[tk] || []).length; }
   function countUpcoming(days) { const now = new Date(); let n = 0; for (let i = 0; i < days; i++) { const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i); const list = events[dateKey(d)]; if (list) n += list.length; } return n; }
-  function getTodayExpense() { const tk = todayKey(); let total = 0; ledger.forEach(item => { if (item.date === tk && item.type === 'expense') total += item.amount; }); return Math.round(total); }
+    function getTodayExpense() {
+    const tk = todayKey();
+    let totalTWD = 0;
+    ledger.forEach(item => {
+      if (item.date === tk && item.type === 'expense') totalTWD += item.amount; // amount 是台幣
+    });
+    // 將台幣換算成主要貨幣
+    const rate = exchangeRates[mainCurrency] || 1;
+    return Math.round(totalTWD / rate);
+  }
 
   function renderHome() {
     if (!LS.get('onboarded', false)) {
@@ -328,7 +343,7 @@
         document.getElementById('welcomeCloseBtn').addEventListener('click', () => { LS.set('onboarded', true); card.remove(); });
       }
     }
-    $('#statTodo').textContent = countTodayTags(); $('#statEvent').textContent = countUpcoming(7); $('#statDiary').textContent = diaries.length; $('#statExpense').textContent = '$' + getTodayExpense();
+    $('#statTodo').textContent = countTodayTags(); $('#statEvent').textContent = countUpcoming(7); $('#statDiary').textContent = diaries.length;     $('#statExpense').textContent = currencySymbols[mainCurrency] + ' ' + getTodayExpense();
     renderCountdowns(); renderGoals(); renderBookmarks();
   }
 
@@ -427,67 +442,68 @@
   $('#bmDelete').addEventListener('click', function () { if (!editingBmId) return; bookmarks = bookmarks.filter(function (x) { return x.id !== editingBmId; }); save('bookmarks'); renderBookmarks(); closeModal('#bmModal'); toast('已刪除書籤'); });
 
   /* 10. 記帳 */
-  function renderLedger() {
+    function renderLedger() {
     if (!$('#ledgerDate').value) $('#ledgerDate').value = todayKey();
-    const now = new Date(); const thisMonth = now.getFullYear() + '-' + pad(now.getMonth() + 1); const monthItems = ledger.filter(item => item.date.startsWith(thisMonth));
-    let totalExpense = 0; let totalIncome = 0; monthItems.forEach(item => { if (item.type === 'income') totalIncome += item.amount; else totalExpense += item.amount; });
-    const balance = totalIncome - totalExpense; $('#monthExpenseTotal').textContent = Math.round(totalExpense); $('#monthIncomeTotal').textContent = Math.round(totalIncome); $('#monthBalanceTotal').textContent = '$' + Math.round(balance); $('#monthBalanceTotal').style.color = balance >= 0 ? 'var(--income-color)' : 'var(--expense-color)';
-    const listWrap = $('#ledgerList'); if (!monthItems.length) { listWrap.innerHTML = '<div class="empty">本月還沒有任何記帳紀錄。</div>'; return; }
+    
+    const now = new Date(); 
+    const thisMonth = now.getFullYear() + '-' + pad(now.getMonth() + 1); 
+    const monthItems = ledger.filter(item => item.date.startsWith(thisMonth));
+    
+    let totalExpenseTWD = 0; 
+    let totalIncomeTWD = 0; 
+    monthItems.forEach(item => { 
+      if (item.type === 'income') totalIncomeTWD += item.amount; 
+      else totalExpenseTWD += item.amount; 
+    });
+
+    // 根據主要貨幣反算金額
+    const currentRate = exchangeRates[mainCurrency] || 1;
+    const showExpense = Math.round(totalExpenseTWD / currentRate);
+    const showIncome = Math.round(totalIncomeTWD / currentRate);
+    const showBalance = showIncome - showExpense;
+
+    const symbol = currencySymbols[mainCurrency] || '$';
+
+    // 更新 UI
+    $('#monthExpenseTotal').textContent = symbol + ' ' + showExpense; 
+    $('#monthIncomeTotal').textContent = symbol + ' ' + showIncome; 
+    $('#monthBalanceTotal').textContent = symbol + ' ' + showBalance; 
+    $('#monthBalanceTotal').style.color = showBalance >= 0 ? 'var(--income-color)' : 'var(--expense-color)';
+
+    const listWrap = $('#ledgerList'); 
+    if (!monthItems.length) { listWrap.innerHTML = '<div class="empty">本月還沒有任何記帳紀錄。</div>'; return; }
+    
     const sorted = monthItems.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+    
     listWrap.innerHTML = sorted.map(function (item) {
       const isIncome = item.type === 'income'; 
       const sign = isIncome ? '+' : '-'; 
       const colorClass = isIncome ? 'income' : 'expense';
       
-      // 處理多幣別顯示
-      let amountDisplay = sign + '$' + item.amount;
-      if (item.currency && item.currency !== 'TWD' && item.originalAmount) {
-        amountDisplay = sign + item.currency + ' ' + item.originalAmount + ' <span style="font-size:12px;color:var(--fg-dim)">(約$' + item.amount + ')</span>';
+      let amountDisplay = '';
+      let extraNote = '';
+
+      // 如果這筆紀錄的幣別跟主要貨幣不同，就顯示原幣與換算
+      if (item.currency && item.currency !== mainCurrency && item.originalAmount) {
+        amountDisplay = sign + item.currency + ' ' + item.originalAmount;
+        const itemInTWD = item.amount;
+        const converted = Math.round(itemInTWD / currentRate);
+        extraNote = ` <span style="font-size:11px;color:var(--fg-dim)">(約 ${symbol}${converted})</span>`;
+      } else if (item.currency && item.currency === mainCurrency && item.originalAmount) {
+        amountDisplay = sign + symbol + ' ' + item.originalAmount;
+      } else {
+        amountDisplay = sign + symbol + ' ' + Math.round(item.amount / currentRate);
       }
 
-      return '<div class="ledger-item"><div class="ledger-date">' + item.date.slice(5) + '</div><div class="ledger-cat">' + escapeHtml(item.category) + '</div><div class="ledger-note">' + escapeHtml(item.note || '-') + '</div><div class="ledger-amount ' + colorClass + '">' + amountDisplay + '</div><button class="mini del ledger-del" data-id="' + item.id + '" title="刪除">×</button></div>';
+      return '<div class="ledger-item">' +
+        '<div class="ledger-date">' + item.date.slice(5) + '</div>' +
+        '<div class="ledger-cat">' + escapeHtml(item.category) + '</div>' +
+        '<div class="ledger-note">' + escapeHtml(item.note || '-') + '</div>' +
+        '<div class="ledger-amount ' + colorClass + '">' + amountDisplay + extraNote + '</div>' +
+        '<button class="mini del ledger-del" data-id="' + item.id + '" title="刪除">×</button>' +
+      '</div>';
     }).join('');
   }
-    $('#ledgerAddBtn').addEventListener('click', function () {
-    const type = $('#ledgerType').value; 
-    const originalAmount = parseFloat($('#ledgerAmount').value); 
-    const currency = $('#ledgerCurrency').value;
-    const category = $('#ledgerCategory').value; 
-    const date = $('#ledgerDate').value; 
-    const note = $('#ledgerNote').value.trim();
-    
-    if (!originalAmount || originalAmount <= 0) { toast('請輸入有效金額'); $('#ledgerAmount').focus(); return; }
-    if (!date) { toast('請選擇日期'); $('#ledgerDate').focus(); return; }
-
-    // 計算換算後的台幣金額（四捨五入到整數或小數第二位）
-    let rate = exchangeRates[currency] || 1;
-    let finalAmount = currency === 'TWD' ? originalAmount : Math.round(originalAmount * rate);
-
-    // 寫入紀錄（保留原幣與原金額供顯示）
-    ledger.push({ 
-      id: uid(), 
-      type: type, 
-      amount: finalAmount, 
-      originalAmount: originalAmount, 
-      currency: currency, 
-      category: category, 
-      date: date, 
-      note: note 
-    }); 
-    
-    save('ledger'); 
-    $('#ledgerAmount').value = ''; 
-    $('#ledgerNote').value = ''; 
-    renderLedger(); 
-    renderHome(); 
-    
-    if (currency !== 'TWD') {
-      toast(`已新增：${currency} ${originalAmount} (約 NT$ ${finalAmount})`);
-    } else {
-      toast('已新增紀錄');
-    }
-  });
-  $('#ledgerList').addEventListener('click', function (e) { const btn = e.target.closest('.ledger-del'); if (!btn) return; const id = btn.dataset.id; ledger = ledger.filter(function (x) { return x.id !== id; }); save('ledger'); renderLedger(); renderHome(); toast('已刪除紀錄'); });
 
   /* 11. 每週必做 */
   function tagById(id) { return todos.tags.find(function (t) { return t.id === id; }) || null; }
@@ -755,6 +771,16 @@
   $('#clearBg').addEventListener('click', function () { state.bg = null; applyTheme(); savePrefs(); toast('已移除背景圖片'); });
   $('#bgFileInput').addEventListener('change', function (e) { const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return; toast('正在處理背景圖片…'); compressImage(file, 1600, 0.8).then(function (data) { state.bg = data; applyTheme(); savePrefs(); toast('背景已套用'); }).catch(function () { toast('圖片處理失敗'); }); });
   $('#themeToggle').addEventListener('click', function () { state.lum = state.lum > 50 ? 15 : 85; applyTheme(); savePrefs(); toast(state.lum > 50 ? '已切換為淺色模式' : '已切換為深色模式'); });
+  
+  // 初始化主要貨幣選單
+  $('#mainCurrencySelect').value = mainCurrency;
+  $('#mainCurrencySelect').addEventListener('change', function () {
+    mainCurrency = this.value;
+    LS.set('mainCurrency', mainCurrency);
+    renderLedger();
+    renderHome();
+    toast('主要貨幣已切換為 ' + mainCurrency);
+  });
 
   const BACKUP_VERSION = 2;
   function exportData() {
@@ -813,6 +839,27 @@
 
   if (!STORAGE_OK) { setTimeout(function () { toast('⚠️ 瀏覽器儲存空間不可用，資料將不會保留'); }, 900); }
   loadPrefs(); applyTheme(); pruneEvents(); pruneDone();
-  migrateLegacyPhotos().then(loadCustomAudio).then(function () { renderTodos(); renderCalendar(); renderDiaries(); renderNotes(); renderPhotos(); renderLedger(); renderHome(); showView('home'); });
+
+  /* ═══════════════ Service Worker 更新提示 ═══════════════ */
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').then((reg) => {
+        // 檢查是否有新版本正在等待
+        reg.onupdatefound = () => {
+          const installingWorker = reg.installing;
+          installingWorker.onstatechange = () => {
+            if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // 發現新版本，跳出確認視窗
+              if (confirm('✨ 網站已更新！點擊「確定」載入最新版本。')) {
+                window.location.reload();
+              }
+            }
+          };
+        };
+      }).catch((err) => {
+        console.log('SW registration failed:', err);
+      });
+    });
+  }
 
 })();

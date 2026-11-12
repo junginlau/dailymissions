@@ -78,6 +78,19 @@
     </div>
     <input type="range" id="lumRange" min="0" max="100" step="1" value="55">
 
+    <div class="set-title" style="margin-top: 12px;">
+      <span>主要顯示貨幣</span>
+    </div>
+    <select id="mainCurrencySelect" style="width: 100%; margin-bottom: 16px;">
+      <option value="TWD">TWD (台幣)</option>
+      <option value="USD">USD (美元)</option>
+      <option value="JPY">JPY (日圓)</option>
+      <option value="HKD" selected>HKD (港幣)</option>
+      <option value="EUR">EUR (歐元)</option>
+      <option value="GBP">GBP (英鎊)</option>
+      <option value="CNY">CNY (人民幣)</option>
+    </select>
+
     <div class="set-actions">
       <button class="set-btn" id="pickBg">插入背景圖片</button>
       <button class="set-btn ghost" id="clearBg">移除背景</button>
@@ -308,11 +321,11 @@
         <div class="ledger-summary">
           <div class="summary-item">
             <span>本月支出</span>
-            <b style="color: var(--expense-color);">$<span id="monthExpenseTotal">0</span></b>
+            <b style="color: var(--expense-color);"><span id="monthExpenseTotal">0</span></b>
           </div>
           <div class="summary-item">
             <span>本月進帳</span>
-            <b style="color: var(--income-color);">$<span id="monthIncomeTotal">0</span></b>
+            <b style="color: var(--income-color);"><span id="monthIncomeTotal">0</span></b>
           </div>
           <div class="summary-item">
             <span>本月結餘</span>
@@ -668,14 +681,5 @@
 <input type="file" id="importFileInput" accept="application/json" hidden>
 
 <script src="script.js"></script>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch((err) => {
-        console.log('SW registration failed:', err);
-      });
-    });
-  }
-</script>
 </body>
 </html>

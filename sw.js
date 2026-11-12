@@ -1,4 +1,4 @@
-const CACHE_NAME = 'my-space-cache-v1.0.3';
+const CACHE_NAME = 'my-space-cache-v1.0.4-beta-a';
 
 const ASSETS = [
   './',
@@ -14,6 +14,7 @@ self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
+  // 讓新的 Service Worker 立刻進入等待接管狀態
   self.skipWaiting();
 });
 
@@ -27,6 +28,7 @@ self.addEventListener('activate', (e) => {
       );
     })
   );
+  // 接管所有頁面
   self.clients.claim();
 });
 
