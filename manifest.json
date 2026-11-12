@@ -1,6 +1,6 @@
 {
-  "name": "我的空間",
-  "short_name": "我的空間",
+  "name": "My Space",
+  "short_name": "My Space",
   "description": "一個極簡、高效且充滿個人風格的數位生活儀表板。",
   "start_url": "./index.html",
   "display": "standalone",
