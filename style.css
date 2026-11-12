@@ -2005,46 +2005,37 @@ main.app > .view.active {
   background: var(--hover);
 }
 
-/* ═══════════════ 平板與桌面版面強制修正 ═══════════════ */
+/* ═══════════════ iPad 與平板最終強制修正 ═══════════════ */
+@media (min-width: 769px) and (max-width: 1100px) {
+  
+  /* 1. 解除主容器的高度鎖定 */
+  .app {
+    height: auto !important;
+    min-height: 100vh !important;
+    padding-bottom: 40px !important;
+  }
 
-/* 1. 強制解除高度鎖定，讓內容自然往下長 */
-html, body, .app {
-  height: auto !important;
-  overflow: visible !important;
-}
-
-/* 2. 針對平板與縮小視窗，讓「每週必做」的卡片不要撐滿 */
-@media (min-width: 769px) {
+  /* 2. 讓「每週必做」的內容自然撐開，不要被強制拉長 */
   .today-layout {
-    display: flex !important;
     flex-direction: row !important;
     align-items: flex-start !important;
-    gap: 16px !important;
   }
   
   .today-card {
     flex: 1 1 auto !important;
-    min-height: 300px !important; /* 給個基本高度就好，不要撐滿 */
-    height: auto !important;
+    height: auto !important; /* 關鍵：不要讓它撐滿 */
+    min-height: 250px !important; /* 給個基本高度就好 */
   }
-  
-  .tomorrow-col {
-    flex: 0 0 200px !important;
-  }
-  
-  /* 讓 Footer 乖乖待在內容最下方 */
+
+  /* 3. 確保 Footer 乖乖待在內容下方，而不是黏在螢幕最底端 */
   .site-footer {
     margin-top: auto !important;
     padding-bottom: 30px !important;
   }
-}
 
-/* 3. 確保手機版依然是原本的上下排列，不受平板設定影響 */
-@media (max-width: 768px) {
-  .today-layout {
-    flex-direction: column !important;
-  }
-  .today-card {
-    min-height: auto !important;
+  /* 4. 確保頂部導覽列沒有被擠壓 */
+  .nav {
+    height: 64px !important;
+    padding-top: 0 !important;
   }
 }
