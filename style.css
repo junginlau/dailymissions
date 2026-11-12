@@ -2007,19 +2007,43 @@ main.app > .view.active {
 
 /* ═══════════════ iPad 平板專屬修正 ═══════════════ */
 @media (min-width: 769px) and (max-width: 1024px) {
-  /* 1. 確保底部導覽列不會貼著螢幕最底端，留出安全距離 */
-  .mobile-nav {
-    padding-bottom: max(env(safe-area-inset-bottom), 12px) !important;
-  }
-
-  /* 2. 確保主內容區塊底部有足夠的空間，不會被導覽列蓋住 */
-  .app {
-    padding-bottom: 100px !important; 
-  }
-
-  /* 3. 如果 iPad 直向或橫向切換時，讓主內容保持順暢 */
-  .view {
+  /* 1. 讓「每週必做」的今天卡片不要無限拉長 */
+  .today-layout {
     min-height: auto;
-    height: auto;
+    flex-direction: row;
+    gap: 16px;
+  }
+  .today-card {
+    flex: 1 1 auto;
+    min-height: 200px; /* 給一個基本高度，但不撐滿整個螢幕 */
+  }
+
+  /* 2. 確保主內容區塊（.app）不會強制撐滿 100vh，讓 Footer 自然貼底 */
+  .app {
+    height: auto !important;
+    min-height: 100vh;
+    padding-bottom: 20px;
+  }
+
+  /* 3. 確保 Footer 乖乖在最下面 */
+  .site-footer {
+    margin-top: auto !important;
+    padding-bottom: 20px !important;
+  }
+
+  /* 4. 頂部導覽列如果擠壓，讓它顯示「...」選單（隱藏橫向選單） */
+  .nav-links {
+    display: flex; /* 保持顯示，因為平板橫向夠寬 */
+    overflow-x: auto;
+  }
+}
+
+/* 針對更小的平板（例如直向） */
+@media (min-width: 769px) and (max-width: 900px) {
+  .nav-links {
+    display: none !important; /* 寬度不夠就隱藏橫向選單 */
+  }
+  .nav-more-wrap {
+    display: block !important; /* 顯示「...」按鈕 */
   }
 }
