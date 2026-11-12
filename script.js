@@ -1,9 +1,6 @@
 (function () {
   'use strict';
 
-  /* ═════════════════════════════════════════════════════════════
-   * 1. 工具與本地儲存 (Utils & LS)
-   * ═════════════════════════════════════════════════════════════ */
   const $  = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.prototype.slice.call(r.querySelectorAll(s));
 
@@ -27,7 +24,6 @@
     remove(k) { if (!STORAGE_OK) return; try { localStorage.removeItem(k); } catch (e) {} }
   };
 
-  /* 2. IndexedDB */
   const IDB = (function () {
     const DB_NAME = 'my_space_db'; const DB_VERSION = 1; const STORES = ['photos', 'audio']; let dbPromise = null;
     function open() {
@@ -102,7 +98,6 @@
     });
   }
 
-  /* 3. 主題與設定 */
   const root = document.documentElement; const bgLayer = $('#bgLayer'); const DEFAULT_LUM = 55; const state = { lum: DEFAULT_LUM, bg: null };
   function getCookie(name) { const m = document.cookie.match('(?:^|; )' + name + '=([^;]*)'); return m ? decodeURIComponent(m[1]) : null; }
   function setCookie(name, value) { try { document.cookie = name + '=' + encodeURIComponent(value) + '; path=/; max-age=31536000; SameSite=Lax'; return getCookie(name) !== null; } catch (e) { return false; } }
@@ -131,7 +126,6 @@
     $('#lumRange').value = state.lum; $('#lumVal').textContent = Math.round(state.lum);
   }
 
-  /* 4. 資料處理與遷移 */
   const WEEKDAYS = [{ key: 'mon', label: '星期一' }, { key: 'tue', label: '星期二' }, { key: 'wed', label: '星期三' }, { key: 'thu', label: '星期四' }, { key: 'fri', label: '星期五' }, { key: 'sat', label: '星期六' }, { key: 'sun', label: '星期日' }];
   const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
   function emptyTodoData() { return { tags: [], schedule: { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] }, done: {} }; }
@@ -150,7 +144,6 @@
   let goals = LS.get('goals', []);
   let bookmarks = LS.get('bookmarks', []);
   let countdowns = LS.get('countdowns', []);
-  
   let ledgerCategories = LS.get('ledgerCategories', ['飲食', '交通', '購物', '娛樂', '薪資', '投資', '其他']);
 
   let photoMeta = LS.get('photoMeta', null);
@@ -223,7 +216,6 @@
   function dayLabelOf(key) { const map = { mon: '星期一', tue: '星期二', wed: '星期三', thu: '星期四', fri: '星期五', sat: '星期六', sun: '星期日' }; return map[key] || key; }
   function pruneDone() { const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 60); const minKey = dateKey(cutoff); let changed = false; Object.keys(todos.done || {}).forEach(function (k) { if (k < minKey) { delete todos.done[k]; changed = true; } }); if (changed) save('todos'); }
 
-  /* 5. 視圖切換與導覽列 */
   const views = $$('.view'); const navBtns = $$('.nav-btn'); const mobileNavBtns = $$('.mobile-nav-btn'); const mobileMoreMenu = $('#mobileMoreMenu');
   let currentView = 'home';
 
@@ -266,7 +258,6 @@
   $('#logoBtn').addEventListener('click', function () { showView('home'); closeSettings(); });
   $$('[data-go]').forEach(function (el) { el.addEventListener('click', function () { showView(el.dataset.go); }); });
 
-  /* 6. 搜尋與快捷鍵 */
   function doSearch(raw) {
     const q = String(raw || '').trim(); if (!q) return;
     if (/^https?:\/\//i.test(q)) { window.open(q, '_blank', 'noopener'); return; }
@@ -285,7 +276,6 @@
     else if (e.key === 'Escape') { closeSettings(); $('#pomoPanel').classList.remove('open'); $$('.modal.open').forEach(function (m) { closeModal('#' + m.id); }); if ($('#lightbox').classList.contains('open')) closeLightbox(); }
   });
 
-  /* 7. 首頁 Widgets */
   const copyrightEl = document.getElementById('copyrightYear');
   if (copyrightEl) copyrightEl.textContent = new Date().getFullYear();
 
@@ -396,7 +386,6 @@
     renderCountdowns(); renderGoals(); renderBookmarks();
   }
 
-  /* 8. 目標 */
   function renderGoals() {
     const wrap = $('#goalList'); const badge = $('#goalBadge');
     if (!goals.length) { wrap.innerHTML = '<div class="empty small">還沒有目標，點右上角「新增目標」開始吧。</div>'; badge.textContent = '0 / 0'; return; }
@@ -436,7 +425,6 @@
   });
   $('#goalDelete').addEventListener('click', function () { if (!editingGoalId) return; goals = goals.filter(function (x) { return x.id !== editingGoalId; }); save('goals'); renderGoals(); closeModal('#goalModal'); toast('已刪除目標'); });
 
-  /* 9. 書籤 */
   let editingBmId = null;
   function faviconUrl(url) { return 'https://www.google.com/s2/favicons?sz=64&domain_url=' + encodeURIComponent(url); }
   function renderBookmarks() {
@@ -497,15 +485,32 @@
     wrap.innerHTML = ledgerCategories.map(function(cat) { return '<button class="tag-chip-ledger" type="button" data-cat="' + escapeHtml(cat) + '">' + escapeHtml(cat) + '</button>'; }).join('');
   }
 
-  $('#ledgerTags').addEventListener('click', function(e) {
+  const ledgerTagsWrap = $('#ledgerTags');
+  const ledgerCategoryInp = $('#ledgerCategory');
+  
+  // 點擊輸入框顯示選單
+  ledgerCategoryInp.addEventListener('focus', function() {
+    renderLedgerTags();
+    ledgerTagsWrap.classList.add('open');
+  });
+
+  // 點擊標籤填入輸入框並收起選單
+  ledgerTagsWrap.addEventListener('click', function(e) {
     const btn = e.target.closest('.tag-chip-ledger'); if (!btn) return;
-    $('#ledgerCategory').value = btn.dataset.cat;
+    ledgerCategoryInp.value = btn.dataset.cat;
+    ledgerTagsWrap.classList.remove('open');
+  });
+
+  // 點擊外部收起選單
+  document.addEventListener('click', function(e) {
+    if (ledgerTagsWrap.classList.contains('open') && !ledgerCategoryInp.contains(e.target) && !ledgerTagsWrap.contains(e.target)) {
+      ledgerTagsWrap.classList.remove('open');
+    }
   });
 
   function renderLedger() {
     if (!$('#ledgerDate').value) $('#ledgerDate').value = todayKey();
     $('#ledgerDate').max = todayKey();
-    renderLedgerTags();
 
     const now = new Date(); const thisMonth = now.getFullYear() + '-' + pad(now.getMonth() + 1); const monthItems = ledger.filter(item => item.date.startsWith(thisMonth));
     let totalExpenseTWD = 0; let totalIncomeTWD = 0;
@@ -546,7 +551,6 @@
         if (!date) { toast('請選擇日期'); return; }
         if (date > todayKey()) { toast('不能選擇未來日期'); $('#ledgerDate').value = todayKey(); return; }
         
-        // 儲存自訂標籤
         if (!ledgerCategories.includes(category)) {
           ledgerCategories.push(category);
           save('ledgerCategories');
@@ -569,7 +573,6 @@
     }
   })();
 
-  /* 11. 每週必做 */
   function tagById(id) { return todos.tags.find(function (t) { return t.id === id; }) || null; }
   function tagsForDay(dayKey) { return (todos.schedule[dayKey] || []).map(tagById).filter(Boolean); }
   function renderTodos() {
@@ -633,7 +636,6 @@
   $('#todoCancelBtn').addEventListener('click', function () { todoDraft = JSON.parse(JSON.stringify(todos)); renderTagPool(); renderSchedule(); checkTodoChanged(); toast('已撤銷變更'); });
   $('#todoSettingsBtn').addEventListener('click', openTodoSettings);
 
-  /* 12. 日曆 */
   const TIMEZONE = (function () { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || '本地時區'; } catch (e) { return '本地時區'; } })();
   let calCursor = new Date(); calCursor.setDate(1);
   function monthIndex(y, m) { return y * 12 + m; }
@@ -692,7 +694,6 @@
     Object.keys(events).forEach(function (k) { if (k < minKey || k > maxKey) { delete events[k]; changed = true; } }); if (changed) save('events');
   }
 
-  /* 13. 日記 (支援編輯與照片) */
   let diaryFilterDate = '';
   let editingDiaryId = null;
   let diaryImageData = null;
@@ -805,7 +806,6 @@
   });
   $('#diaryClearFilter').addEventListener('click', function () { diaryFilterDate = ''; $('#diaryDatePickerBtn').textContent = '全部日記（點擊選擇日期）'; $('#diaryClearFilter').hidden = true; renderDiaries(); });
 
-  /* 14. 筆記本 */
   function renderNotes() {
     const grid = $('#notesGrid'); if (!notes.length) { grid.innerHTML = ''; return; }
     grid.innerHTML = notes.map(function (n) { const excerpt = (n.content || '').replace(/\s+/g, ' ').slice(0, 70); return '<button class="card note" data-id="' + n.id + '">' + (n.image ? '<div class="note-thumb" style="background-image:url(\'' + n.image + '\')"></div>' : '') + '<div class="note-h">' + escapeHtml(n.title || '無標題') + '</div><div class="note-b">' + escapeHtml(excerpt) + '</div><div class="note-d">' + escapeHtml(n.date || '') + '</div></button>'; }).join('');
@@ -834,7 +834,6 @@
   });
   $('#noteDelete').addEventListener('click', function () { if (!editingNoteId) return; notes = notes.filter(function (x) { return x.id !== editingNoteId; }); save('notes'); renderNotes(); closeModal('#noteModal'); toast('已刪除筆記'); });
 
-  /* 15. 照片庫 */
   const photoCache = {};
   function loadPhotoSrc(id) {
     if (photoCache[id]) return Promise.resolve(photoCache[id]);
@@ -867,8 +866,8 @@
   $('#lightboxCaption').addEventListener('input', function () { if (!lightboxId) return; const meta = photoMeta.find(function (x) { return x.id === lightboxId; }); if (meta) { meta.title = $('#lightboxCaption').value; save('photoMeta'); } });
   $('#lightboxDel').addEventListener('click', function () { if (!lightboxId) return; const id = lightboxId; photoMeta = photoMeta.filter(function (x) { return x.id !== id; }); delete photoCache[id]; save('photoMeta'); if (IDB.available()) IDB.del('photos', id).catch(function () {}); renderPhotos(); closeLightbox(); toast('已刪除照片'); });
 
-  /* 16. 番茄鐘 (全新邏輯) */
-  let pomoState = 'idle'; // idle | running | paused
+  /* 16. 番茄鐘 (優化儲存) */
+  let pomoState = 'idle'; 
   let pomoRemaining = 0;
   let pomoTotalSet = 25 * 60;
   let pomoInterval = null;
@@ -911,11 +910,7 @@
     if (pomoState === 'idle') {
       pomoBtnLeft.textContent = '開始';
       pomoBtnLeft.className = 'pomo-btn start';
-      if (pomoRemaining === 0) {
-        pomoBtnLeft.disabled = true;
-      } else {
-        pomoBtnLeft.disabled = false;
-      }
+      pomoBtnLeft.disabled = pomoRemaining === 0;
       
       pomoBtnRight.textContent = '重置';
       pomoBtnRight.className = 'pomo-btn stop';
@@ -945,17 +940,12 @@
     return total;
   }
 
-  function applyInputSecs(total) {
-    const h = Math.floor(total / 3600);
-    const m = Math.floor((total % 3600) / 60);
-    const s = total % 60;
-    $('#pomoInpH').value = pad(h);
-    $('#pomoInpM').value = pad(m);
-    $('#pomoInpS').value = pad(s);
-    pomoRemaining = total;
+  // 只在關閉編輯器時儲存
+  function savePomoSettings() {
+    const total = getInputSecs();
     pomoTotalSet = total;
+    pomoRemaining = total;
     LS.set('pomoDuration', total);
-    pomoTimeDisplay.textContent = formatPomoTime(total);
     updatePomoUI();
   }
 
@@ -974,7 +964,8 @@
   });
 
   $$('.pomo-arrow').forEach(function(el) {
-    el.addEventListener('click', function() {
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
       const unit = this.dataset.unit;
       const act = this.dataset.act;
       const inp = unit === 'h' ? $('#pomoInpH') : (unit === 'm' ? $('#pomoInpM') : $('#pomoInpS'));
@@ -982,16 +973,21 @@
       if (act === 'up') { val = Math.min(99, val + 1); } 
       else { val = Math.max(0, val - 1); }
       inp.value = pad(val);
-      applyInputSecs(getInputSecs());
+      
+      // 即時更新畫面上顯示的時間，但不存檔
+      const tempTotal = getInputSecs();
+      pomoTimeDisplay.textContent = formatPomoTime(tempTotal);
     });
   });
 
-  $('#pomoInpH').addEventListener('change', function() { this.value = pad(Math.min(99, Math.max(0, parseInt(this.value,10)||0))); applyInputSecs(getInputSecs()); });
-  $('#pomoInpM').addEventListener('change', function() { this.value = pad(Math.min(99, Math.max(0, parseInt(this.value,10)||0))); applyInputSecs(getInputSecs()); });
-  $('#pomoInpS').addEventListener('change', function() { this.value = pad(Math.min(99, Math.max(0, parseInt(this.value,10)||0))); applyInputSecs(getInputSecs()); });
+  $('#pomoInpH').addEventListener('change', function() { this.value = pad(Math.min(99, Math.max(0, parseInt(this.value,10)||0))); pomoTimeDisplay.textContent = formatPomoTime(getInputSecs()); });
+  $('#pomoInpM').addEventListener('change', function() { this.value = pad(Math.min(99, Math.max(0, parseInt(this.value,10)||0))); pomoTimeDisplay.textContent = formatPomoTime(getInputSecs()); });
+  $('#pomoInpS').addEventListener('change', function() { this.value = pad(Math.min(99, Math.max(0, parseInt(this.value,10)||0))); pomoTimeDisplay.textContent = formatPomoTime(getInputSecs()); });
 
-  pomoEditor.addEventListener('click', function(e) {
-    if (e.target === pomoEditor) {
+  // 點擊編輯器外部或按 Enter 關閉並儲存
+  document.addEventListener('click', function(e) {
+    if (pomoEditor.classList.contains('active') && !pomoEditor.contains(e.target) && !pomoTimeDisplay.contains(e.target)) {
+      savePomoSettings();
       pomoEditor.classList.remove('active');
       pomoTimeDisplay.style.display = 'flex';
     }
@@ -1017,6 +1013,12 @@
 
   pomoBtnLeft.addEventListener('click', function() {
     initAudio();
+    if (pomoEditor.classList.contains('active')) {
+      savePomoSettings();
+      pomoEditor.classList.remove('active');
+      pomoTimeDisplay.style.display = 'flex';
+    }
+    
     if (pomoState === 'idle') {
       if (pomoRemaining <= 0) return;
       startPomoTimer();
@@ -1031,10 +1033,18 @@
 
   pomoBtnRight.addEventListener('click', function() {
     clearInterval(pomoInterval);
+    if (pomoEditor.classList.contains('active')) {
+      savePomoSettings();
+      pomoEditor.classList.remove('active');
+      pomoTimeDisplay.style.display = 'flex';
+    }
+    
     if (pomoState === 'idle') {
       // 重置為 00:00:00
       pomoTotalSet = 0;
-      applyInputSecs(0);
+      pomoRemaining = 0;
+      LS.set('pomoDuration', 0);
+      updatePomoUI();
     } else {
       // 停止：回到設定的時間
       pomoState = 'idle';
@@ -1046,8 +1056,9 @@
   const savedDur = LS.get('pomoDuration', null);
   if (savedDur !== null && savedDur >= 0) {
     pomoTotalSet = savedDur;
+    pomoRemaining = savedDur;
   }
-  applyInputSecs(pomoTotalSet);
+  updatePomoUI();
 
   function updateSoundUI() { $$('input[name="soundType"]').forEach(function (r) { r.checked = (r.value === soundType); }); $('#soundFileName').textContent = customAudioData ? '已載入自訂音效' : '尚未選擇檔案'; }
   $('#pomoSoundBtn').addEventListener('click', function () { updateSoundUI(); openModal('#soundModal'); });
@@ -1061,11 +1072,10 @@
   });
   function updateVolumeUI() { $('#pomoVolume').value = pomoVolume; $('#pomoVolumeVal').textContent = pomoVolume; }
   $('#pomoVolume').addEventListener('input', function () { pomoVolume = parseInt(this.value, 10); $('#pomoVolumeVal').textContent = pomoVolume; LS.set('pomoVolume', pomoVolume); });
-  updateVolumeUI(); updatePomoUI();
+  updateVolumeUI();
 
   $('#pomoFab').addEventListener('click', function () { $('#pomoPanel').classList.toggle('open'); });
 
-  /* 17. 設定、備份與初始化 */
   const settings = $('#settings'); const gearBtn = $('#gearBtn');
   function openSettings() { settings.classList.add('open'); gearBtn.classList.add('open'); }
   function closeSettings() { settings.classList.remove('open'); gearBtn.classList.remove('open'); }

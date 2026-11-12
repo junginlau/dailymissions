@@ -14,7 +14,6 @@
 </head>
 <body>
 
-<!-- ══════════ 更新橫幅 ══════════ -->
 <div class="update-banner" id="updateBanner" hidden>
   <span class="update-banner-text">✨ 有新版本可用</span>
   <div class="update-banner-actions">
@@ -26,7 +25,6 @@
 
 <div class="bg-layer" id="bgLayer"></div>
 
-<!-- ══════════ 頂部導覽列 ══════════ -->
 <header class="nav">
   <div class="nav-left">
     <button class="logo-btn" id="logoBtn" aria-label="回到首頁" title="回到首頁">
@@ -83,7 +81,6 @@
   <div class="settings" id="settings">
     <div class="set-title"><span>背景亮度</span><span id="lumVal">55</span></div>
     <input type="range" id="lumRange" min="0" max="100" step="1" value="55">
-
     <div class="set-title" style="margin-top: 12px;"><span>主要顯示貨幣</span></div>
     <select id="mainCurrencySelect" style="width: 100%; margin-bottom: 16px;">
       <option value="TWD">TWD (台幣)</option>
@@ -94,14 +91,11 @@
       <option value="GBP">GBP (英鎊)</option>
       <option value="CNY">CNY (人民幣)</option>
     </select>
-
     <div class="set-actions">
       <button class="set-btn" id="pickBg">插入背景圖片</button>
       <button class="set-btn ghost" id="clearBg">移除背景</button>
     </div>
-    <div class="set-actions">
-      <button class="set-btn" id="themeToggle">切換深/淺色</button>
-    </div>
+    <div class="set-actions"><button class="set-btn" id="themeToggle">切換深/淺色</button></div>
     <div class="set-actions">
       <button class="set-btn" id="exportBtn">匯出備份</button>
       <button class="set-btn ghost" id="importBtn">匯入備份</button>
@@ -296,10 +290,12 @@
             </select>
           </div>
           <input type="text" id="ledgerAmount" placeholder="輸入金額..." inputmode="decimal" style="font-size:20px;font-weight:600;">
-          <div class="row" style="flex-direction: column; align-items: stretch; gap: 8px;">
-            <input type="text" id="ledgerCategory" placeholder="輸入性質（如：飲食）" maxlength="20">
-            <div id="ledgerTags" class="tag-chips"></div>
+          
+          <div class="dropdown-wrap">
+            <input type="text" id="ledgerCategory" class="ledger-input-sm" placeholder="輸入性質（如：飲食）" maxlength="20" autocomplete="off">
+            <div class="dropdown-menu" id="ledgerTags"></div>
           </div>
+
           <div class="row">
             <input type="date" id="ledgerDate">
           </div>
@@ -374,7 +370,6 @@
   </footer>
 </main>
 
-<!-- 手機版底部導覽列 -->
 <nav class="mobile-nav" id="mobileNav">
   <button class="mobile-nav-btn active" data-view="home">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>首頁</span>
@@ -400,7 +395,6 @@
   <button data-view="about">關於本站</button>
 </div>
 
-<!-- 番茄鐘懸浮窗 -->
 <button class="pomo-fab" id="pomoFab" title="番茄鐘">🍅</button>
 <div class="pomo-panel" id="pomoPanel">
   <div class="pomo-time-display" id="pomoTimeDisplay">00:00:00</div>
@@ -442,7 +436,6 @@
   <button class="btn ghost" id="pomoSoundBtn" style="width: 100%; font-size: 12px; padding: 6px; margin-top: 4px;">🔔 設定鈴聲</button>
 </div>
 
-<!-- 鈴聲設定彈窗 -->
 <div class="modal" id="soundModal">
   <div class="modal-card narrow">
     <div class="modal-head">
@@ -468,7 +461,6 @@
   </div>
 </div>
 
-<!-- 彈窗區 -->
 <div class="modal" id="goalConfirmModal">
   <div class="modal-card narrow">
     <span class="goal-confirm-icon">🤔</span>
@@ -639,7 +631,6 @@
   </div>
 </div>
 
-<!-- 通用確認彈窗 -->
 <div class="modal" id="confirmModal">
   <div class="modal-card narrow">
     <div class="modal-head">
