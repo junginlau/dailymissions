@@ -2,27 +2,8 @@
   'use strict';
 
   /* ═════════════════════════════════════════════════════════════
-   * 目錄
    * 1. 工具與本地儲存 (Utils & LS)
-   * 2. IndexedDB 封裝
-   * 3. 主題與設定面板
-   * 4. 資料處理與遷移
-   * 5. 視圖切換與導覽列
-   * 6. 搜尋欄與快捷鍵
-   * 7. 首頁 Widgets
-   * 8. 目標管理
-   * 9. 書籤管理
-   * 10. 記帳功能
-   * 11. 每週必做
-   * 12. 日曆
-   * 13. 日記
-   * 14. 筆記本
-   * 15. 照片庫
-   * 16. 番茄鐘
-   * 17. 備份與初始化
    * ═════════════════════════════════════════════════════════════ */
-
-  /* 1. 工具與本地儲存 */
   const $  = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.prototype.slice.call(r.querySelectorAll(s));
 
@@ -95,7 +76,6 @@
   function openModal(sel) { const m = $(sel); if (!m) return; m.classList.add('open'); document.body.classList.add('lock'); }
   function closeModal(sel) { const m = $(sel); if (m) m.classList.remove('open'); if (!document.querySelector('.modal.open, .lightbox.open')) document.body.classList.remove('lock'); }
 
-  // 自訂確認彈窗（回傳 Promise<boolean>，內建防重複機制）
   let confirmActive = false;
   function customConfirm(title, message, okText, cancelText, danger) {
     return new Promise(function (resolve) {
@@ -105,33 +85,18 @@
       confirmActive = true;
       $('#confirmTitle').textContent = title || '確定嗎？';
       $('#confirmSub').textContent = message || '';
-      const okBtn = $('#confirmOk');
-      const cancelBtn = $('#confirmCancel');
-      okBtn.textContent = okText || '確定';
-      cancelBtn.textContent = cancelText || '取消';
-      if (danger) {
-        okBtn.style.background = '#e5484d';
-        okBtn.style.borderColor = 'transparent';
-        okBtn.style.color = '#fff';
-      } else {
-        okBtn.style.background = '';
-        okBtn.style.borderColor = '';
-        okBtn.style.color = '';
-      }
+      const okBtn = $('#confirmOk'); const cancelBtn = $('#confirmCancel');
+      okBtn.textContent = okText || '確定'; cancelBtn.textContent = cancelText || '取消';
+      if (danger) { okBtn.style.background = '#e5484d'; okBtn.style.borderColor = 'transparent'; okBtn.style.color = '#fff'; } else { okBtn.style.background = ''; okBtn.style.borderColor = ''; okBtn.style.color = ''; }
       const closeTargets = modal.querySelectorAll('.x-btn, [data-close="#confirmModal"]');
       function cleanup() {
-        confirmActive = false;
-        okBtn.removeEventListener('click', onOk);
-        cancelBtn.removeEventListener('click', onCancel);
-        modal.removeEventListener('click', onBackdrop);
+        confirmActive = false; okBtn.removeEventListener('click', onOk); cancelBtn.removeEventListener('click', onCancel); modal.removeEventListener('click', onBackdrop);
         closeTargets.forEach(function (b) { b.removeEventListener('click', onCancel); });
       }
       function onOk() { cleanup(); closeModal('#confirmModal'); resolve(true); }
       function onCancel() { cleanup(); closeModal('#confirmModal'); resolve(false); }
       function onBackdrop(e) { if (e.target === modal) onCancel(); }
-      okBtn.addEventListener('click', onOk);
-      cancelBtn.addEventListener('click', onCancel);
-      modal.addEventListener('click', onBackdrop);
+      okBtn.addEventListener('click', onOk); cancelBtn.addEventListener('click', onCancel); modal.addEventListener('click', onBackdrop);
       closeTargets.forEach(function (b) { b.addEventListener('click', onCancel); });
       openModal('#confirmModal');
     });
@@ -192,12 +157,10 @@
   if (!photoMeta && Array.isArray(legacyPhotos) && legacyPhotos.length) { needsLegacyPhotoMigration = true; photoMeta = legacyPhotos.map(function (p) { return { id: p.id, title: p.title || '' }; }); }
   if (!Array.isArray(photoMeta)) photoMeta = [];
 
-  // 匯率快取（以 TWD 為基準，預設值防止 API 失敗）
   const DEFAULT_RATES = { TWD: 1, USD: 32, JPY: 0.22, HKD: 4.1, EUR: 35, GBP: 41, CNY: 4.4 };
   let exchangeRates = Object.assign({}, DEFAULT_RATES);
   let exchangeRatesUpdatedAt = 0;
   const RATE_MIN_INTERVAL = 60 * 60 * 1000;
-
   (function loadCachedRates() {
     const cached = LS.get('exchangeRates', null);
     if (cached && cached.rates && cached.updatedAt) {
@@ -210,42 +173,25 @@
   const currencySymbols = { TWD: 'NT$', USD: '$', JPY: '¥', HKD: 'HK$', EUR: '€', GBP: '£', CNY: '¥' };
 
   function renderRateFreshness() {
-    const el = $('#rateFreshness');
-    if (!el) return;
-    if (!exchangeRatesUpdatedAt) {
-      el.textContent = '匯率：使用預設值（尚未取得即時匯率）';
-      return;
-    }
+    const el = $('#rateFreshness'); if (!el) return;
+    if (!exchangeRatesUpdatedAt) { el.textContent = '匯率：使用預設值（尚未取得即時匯率）'; return; }
     el.textContent = '匯率最後更新：' + fmtDateTime(new Date(exchangeRatesUpdatedAt)) + '（以 TWD 為基準）';
   }
 
   function fetchExchangeRates() {
     const now = Date.now();
-    if (exchangeRatesUpdatedAt && (now - exchangeRatesUpdatedAt) < RATE_MIN_INTERVAL) {
-      console.log('匯率快取仍新鮮，略過 API 請求');
-      renderRateFreshness();
-      return;
-    }
+    if (exchangeRatesUpdatedAt && (now - exchangeRatesUpdatedAt) < RATE_MIN_INTERVAL) { renderRateFreshness(); return; }
     fetch('https://open.er-api.com/v6/latest/TWD')
       .then(res => res.json())
       .then(data => {
         if (data && data.rates) {
           const newRates = Object.assign({}, DEFAULT_RATES);
-          ['USD', 'JPY', 'HKD', 'EUR', 'GBP', 'CNY'].forEach(function (cur) {
-            if (data.rates[cur]) newRates[cur] = 1 / data.rates[cur];
-          });
-          exchangeRates = newRates;
-          exchangeRatesUpdatedAt = Date.now();
+          ['USD', 'JPY', 'HKD', 'EUR', 'GBP', 'CNY'].forEach(function (cur) { if (data.rates[cur]) newRates[cur] = 1 / data.rates[cur]; });
+          exchangeRates = newRates; exchangeRatesUpdatedAt = Date.now();
           LS.set('exchangeRates', { rates: newRates, updatedAt: exchangeRatesUpdatedAt });
-          console.log('匯率更新成功', exchangeRates);
-          renderRateFreshness();
-          renderLedger();
-          renderHome();
+          renderRateFreshness(); renderLedger(); renderHome();
         }
-      }).catch(() => {
-        console.log('匯率更新失敗，沿用快取或預設值');
-        renderRateFreshness();
-      });
+      }).catch(() => { renderRateFreshness(); });
   }
   fetchExchangeRates();
 
@@ -337,11 +283,9 @@
     else if (e.key === 'Escape') { closeSettings(); $('#pomoPanel').classList.remove('open'); $$('.modal.open').forEach(function (m) { closeModal('#' + m.id); }); if ($('#lightbox').classList.contains('open')) closeLightbox(); }
   });
 
-   /* 7. 首頁 Widgets */
+  /* 7. 首頁 Widgets */
   const copyrightEl = document.getElementById('copyrightYear');
-  if (copyrightEl) {
-    copyrightEl.textContent = new Date().getFullYear();
-  }
+  if (copyrightEl) copyrightEl.textContent = new Date().getFullYear();
 
   function updateClock() { const now = new Date(); let timeStr = pad(now.getHours()) + ':' + pad(now.getMinutes()); if (window.innerWidth > 768) timeStr += ':' + pad(now.getSeconds()); const days = ['日', '一', '二', '三', '四', '五', '六']; const dateStr = now.getFullYear() + ' 年 ' + (now.getMonth() + 1) + ' 月 ' + now.getDate() + ' 日 · 星期' + days[now.getDay()]; $('#clockTime').textContent = timeStr; $('#clockDate').textContent = dateStr; }
   setInterval(updateClock, 1000); updateClock(); window.addEventListener('resize', updateClock);
@@ -363,14 +307,11 @@
   $('#quoteText').textContent = QUOTES[Math.floor(Math.random() * QUOTES.length)];
 
   let cdInterval = null; let cdIndex = 0; let cdListData = [];
-  // [NEW] 合併 events 與 countdowns
   function collectUpcomingEvents() {
     const today = new Date(); today.setHours(0, 0, 0, 0); const list = [];
     Object.keys(events).forEach(function (k) {
       const target = new Date(k); target.setHours(0, 0, 0, 0); if (target < today) return;
-      (events[k] || []).forEach(function (ev) {
-        list.push({ kind: 'event', id: ev.id, date: k, time: ev.time || '', title: ev.title });
-      });
+      (events[k] || []).forEach(function (ev) { list.push({ kind: 'event', id: ev.id, date: k, time: ev.time || '', title: ev.title }); });
     });
     (countdowns || []).forEach(function (cd) {
       if (!cd || !cd.date) return;
@@ -384,7 +325,6 @@
     const list = $('#countdownList'); if (cdInterval) { clearInterval(cdInterval); cdInterval = null; }
     cdListData = collectUpcomingEvents(); if (!cdListData.length) { list.innerHTML = '<div class="empty small" style="padding:6px 0;">近期沒有要事。</div>'; return; }
     const today = new Date(); today.setHours(0, 0, 0, 0);
-    // [NEW] 倒數日顯示刪除按鈕
     function buildItem(cd) {
       const target = new Date(cd.date); target.setHours(0, 0, 0, 0); const diff = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
       let text = diff === 0 ? '就是今天！' : '還有 ' + diff + ' 天'; const urgentClass = (diff >= 0 && diff <= 3) ? ' urgent' : '';
@@ -404,47 +344,28 @@
     }, 4000);
   }
 
-  // [NEW] 倒數日：新增、刪除事件
   (function bindCountdownHandlers() {
-    const addBtn = $('#cdAddBtn');
-    const saveBtn = $('#cdSave');
-    const listEl = $('#countdownList');
+    const addBtn = $('#cdAddBtn'); const saveBtn = $('#cdSave'); const listEl = $('#countdownList');
     if (addBtn && !addBtn.dataset.bound) {
       addBtn.dataset.bound = '1';
-      addBtn.addEventListener('click', function () {
-        $('#cdTitle').value = '';
-        $('#cdDate').value = '';
-        openModal('#cdModal');
-        setTimeout(function () { $('#cdTitle').focus(); }, 80);
-      });
+      addBtn.addEventListener('click', function () { $('#cdTitle').value = ''; $('#cdDate').value = ''; openModal('#cdModal'); setTimeout(function () { $('#cdTitle').focus(); }, 80); });
     }
     if (saveBtn && !saveBtn.dataset.bound) {
       saveBtn.dataset.bound = '1';
       saveBtn.addEventListener('click', function () {
-        const title = $('#cdTitle').value.trim();
-        const date = $('#cdDate').value;
+        const title = $('#cdTitle').value.trim(); const date = $('#cdDate').value;
         if (!title) { toast('請填寫事件名稱'); $('#cdTitle').focus(); return; }
         if (!date) { toast('請選擇日期'); $('#cdDate').focus(); return; }
-        countdowns.push({ id: uid(), title: title, date: date });
-        save('countdowns');
-        closeModal('#cdModal');
-        renderCountdowns();
-        toast('已新增倒數日');
+        countdowns.push({ id: uid(), title: title, date: date }); save('countdowns'); closeModal('#cdModal'); renderCountdowns(); toast('已新增倒數日');
       });
     }
     if (listEl && !listEl.dataset.bound) {
       listEl.dataset.bound = '1';
       listEl.addEventListener('click', function (e) {
-        const btn = e.target.closest('.cd-del');
-        if (!btn) return;
-        const id = btn.dataset.cdId;
-        if (!id) return;
+        const btn = e.target.closest('.cd-del'); if (!btn) return; const id = btn.dataset.cdId; if (!id) return;
         customConfirm('確定要刪除這個倒數日嗎？', '刪除後無法復原。', '刪除', '取消', true).then(function (ok) {
           if (!ok) return;
-          countdowns = countdowns.filter(function (c) { return c.id !== id; });
-          save('countdowns');
-          renderCountdowns();
-          toast('已刪除倒數日');
+          countdowns = countdowns.filter(function (c) { return c.id !== id; }); save('countdowns'); renderCountdowns(); toast('已刪除倒數日');
         });
       });
     }
@@ -452,12 +373,9 @@
 
   function countTodayTags() { const tk = dayKeyOf(new Date()); return (todos.schedule[tk] || []).length; }
   function countUpcoming(days) { const now = new Date(); let n = 0; for (let i = 0; i < days; i++) { const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i); const list = events[dateKey(d)]; if (list) n += list.length; } return n; }
-    function getTodayExpense() {
-    const tk = todayKey();
-    let totalTWD = 0;
-    ledger.forEach(item => {
-      if (item.date === tk && item.type === 'expense') totalTWD += item.amount; // amount 是台幣
-    });
+  function getTodayExpense() {
+    const tk = todayKey(); let totalTWD = 0;
+    ledger.forEach(item => { if (item.date === tk && item.type === 'expense') totalTWD += item.amount; });
     const rate = exchangeRates[mainCurrency] || 1;
     return Math.round(totalTWD / rate);
   }
@@ -472,7 +390,7 @@
         document.getElementById('welcomeCloseBtn').addEventListener('click', () => { LS.set('onboarded', true); card.remove(); });
       }
     }
-    $('#statTodo').textContent = countTodayTags(); $('#statEvent').textContent = countUpcoming(7); $('#statDiary').textContent = diaries.length;     $('#statExpense').textContent = currencySymbols[mainCurrency] + ' ' + getTodayExpense();
+    $('#statTodo').textContent = countTodayTags(); $('#statEvent').textContent = countUpcoming(7); $('#statDiary').textContent = diaries.length; $('#statExpense').textContent = currencySymbols[mainCurrency] + ' ' + getTodayExpense();
     renderCountdowns(); renderGoals(); renderBookmarks();
   }
 
@@ -571,124 +489,58 @@
   $('#bmDelete').addEventListener('click', function () { if (!editingBmId) return; bookmarks = bookmarks.filter(function (x) { return x.id !== editingBmId; }); save('bookmarks'); renderBookmarks(); closeModal('#bmModal'); toast('已刪除書籤'); });
 
   /* 10. 記帳 */
-    function renderLedger() {
+  function renderLedger() {
     if (!$('#ledgerDate').value) $('#ledgerDate').value = todayKey();
     $('#ledgerDate').max = todayKey();
-    
-    const now = new Date(); 
-    const thisMonth = now.getFullYear() + '-' + pad(now.getMonth() + 1); 
-    const monthItems = ledger.filter(item => item.date.startsWith(thisMonth));
-    
-    let totalExpenseTWD = 0; 
-    let totalIncomeTWD = 0; 
-    monthItems.forEach(item => { 
-      if (item.type === 'income') totalIncomeTWD += item.amount; 
-      else totalExpenseTWD += item.amount; 
-    });
-
+    const now = new Date(); const thisMonth = now.getFullYear() + '-' + pad(now.getMonth() + 1); const monthItems = ledger.filter(item => item.date.startsWith(thisMonth));
+    let totalExpenseTWD = 0; let totalIncomeTWD = 0;
+    monthItems.forEach(item => { if (item.type === 'income') totalIncomeTWD += item.amount; else totalExpenseTWD += item.amount; });
     const currentRate = exchangeRates[mainCurrency] || 1;
-    const showExpense = Math.round(totalExpenseTWD / currentRate);
-    const showIncome = Math.round(totalIncomeTWD / currentRate);
-    const showBalance = showIncome - showExpense;
-
+    const showExpense = Math.round(totalExpenseTWD / currentRate); const showIncome = Math.round(totalIncomeTWD / currentRate); const showBalance = showIncome - showExpense;
     const symbol = currencySymbols[mainCurrency] || '$';
-
-    $('#monthExpenseTotal').textContent = symbol + ' ' + showExpense; 
-    $('#monthIncomeTotal').textContent = symbol + ' ' + showIncome; 
-    $('#monthBalanceTotal').textContent = symbol + ' ' + showBalance; 
-    $('#monthBalanceTotal').style.color = showBalance >= 0 ? 'var(--income-color)' : 'var(--expense-color)';
-
-    const listWrap = $('#ledgerList'); 
-    if (!monthItems.length) { listWrap.innerHTML = '<div class="empty">本月還沒有任何記帳紀錄。</div>'; renderRateFreshness(); return; }
-    
+    $('#monthExpenseTotal').textContent = symbol + ' ' + showExpense; $('#monthIncomeTotal').textContent = symbol + ' ' + showIncome; $('#monthBalanceTotal').textContent = symbol + ' ' + showBalance; $('#monthBalanceTotal').style.color = showBalance >= 0 ? 'var(--income-color)' : 'var(--expense-color)';
+    const listWrap = $('#ledgerList'); if (!monthItems.length) { listWrap.innerHTML = '<div class="empty">本月還沒有任何記帳紀錄。</div>'; renderRateFreshness(); return; }
     const sorted = monthItems.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
-    
     listWrap.innerHTML = sorted.map(function (item) {
-      const isIncome = item.type === 'income'; 
-      const sign = isIncome ? '+' : '-'; 
-      const colorClass = isIncome ? 'income' : 'expense';
-      
-      let amountDisplay = '';
-      let extraNote = '';
-
+      const isIncome = item.type === 'income'; const sign = isIncome ? '+' : '-'; const colorClass = isIncome ? 'income' : 'expense';
+      let amountDisplay = ''; let extraNote = '';
       if (item.currency && item.currency !== mainCurrency && item.originalAmount) {
-        amountDisplay = sign + item.currency + ' ' + item.originalAmount;
-        const itemInTWD = item.amount;
-        const converted = Math.round(itemInTWD / currentRate);
+        amountDisplay = sign + item.currency + ' ' + item.originalAmount; const itemInTWD = item.amount; const converted = Math.round(itemInTWD / currentRate);
         extraNote = ` <span style="font-size:11px;color:var(--fg-dim)">(約 ${symbol}${converted})</span>`;
       } else if (item.currency && item.currency === mainCurrency && item.originalAmount) {
         amountDisplay = sign + symbol + ' ' + item.originalAmount;
       } else {
         amountDisplay = sign + symbol + ' ' + Math.round(item.amount / currentRate);
       }
-
-      return '<div class="ledger-item">' +
-        '<div class="ledger-date">' + item.date.slice(5) + '</div>' +
-        '<div class="ledger-cat">' + escapeHtml(item.category) + '</div>' +
-        '<div class="ledger-note">' + escapeHtml(item.note || '-') + '</div>' +
-        '<div class="ledger-amount ' + colorClass + '">' + amountDisplay + extraNote + '</div>' +
-        '<button class="mini del ledger-del" data-id="' + item.id + '" title="刪除">×</button>' +
-      '</div>';
+      return '<div class="ledger-item"><div class="ledger-date">' + item.date.slice(5) + '</div><div class="ledger-cat">' + escapeHtml(item.category) + '</div><div class="ledger-note">' + escapeHtml(item.note || '-') + '</div><div class="ledger-amount ' + colorClass + '">' + amountDisplay + extraNote + '</div><button class="mini del ledger-del" data-id="' + item.id + '" title="刪除">×</button></div>';
     }).join('');
-
     renderRateFreshness();
   }
 
-  /* 記帳：新增與刪除事件（確保只綁定一次） */
   (function bindLedgerHandlers() {
-    const addBtn = $('#ledgerAddBtn');
-    const listEl = $('#ledgerList');
+    const addBtn = $('#ledgerAddBtn'); const listEl = $('#ledgerList');
     if (addBtn && !addBtn.dataset.bound) {
       addBtn.dataset.bound = '1';
       addBtn.addEventListener('click', function () {
-        const type = $('#ledgerType').value;
-        const currency = $('#ledgerCurrency').value;
+        const type = $('#ledgerType').value; const currency = $('#ledgerCurrency').value;
         const amountRaw = parseFloat($('#ledgerAmount').value);
-        const category = $('#ledgerCategory').value;
-        const date = $('#ledgerDate').value || todayKey();
-        const note = $('#ledgerNote').value.trim();
-
+        const category = $('#ledgerCategory').value.trim() || '其他';
+        const date = $('#ledgerDate').value || todayKey(); const note = $('#ledgerNote').value.trim();
         if (!amountRaw || amountRaw <= 0) { toast('請輸入有效金額'); $('#ledgerAmount').focus(); return; }
         if (!date) { toast('請選擇日期'); return; }
         if (date > todayKey()) { toast('不能選擇未來日期'); $('#ledgerDate').value = todayKey(); return; }
-
-        const rateToBase = exchangeRates[currency] || 1;
-        const amountInBase = amountRaw * rateToBase;
-
-        ledger.push({
-          id: uid(),
-          type: type,
-          currency: currency,
-          originalAmount: amountRaw,
-          amount: amountInBase,
-          category: category,
-          date: date,
-          note: note,
-          createdAt: Date.now()
-        });
-
-        save('ledger');
-        $('#ledgerAmount').value = '';
-        $('#ledgerNote').value = '';
-        renderLedger();
-        renderHome();
-        toast('已儲存這筆紀錄');
+        const rateToBase = exchangeRates[currency] || 1; const amountInBase = amountRaw * rateToBase;
+        ledger.push({ id: uid(), type: type, currency: currency, originalAmount: amountRaw, amount: amountInBase, category: category, date: date, note: note, createdAt: Date.now() });
+        save('ledger'); $('#ledgerAmount').value = ''; $('#ledgerNote').value = ''; $('#ledgerCategory').value = ''; renderLedger(); renderHome(); toast('已儲存這筆紀錄');
       });
     }
     if (listEl && !listEl.dataset.bound) {
       listEl.dataset.bound = '1';
       listEl.addEventListener('click', function (e) {
-        const btn = e.target.closest('.ledger-del');
-        if (!btn) return;
-        const id = btn.dataset.id;
-        if (!id) return;
+        const btn = e.target.closest('.ledger-del'); if (!btn) return; const id = btn.dataset.id; if (!id) return;
         customConfirm('確定要刪除這筆紀錄嗎？', '刪除後無法復原。', '刪除', '取消', true).then(function (ok) {
           if (!ok) return;
-          ledger = ledger.filter(function (x) { return x.id !== id; });
-          save('ledger');
-          renderLedger();
-          renderHome();
-          toast('已刪除紀錄');
+          ledger = ledger.filter(function (x) { return x.id !== id; }); save('ledger'); renderLedger(); renderHome(); toast('已刪除紀錄');
         });
       });
     }
@@ -817,25 +669,113 @@
     Object.keys(events).forEach(function (k) { if (k < minKey || k > maxKey) { delete events[k]; changed = true; } }); if (changed) save('events');
   }
 
-  /* 13. 日記 */
+  /* 13. 日記 (支援編輯與照片) */
   let diaryFilterDate = '';
+  let editingDiaryId = null;
+  let diaryImageData = null;
+
+  function updateDiaryImagePreview() {
+    const wrap = $('#diaryImgWrap');
+    if (diaryImageData) { $('#diaryImgPreview').src = diaryImageData; wrap.hidden = false; } else { $('#diaryImgPreview').removeAttribute('src'); wrap.hidden = true; }
+  }
+
+  function resetDiaryForm() {
+    editingDiaryId = null; diaryImageData = null;
+    $('#diaryTitle').value = ''; $('#diaryContent').value = ''; $('#diaryWeather').value = ''; $('#diaryMood').value = '';
+    updateDiaryImagePreview();
+    $('#diaryCancelEdit').hidden = true;
+    $('#diarySave').textContent = '保存日記';
+    $('#diaryLockNote').textContent = '🔒 保存後即可編輯。';
+  }
+
   function renderDiaries() {
     let list = diaries.slice().sort(function (a, b) { return b.createdAt - a.createdAt; });
     if (diaryFilterDate) list = list.filter(function (d) { return dateKey(new Date(d.createdAt)) === diaryFilterDate; });
     const wrap = $('#diaryList'); if (!list.length) { wrap.innerHTML = '<div class="empty">' + (diaryFilterDate ? '這天還沒有日記。' : '還沒有日記，從上面開始寫第一篇吧。') + '</div>'; return; }
     wrap.innerHTML = list.map(function (d) { const dt = new Date(d.createdAt); return '<div class="diary-card" data-id="' + d.id + '"><div class="diary-meta"><span>' + fmtDateTime(dt) + '</span>' + (d.weather ? '<span class="tag">' + escapeHtml(d.weather) + '</span>' : '') + (d.mood ? '<span class="tag">' + escapeHtml(d.mood) + '</span>' : '') + '</div><div class="diary-title">' + escapeHtml(d.title) + '</div><div class="diary-preview">' + escapeHtml(d.content) + '</div></div>'; }).join('');
   }
+
   $('#diaryList').addEventListener('click', function (e) { const card = e.target.closest('.diary-card[data-id]'); if (card) openDiaryModal(card.dataset.id); });
+  
   function openDiaryModal(id) {
     const d = diaries.find(function (x) { return x.id === id; }); if (!d) return; const dt = new Date(d.createdAt);
-    $('#diaryModalTitle').textContent = d.title; $('#diaryModalMeta').innerHTML = fmtDateTime(dt) + (d.weather ? ' · ' + escapeHtml(d.weather) : '') + (d.mood ? ' · ' + escapeHtml(d.mood) : '');
-    $('#diaryModalBody').textContent = d.content; openModal('#diaryModal');
+    $('#diaryModalTitle').textContent = d.title; 
+    $('#diaryModalMeta').innerHTML = fmtDateTime(dt) + (d.weather ? ' · ' + escapeHtml(d.weather) : '') + (d.mood ? ' · ' + escapeHtml(d.mood) : '');
+    $('#diaryModalBody').textContent = d.content; 
+    
+    if (d.image) { $('#diaryModalImg').src = d.image; $('#diaryModalImg').hidden = false; } else { $('#diaryModalImg').removeAttribute('src'); $('#diaryModalImg').hidden = true; }
+    
+    $('#diaryModalEditBtn').onclick = function() {
+      closeModal('#diaryModal');
+      editDiary(id);
+    };
+    
+    openModal('#diaryModal');
   }
-  $('#diarySave').addEventListener('click', function () {
-    const title = $('#diaryTitle').value.trim(); const content = $('#diaryContent').value.trim(); if (!title) { toast('請填寫標題'); $('#diaryTitle').focus(); return; } if (!content) { toast('請填寫內文'); $('#diaryContent').focus(); return; }
-    diaries.push({ id: uid(), title: title, weather: $('#diaryWeather').value, mood: $('#diaryMood').value, content: content, createdAt: Date.now() }); save('diaries');
-    $('#diaryTitle').value = ''; $('#diaryContent').value = ''; $('#diaryWeather').value = ''; $('#diaryMood').value = ''; renderDiaries(); renderHome(); toast('已保存，日記永久保留且不可修改');
+
+  function editDiary(id) {
+    const d = diaries.find(function (x) { return x.id === id; }); if (!d) return;
+    editingDiaryId = id; diaryImageData = d.image || null;
+    $('#diaryTitle').value = d.title; $('#diaryContent').value = d.content; $('#diaryWeather').value = d.weather || ''; $('#diaryMood').value = d.mood || '';
+    updateDiaryImagePreview();
+    $('#diaryCancelEdit').hidden = false;
+    $('#diarySave').textContent = '更新日記';
+    $('#diaryLockNote').textContent = '📝 正在編輯日記';
+    showView('diary');
+    $('#diaryCompose').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  $('#diaryImgPick').addEventListener('click', function() { $('#diaryImgInput').click(); });
+  $('#diaryImgInput').addEventListener('change', function(e) {
+    const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return; toast('正在處理圖片…');
+    compressImage(file, 1200, 0.75).then(function(data) { diaryImageData = data; updateDiaryImagePreview(); }).catch(function() { toast('圖片處理失敗'); });
   });
+  $('#diaryImgClear').addEventListener('click', function() { diaryImageData = null; updateDiaryImagePreview(); });
+  $('#diaryCancelEdit').addEventListener('click', function() { resetDiaryForm(); toast('已取消編輯'); });
+
+  $('#diarySave').addEventListener('click', function () {
+    const title = $('#diaryTitle').value.trim(); const content = $('#diaryContent').value.trim(); 
+    if (!title) { toast('請填寫標題'); $('#diaryTitle').focus(); return; } 
+    if (!content) { toast('請填寫內文'); $('#diaryContent').focus(); return; }
+    
+    if (editingDiaryId) {
+      const d = diaries.find(function (x) { return x.id === editingDiaryId; });
+      if (d) {
+        d.title = title; d.weather = $('#diaryWeather').value; d.mood = $('#diaryMood').value; d.content = content;
+        if (diaryImageData && diaryImageData !== d.image) {
+          const newId = uid();
+          if (IDB.available()) IDB.put('photos', { id: newId, src: diaryImageData }).catch(function(){});
+          photoCache[newId] = diaryImageData;
+          const dDate = dateKey(new Date(d.createdAt));
+          photoMeta.push({ id: newId, title: dDate });
+          d.image = diaryImageData;
+          save('photoMeta');
+        } else if (!diaryImageData && d.image) {
+          // 如果移除了照片，可以選擇不清除圖庫（保留歷史），但更新日記
+          d.image = null;
+        } else if (diaryImageData) {
+          d.image = diaryImageData;
+        }
+      }
+      save('diaries'); resetDiaryForm(); renderDiaries(); renderPhotos(); renderHome(); toast('已更新日記');
+    } else {
+      const newDiaryId = uid();
+      let finalImg = null;
+      if (diaryImageData) {
+        finalImg = diaryImageData;
+        const newId = uid();
+        if (IDB.available()) IDB.put('photos', { id: newId, src: diaryImageData }).catch(function(){});
+        photoCache[newId] = diaryImageData;
+        const today = todayKey();
+        photoMeta.push({ id: newId, title: today });
+        save('photoMeta');
+      }
+      diaries.push({ id: newDiaryId, title: title, weather: $('#diaryWeather').value, mood: $('#diaryMood').value, content: content, image: finalImg, createdAt: Date.now() }); 
+      save('diaries');
+      resetDiaryForm(); renderDiaries(); renderPhotos(); renderHome(); toast('已保存日記');
+    }
+  });
+
   $('#diaryDatePickerBtn').addEventListener('click', function () { $('#diaryDateInput').value = diaryFilterDate || todayKey(); openModal('#diaryDateModal'); });
   $('#diaryDateConfirm').addEventListener('click', function () {
     const val = $('#diaryDateInput').value;
@@ -874,19 +814,11 @@
 
   /* 15. 照片庫 */
   const photoCache = {};
-  // [NEW] fallback legacy
   function loadPhotoSrc(id) {
     if (photoCache[id]) return Promise.resolve(photoCache[id]);
-    const fallbackLegacy = function () {
-      const legacy = (legacyPhotos || []).find(function (p) { return p.id === id; });
-      if (legacy && legacy.src) { photoCache[id] = legacy.src; return legacy.src; }
-      return null;
-    };
+    const fallbackLegacy = function () { const legacy = (legacyPhotos || []).find(function (p) { return p.id === id; }); if (legacy && legacy.src) { photoCache[id] = legacy.src; return legacy.src; } return null; };
     if (!IDB.available()) return Promise.resolve(fallbackLegacy());
-    return IDB.get('photos', id).then(function (rec) {
-      if (rec && rec.src) { photoCache[id] = rec.src; return rec.src; }
-      return fallbackLegacy();
-    }).catch(function () { return fallbackLegacy(); });
+    return IDB.get('photos', id).then(function (rec) { if (rec && rec.src) { photoCache[id] = rec.src; return rec.src; } return fallbackLegacy(); }).catch(function () { return fallbackLegacy(); });
   }
   function renderPhotos() {
     const grid = $('#photoGrid'); if (!photoMeta.length) { grid.innerHTML = '<div class="empty" style="grid-column:1/-1;">還沒有照片，點「添加照片」上傳。</div>'; return; }
@@ -913,26 +845,24 @@
   $('#lightboxCaption').addEventListener('input', function () { if (!lightboxId) return; const meta = photoMeta.find(function (x) { return x.id === lightboxId; }); if (meta) { meta.title = $('#lightboxCaption').value; save('photoMeta'); } });
   $('#lightboxDel').addEventListener('click', function () { if (!lightboxId) return; const id = lightboxId; photoMeta = photoMeta.filter(function (x) { return x.id !== id; }); delete photoCache[id]; save('photoMeta'); if (IDB.available()) IDB.del('photos', id).catch(function () {}); renderPhotos(); closeLightbox(); toast('已刪除照片'); });
 
-  /* 16. 番茄鐘 */
-  let pomoInterval = null; let pomoSeconds = 25 * 60; let pomoRunning = false;
-  const pomoTime = $('#pomoTime'); const pomoPanel = $('#pomoPanel'); const pomoFab = $('#pomoFab');
-  let audioCtx = null; let customAudioData = null; let soundType = LS.get('pomoSoundType', 'synth'); let pomoVolume = LS.get('pomoVolume', 70); let pomoBaseSeconds = 25 * 60;
-  // [NEW] 載入完成後主動刷新 UI
+  /* 16. 番茄鐘 (全新邏輯) */
+  let pomoState = 'idle'; // idle | running | paused
+  let pomoRemaining = 25 * 60;
+  let pomoTotalSet = 25 * 60;
+  let pomoInterval = null;
+  
+  const pomoTimeDisplay = $('#pomoTimeDisplay');
+  const pomoEditor = $('#pomoEditor');
+  const pomoBtnLeft = $('#pomoBtnLeft');
+  const pomoBtnRight = $('#pomoBtnRight');
+  
+  let audioCtx = null; let customAudioData = null; let soundType = LS.get('pomoSoundType', 'synth'); let pomoVolume = LS.get('pomoVolume', 70);
+
   function loadCustomAudio() {
     if (!IDB.available()) return Promise.resolve();
-    return IDB.get('audio', 'pomo').then(function (rec) {
-      if (rec && rec.data) { customAudioData = rec.data; }
-      if (typeof updateSoundUI === 'function') updateSoundUI();
-    }).catch(function () {});
+    return IDB.get('audio', 'pomo').then(function (rec) { if (rec && rec.data) { customAudioData = rec.data; } if (typeof updateSoundUI === 'function') updateSoundUI(); }).catch(function () {});
   }
-  function updatePomoDisplay() { const m = Math.floor(pomoSeconds / 60); const s = pomoSeconds % 60; pomoTime.textContent = pad(m) + ':' + pad(s); }
-  pomoFab.addEventListener('click', function () { pomoPanel.classList.toggle('open'); });
-  $('#pomoSetBtn').addEventListener('click', function () {
-    let custom = parseInt($('#pomoCustom').value, 10); let secs;
-    if (custom && custom >= 5 && custom <= 10800) { secs = custom; $('#pomoPreset').value = ''; } else { const mins = parseInt($('#pomoPreset').value, 10) || 25; secs = mins * 60; }
-    pomoBaseSeconds = secs; pomoSeconds = secs; clearInterval(pomoInterval); pomoRunning = false; $('#pomoStart').textContent = '開始'; updatePomoDisplay(); $('#pomoCustom').value = '';
-  });
-  $('#pomoPreset').addEventListener('change', function () { if (this.value) { const secs = parseInt(this.value, 10) * 60; pomoBaseSeconds = secs; pomoSeconds = secs; clearInterval(pomoInterval); pomoRunning = false; $('#pomoStart').textContent = '開始'; updatePomoDisplay(); $('#pomoCustom').value = ''; } });
+
   function initAudio() { if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); }
   function playBell() {
     const vol = Math.max(0, Math.min(1, pomoVolume / 100));
@@ -943,6 +873,160 @@
       playNote(880, audioCtx.currentTime, 0.4); playNote(1046.50, audioCtx.currentTime + 0.15, 0.6); playNote(880, audioCtx.currentTime + 0.45, 0.4); playNote(1046.50, audioCtx.currentTime + 0.6, 0.8);
     } catch (e) {}
   }
+
+  function formatPomoTime(secs) {
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    return pad(h) + ':' + pad(m) + ':' + pad(s);
+  }
+
+  function updatePomoUI() {
+    if (pomoState === 'idle') {
+      pomoTimeDisplay.textContent = formatPomoTime(pomoRemaining);
+      pomoTimeDisplay.style.display = 'flex';
+      pomoEditor.classList.remove('active');
+      
+      pomoBtnLeft.textContent = '開始';
+      pomoBtnLeft.className = 'pomo-btn start';
+      
+      pomoBtnRight.textContent = '重置';
+      pomoBtnRight.className = 'pomo-btn stop';
+    } else {
+      pomoTimeDisplay.textContent = formatPomoTime(pomoRemaining);
+      pomoTimeDisplay.style.display = 'flex';
+      pomoEditor.classList.remove('active');
+      
+      pomoBtnRight.textContent = '停止';
+      pomoBtnRight.className = 'pomo-btn stop';
+      
+      if (pomoState === 'running') {
+        pomoBtnLeft.textContent = '暫停';
+        pomoBtnLeft.className = 'pomo-btn pause';
+      } else if (pomoState === 'paused') {
+        pomoBtnLeft.textContent = '繼續';
+        pomoBtnLeft.className = 'pomo-btn resume';
+      }
+    }
+  }
+
+  // 數字加減與自動儲存
+  function getInputSecs() {
+    const h = parseInt($('#pomoInpH').value, 10) || 0;
+    const m = parseInt($('#pomoInpM').value, 10) || 0;
+    const s = parseInt($('#pomoInpS').value, 10) || 0;
+    let total = h * 3600 + m * 60 + s;
+    if (total < 1) total = 1;
+    if (total > 99 * 3600 + 99 * 60 + 99) total = 99 * 3600 + 99 * 60 + 99;
+    return total;
+  }
+
+  function applyInputSecs(total) {
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    $('#pomoInpH').value = pad(h);
+    $('#pomoInpM').value = pad(m);
+    $('#pomoInpS').value = pad(s);
+    pomoRemaining = total;
+    pomoTotalSet = total;
+    LS.set('pomoDuration', total);
+    pomoTimeDisplay.textContent = formatPomoTime(total);
+  }
+
+  pomoTimeDisplay.addEventListener('click', function () {
+    if (pomoState !== 'idle') return;
+    const h = Math.floor(pomoRemaining / 3600);
+    const m = Math.floor((pomoRemaining % 3600) / 60);
+    const s = pomoRemaining % 60;
+    $('#pomoInpH').value = pad(h);
+    $('#pomoInpM').value = pad(m);
+    $('#pomoInpS').value = pad(s);
+    
+    pomoTimeDisplay.style.display = 'none';
+    pomoEditor.classList.add('active');
+    $('#pomoInpM').focus();
+  });
+
+  $$('.pomo-arrow').forEach(function(el) {
+    el.addEventListener('click', function() {
+      const unit = this.dataset.unit;
+      const act = this.dataset.act;
+      const inp = unit === 'h' ? $('#pomoInpH') : (unit === 'm' ? $('#pomoInpM') : $('#pomoInpS'));
+      let val = parseInt(inp.value, 10) || 0;
+      if (act === 'up') { val = Math.min(99, val + 1); } 
+      else { val = Math.max(0, val - 1); }
+      inp.value = pad(val);
+      applyInputSecs(getInputSecs());
+    });
+  });
+
+  $('#pomoInpH').addEventListener('change', function() { this.value = pad(Math.min(99, Math.max(0, parseInt(this.value,10)||0))); applyInputSecs(getInputSecs()); });
+  $('#pomoInpM').addEventListener('change', function() { this.value = pad(Math.min(99, Math.max(0, parseInt(this.value,10)||0))); applyInputSecs(getInputSecs()); });
+  $('#pomoInpS').addEventListener('change', function() { this.value = pad(Math.min(99, Math.max(0, parseInt(this.value,10)||0))); applyInputSecs(getInputSecs()); });
+
+  pomoEditor.addEventListener('click', function(e) {
+    if (e.target === pomoEditor) {
+      pomoEditor.classList.remove('active');
+      pomoTimeDisplay.style.display = 'flex';
+    }
+  });
+
+  pomoBtnLeft.addEventListener('click', function() {
+    initAudio();
+    if (pomoState === 'idle') {
+      pomoState = 'running';
+      updatePomoUI();
+      pomoInterval = setInterval(function() {
+        pomoRemaining--;
+        pomoTimeDisplay.textContent = formatPomoTime(pomoRemaining);
+        if (pomoRemaining <= 0) {
+          clearInterval(pomoInterval);
+          pomoState = 'idle';
+          pomoRemaining = pomoTotalSet;
+          updatePomoUI();
+          playBell();
+          if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+          toast('時間到！休息一下吧 🍅');
+        }
+      }, 1000);
+    } else if (pomoState === 'running') {
+      clearInterval(pomoInterval);
+      pomoState = 'paused';
+      updatePomoUI();
+    } else if (pomoState === 'paused') {
+      pomoState = 'running';
+      updatePomoUI();
+      pomoInterval = setInterval(function() {
+        pomoRemaining--;
+        pomoTimeDisplay.textContent = formatPomoTime(pomoRemaining);
+        if (pomoRemaining <= 0) {
+          clearInterval(pomoInterval);
+          pomoState = 'idle';
+          pomoRemaining = pomoTotalSet;
+          updatePomoUI();
+          playBell();
+          if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+          toast('時間到！休息一下吧 🍅');
+        }
+      }, 1000);
+    }
+  });
+
+  pomoBtnRight.addEventListener('click', function() {
+    clearInterval(pomoInterval);
+    pomoState = 'idle';
+    pomoRemaining = pomoTotalSet; // 重置為設定的時間
+    updatePomoUI();
+  });
+
+  const savedDur = LS.get('pomoDuration', null);
+  if (savedDur && savedDur >= 1) {
+    pomoRemaining = savedDur;
+    pomoTotalSet = savedDur;
+  }
+  applyInputSecs(pomoTotalSet);
+
   function updateSoundUI() { $$('input[name="soundType"]').forEach(function (r) { r.checked = (r.value === soundType); }); $('#soundFileName').textContent = customAudioData ? '已載入自訂音效' : '尚未選擇檔案'; }
   $('#pomoSoundBtn').addEventListener('click', function () { updateSoundUI(); openModal('#soundModal'); });
   $('#soundFilePick').addEventListener('click', function () { $('#soundFileInput').click(); });
@@ -953,21 +1037,11 @@
     if (IDB.available()) { if (customAudioData) { IDB.put('audio', { id: 'pomo', data: customAudioData }).catch(function () {}); } else { IDB.del('audio', 'pomo').catch(function () {}); } }
     closeModal('#soundModal'); toast('鈴聲設定已儲存'); initAudio(); playBell();
   });
-  $('#pomoStart').addEventListener('click', function () {
-    initAudio();
-    if (pomoRunning) { clearInterval(pomoInterval); pomoRunning = false; this.textContent = '繼續'; $('#pomoFab').classList.remove('running'); }
-    else {
-      pomoRunning = true; this.textContent = '暫停'; $('#pomoFab').classList.add('running');
-      pomoInterval = setInterval(function () {
-        pomoSeconds--; updatePomoDisplay();
-        if (pomoSeconds <= 0) { clearInterval(pomoInterval); pomoRunning = false; $('#pomoStart').textContent = '開始'; $('#pomoFab').classList.remove('running'); pomoSeconds = pomoBaseSeconds; updatePomoDisplay(); playBell(); if (navigator.vibrate) navigator.vibrate([200, 100, 200]); toast('時間到！休息一下吧 🍅'); }
-      }, 1000);
-    }
-  });
-  $('#pomoReset').addEventListener('click', function () { clearInterval(pomoInterval); pomoRunning = false; pomoSeconds = pomoBaseSeconds; updatePomoDisplay(); $('#pomoStart').textContent = '開始'; $('#pomoFab').classList.remove('running'); });
   function updateVolumeUI() { $('#pomoVolume').value = pomoVolume; $('#pomoVolumeVal').textContent = pomoVolume; }
   $('#pomoVolume').addEventListener('input', function () { pomoVolume = parseInt(this.value, 10); $('#pomoVolumeVal').textContent = pomoVolume; LS.set('pomoVolume', pomoVolume); });
-  updateVolumeUI(); updatePomoDisplay();
+  updateVolumeUI(); updatePomoUI();
+
+  $('#pomoFab').addEventListener('click', function () { $('#pomoPanel').classList.toggle('open'); });
 
   /* 17. 設定、備份與初始化 */
   const settings = $('#settings'); const gearBtn = $('#gearBtn');
@@ -981,14 +1055,9 @@
   $('#bgFileInput').addEventListener('change', function (e) { const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return; toast('正在處理背景圖片…'); compressImage(file, 1600, 0.8).then(function (data) { state.bg = data; applyTheme(); savePrefs(); toast('背景已套用'); }).catch(function () { toast('圖片處理失敗'); }); });
   $('#themeToggle').addEventListener('click', function () { state.lum = state.lum > 50 ? 15 : 85; applyTheme(); savePrefs(); toast(state.lum > 50 ? '已切換為淺色模式' : '已切換為深色模式'); });
   
-  // 初始化主要貨幣選單
   $('#mainCurrencySelect').value = mainCurrency;
   $('#mainCurrencySelect').addEventListener('change', function () {
-    mainCurrency = this.value;
-    LS.set('mainCurrency', mainCurrency);
-    renderLedger();
-    renderHome();
-    toast('主要貨幣已切換為 ' + mainCurrency);
+    mainCurrency = this.value; LS.set('mainCurrency', mainCurrency); renderLedger(); renderHome(); toast('主要貨幣已切換為 ' + mainCurrency);
   });
 
   const BACKUP_VERSION = 2;
@@ -1003,17 +1072,9 @@
   $('#exportBtn').addEventListener('click', exportData); $('#aboutExportBtn').addEventListener('click', exportData);
 
   $('#clearAllBtn').addEventListener('click', function () {
-    customConfirm(
-      '⚠️ 警告：清除所有資料？',
-      '這將永久刪除您所有的筆記、日記、照片與設定。',
-      '確定清除', '取消', true
-    ).then(function (ok1) {
+    customConfirm('⚠️ 警告：清除所有資料？', '這將永久刪除您所有的筆記、日記、照片與設定。', '確定清除', '取消', true).then(function (ok1) {
       if (!ok1) return;
-      customConfirm(
-        '最後確認',
-        '您是否已經匯出備份？如果沒有，請先取消並匯出。',
-        '已備份，確定清除', '取消', true
-      ).then(function (ok2) {
+      customConfirm('最後確認', '您是否已經匯出備份？如果沒有，請先取消並匯出。', '已備份，確定清除', '取消', true).then(function (ok2) {
         if (!ok2) return;
         try { localStorage.clear(); } catch (e) {}
         document.cookie.split(';').forEach(function (c) { document.cookie = c.replace(/^ +/, '').replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/'); });
@@ -1039,11 +1100,7 @@
     reader.onload = function (ev) {
       let data; try { data = JSON.parse(ev.target.result); } catch (err) { toast('備份檔案解析失敗'); return; }
       const err = validateBackup(data); if (err) { toast('備份驗證失敗：' + err); return; }
-      customConfirm(
-        '確定要匯入備份嗎？',
-        '這將覆蓋目前所有資料，請確認。',
-        '匯入', '取消', true
-      ).then(function (ok) {
+      customConfirm('確定要匯入備份嗎？', '這將覆蓋目前所有資料，請確認。', '匯入', '取消', true).then(function (ok) {
         if (!ok) return;
         if (data.todos) todos = migrateTodos(data.todos); if (data.events) events = data.events; if (data.diaries) diaries = data.diaries; if (data.notes) notes = data.notes; if (data.goals) goals = data.goals; if (data.bookmarks) bookmarks = data.bookmarks; if (data.countdowns) countdowns = data.countdowns;
         if (data.ledger) ledger = data.ledger; else if (data.expenses) ledger = data.expenses.map(function (x) { return Object.assign({}, x, { type: 'expense' }); });
@@ -1067,7 +1124,7 @@
   if (!STORAGE_OK) { setTimeout(function () { toast('⚠️ 瀏覽器儲存空間不可用，資料將不會保留'); }, 900); }
   loadPrefs(); applyTheme(); pruneEvents(); pruneDone();
 
-  // [NEW] 初始化渲染（每個視圖獨立保護，避免單一錯誤中斷全部）
+  // 初始化渲染
   function safeRender(name, fn) {
     try { fn(); } catch (e) { console.warn('初始化渲染失敗：' + name, e); }
   }
@@ -1081,13 +1138,12 @@
   safeRender('bookmarks', renderBookmarks);
   safeRender('ledger', renderLedger);
 
-  // [NEW] 非同步載入：鈴聲 + 舊照片遷移
   Promise.all([loadCustomAudio(), migrateLegacyPhotos()]).then(function () {
     if (typeof updateSoundUI === 'function') updateSoundUI();
     renderPhotos();
   }).catch(function () {});
 
-  /* ═══════════════ Service Worker 更新提示 ═══════════════ */
+  /* Service Worker 更新提示 */
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').then((reg) => {
@@ -1100,19 +1156,13 @@
             }
           };
         };
-      }).catch((err) => {
-        console.log('SW registration failed:', err);
-      });
+      }).catch((err) => { console.log('SW registration failed:', err); });
     });
   }
 
-  // 更新橫幅按鈕
   (function initUpdateBanner() {
-    const banner = $('#updateBanner');
-    if (!banner) return;
-    const applyBtn = $('#updateBannerApply');
-    const laterBtn = $('#updateBannerLater');
-    const closeBtn = $('#updateBannerClose');
+    const banner = $('#updateBanner'); if (!banner) return;
+    const applyBtn = $('#updateBannerApply'); const laterBtn = $('#updateBannerLater'); const closeBtn = $('#updateBannerClose');
     if (applyBtn) applyBtn.addEventListener('click', function () { window.location.reload(); });
     if (laterBtn) laterBtn.addEventListener('click', function () { banner.hidden = true; });
     if (closeBtn) closeBtn.addEventListener('click', function () { banner.hidden = true; });
