@@ -1,4 +1,4 @@
-const CACHE_NAME = 'my-space-cache-v1.0.3-released-beta-zb';
+const CACHE_NAME = 'my-space-cache-v1.0.3-released-beta-zc';
 
 const ASSETS = [
   './',
