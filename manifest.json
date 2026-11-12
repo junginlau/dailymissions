@@ -8,13 +8,13 @@
   "theme_color": "#12141a",
   "icons": [
     {
-      "src": "https://raw.githubusercontent.com/junginlau/ChungSS/main/src/images/logo/csSicon.png",
+      "src": "./images/icon.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "https://raw.githubusercontent.com/junginlau/ChungSS/main/src/images/logo/csSicon.png",
+      "src": "./images/icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

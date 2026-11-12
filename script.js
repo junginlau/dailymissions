@@ -239,6 +239,9 @@
   });
 
   /* 7. 首頁 Widgets */
+  // 自動更新版權年份
+  document.getElementById('copyrightYear').textContent = new Date().getFullYear();
+
   function updateClock() { const now = new Date(); let timeStr = pad(now.getHours()) + ':' + pad(now.getMinutes()); if (window.innerWidth > 768) timeStr += ':' + pad(now.getSeconds()); const days = ['日', '一', '二', '三', '四', '五', '六']; const dateStr = now.getFullYear() + ' 年 ' + (now.getMonth() + 1) + ' 月 ' + now.getDate() + ' 日 · 星期' + days[now.getDay()]; $('#clockTime').textContent = timeStr; $('#clockDate').textContent = dateStr; }
   setInterval(updateClock, 1000); updateClock(); window.addEventListener('resize', updateClock);
 
