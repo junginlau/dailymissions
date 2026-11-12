@@ -14,6 +14,16 @@
 </head>
 <body>
 
+<!-- ══════════ 更新橫幅 ══════════ -->
+<div class="update-banner" id="updateBanner" hidden>
+  <span class="update-banner-text">✨ 有新版本可用</span>
+  <div class="update-banner-actions">
+    <button class="update-banner-btn primary" id="updateBannerApply">立即更新</button>
+    <button class="update-banner-btn" id="updateBannerLater">稍後</button>
+  </div>
+  <button class="update-banner-close" id="updateBannerClose" aria-label="關閉">×</button>
+</div>
+
 <div class="bg-layer" id="bgLayer"></div>
 
 <!-- ══════════ 頂部導覽列 ══════════ -->
@@ -316,6 +326,8 @@
           <input type="text" id="ledgerNote" placeholder="備註（選填，例如：午餐）" maxlength="50">
           <button class="btn primary" id="ledgerAddBtn" style="margin-top:8px;">儲存這筆紀錄</button>
         </div>
+        <div id="rateFreshness" style="font-size:11px;color:var(--fg-dim);margin-top:4px;"></div>
+        <div class="lock-note" style="margin-top:4px;">💡 歷史紀錄以「記帳當下匯率」換算，不會隨之後的匯率浮動。</div>
       </div>
       <div class="card ledger-list-card">
         <div class="ledger-summary">
@@ -672,6 +684,23 @@
   <input type="text" class="caption" id="lightboxCaption" placeholder="點此輸入照片標題（選填）" maxlength="60">
   <div class="lb-acts">
     <button class="btn danger" id="lightboxDel" aria-label="刪除這張照片" style="font-size:18px;padding:8px 18px;">🗑️</button>
+  </div>
+</div>
+
+<!-- 通用確認彈窗 -->
+<div class="modal" id="confirmModal">
+  <div class="modal-card narrow">
+    <div class="modal-head">
+      <div>
+        <h3 id="confirmTitle">確定嗎？</h3>
+        <div class="sub2" id="confirmSub"></div>
+      </div>
+      <button class="x-btn" data-close="#confirmModal" aria-label="關閉">×</button>
+    </div>
+    <div class="goal-confirm-actions">
+      <button class="btn ghost" id="confirmCancel">取消</button>
+      <button class="btn primary" id="confirmOk">確定</button>
+    </div>
   </div>
 </div>
 

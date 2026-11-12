@@ -604,3 +604,58 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
   flex: 1 1 auto;
   min-height: 0;
 }
+
+/* ═══════════════ 更新橫幅 ═══════════════ */
+.update-banner {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 44px 10px 16px;
+  background: var(--panel-bg-solid);
+  border-bottom: 1px solid var(--panel-border);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  animation: bannerSlideDown .3s var(--ease) both;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+@keyframes bannerSlideDown {
+  from { transform: translateY(-100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.update-banner[hidden] { display: none; }
+.update-banner-text { font-weight: 500; color: var(--fg); }
+.update-banner-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.update-banner-btn {
+  font: inherit; font-size: 13px; font-weight: 500;
+  padding: 6px 14px; border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  background: var(--hover); color: var(--fg);
+  cursor: pointer; white-space: nowrap;
+  transition: background .2s var(--ease), transform .15s var(--ease);
+}
+.update-banner-btn:hover { background: var(--panel-border); }
+.update-banner-btn:active { transform: scale(.97); }
+.update-banner-btn.primary {
+  background: var(--fg); color: var(--ink-inv); border-color: transparent;
+}
+.update-banner-btn.primary:hover { opacity: .86; }
+.update-banner-close {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  width: 28px; height: 28px; border-radius: 50%;
+  border: none; background: transparent;
+  color: var(--fg-dim); font-size: 18px; line-height: 1;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background .2s var(--ease), color .2s var(--ease);
+}
+.update-banner-close:hover { background: var(--hover); color: var(--fg); }
+
+@media (max-width: 768px) {
+  .update-banner { font-size: 12px; padding: 8px 40px 8px 12px; justify-content: flex-start; }
+  .update-banner-btn { padding: 5px 12px; font-size: 12px; }
+}

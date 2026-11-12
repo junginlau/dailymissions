@@ -95,6 +95,47 @@
   function openModal(sel) { const m = $(sel); if (!m) return; m.classList.add('open'); document.body.classList.add('lock'); }
   function closeModal(sel) { const m = $(sel); if (m) m.classList.remove('open'); if (!document.querySelector('.modal.open, .lightbox.open')) document.body.classList.remove('lock'); }
 
+  // 自訂確認彈窗（回傳 Promise<boolean>）
+  function customConfirm(title, message, okText, cancelText, danger) {
+    return new Promise(function (resolve) {
+      const modal = $('#confirmModal');
+      if (!modal) { resolve(window.confirm(title + '\n' + (message || ''))); return; }
+      $('#confirmTitle').textContent = title || '確定嗎？';
+      $('#confirmSub').textContent = message || '';
+      const okBtn = $('#confirmOk');
+      const cancelBtn = $('#confirmCancel');
+      okBtn.textContent = okText || '確定';
+      cancelBtn.textContent = cancelText || '取消';
+      if (danger) {
+        okBtn.style.background = '#e5484d';
+        okBtn.style.borderColor = 'transparent';
+        okBtn.style.color = '#fff';
+      } else {
+        okBtn.style.background = '';
+        okBtn.style.borderColor = '';
+        okBtn.style.color = '';
+      }
+      function cleanup() {
+        okBtn.removeEventListener('click', onOk);
+        cancelBtn.removeEventListener('click', onCancel);
+        modal.removeEventListener('click', onBackdrop);
+        modal.querySelectorAll('.x-btn, [data-close="#confirmModal"]').forEach(function (b) {
+          b.removeEventListener('click', onCancel);
+        });
+      }
+      function onOk() { cleanup(); closeModal('#confirmModal'); resolve(true); }
+      function onCancel() { cleanup(); closeModal('#confirmModal'); resolve(false); }
+      function onBackdrop(e) { if (e.target === modal) onCancel(); }
+      okBtn.addEventListener('click', onOk);
+      cancelBtn.addEventListener('click', onCancel);
+      modal.addEventListener('click', onBackdrop);
+      modal.querySelectorAll('.x-btn, [data-close="#confirmModal"]').forEach(function (b) {
+        b.addEventListener('click', onCancel);
+      });
+      openModal('#confirmModal');
+    });
+  }
+
   /* 3. 主題與設定 */
   const root = document.documentElement; const bgLayer = $('#bgLayer'); const DEFAULT_LUM = 55; const state = { lum: DEFAULT_LUM, bg: null };
   function getCookie(name) { const m = document.cookie.match('(?:^|; )' + name + '=([^;]*)'); return m ? decodeURIComponent(m[1]) : null; }
@@ -151,29 +192,63 @@
   if (!Array.isArray(photoMeta)) photoMeta = [];
 
   // 匯率快取（以 TWD 為基準，預設值防止 API 失敗）
-  let exchangeRates = { TWD: 1, USD: 32, JPY: 0.22, HKD: 4.1, EUR: 35, GBP: 41, CNY: 4.4 };
-  
+  const DEFAULT_RATES = { TWD: 1, USD: 32, JPY: 0.22, HKD: 4.1, EUR: 35, GBP: 41, CNY: 4.4 };
+  let exchangeRates = Object.assign({}, DEFAULT_RATES);
+  let exchangeRatesUpdatedAt = 0;
+  const RATE_MIN_INTERVAL = 60 * 60 * 1000; // 最短請求間隔：1 小時
+
+  // 從 LocalStorage 載入已快取的匯率（若有）
+  (function loadCachedRates() {
+    const cached = LS.get('exchangeRates', null);
+    if (cached && cached.rates && cached.updatedAt) {
+      exchangeRates = Object.assign({}, DEFAULT_RATES, cached.rates);
+      exchangeRatesUpdatedAt = cached.updatedAt;
+    }
+  })();
+
   // 主要顯示貨幣設定（預設 HKD）
   let mainCurrency = LS.get('mainCurrency', 'HKD');
 
   // 幣別符號對應表
   const currencySymbols = { TWD: 'NT$', USD: '$', JPY: '¥', HKD: 'HK$', EUR: '€', GBP: '£', CNY: '¥' };
-  
+
+  function renderRateFreshness() {
+    const el = $('#rateFreshness');
+    if (!el) return;
+    if (!exchangeRatesUpdatedAt) {
+      el.textContent = '匯率：使用預設值（尚未取得即時匯率）';
+      return;
+    }
+    el.textContent = '匯率最後更新：' + fmtDateTime(new Date(exchangeRatesUpdatedAt)) + '（以 TWD 為基準）';
+  }
+
   function fetchExchangeRates() {
+    const now = Date.now();
+    if (exchangeRatesUpdatedAt && (now - exchangeRatesUpdatedAt) < RATE_MIN_INTERVAL) {
+      console.log('匯率快取仍新鮮，略過 API 請求');
+      renderRateFreshness();
+      return;
+    }
     fetch('https://open.er-api.com/v6/latest/TWD')
       .then(res => res.json())
       .then(data => {
         if (data && data.rates) {
-          // 將 API 回傳的匯率反轉（因為我們需要 1 外幣 = 多少 TWD）
-          exchangeRates.USD = 1 / data.rates.USD;
-          exchangeRates.JPY = 1 / data.rates.JPY;
-          exchangeRates.HKD = 1 / data.rates.HKD;
-          exchangeRates.EUR = 1 / data.rates.EUR;
-          exchangeRates.GBP = 1 / data.rates.GBP;
-          exchangeRates.CNY = 1 / data.rates.CNY;
+          const newRates = Object.assign({}, DEFAULT_RATES);
+          ['USD', 'JPY', 'HKD', 'EUR', 'GBP', 'CNY'].forEach(function (cur) {
+            if (data.rates[cur]) newRates[cur] = 1 / data.rates[cur];
+          });
+          exchangeRates = newRates;
+          exchangeRatesUpdatedAt = Date.now();
+          LS.set('exchangeRates', { rates: newRates, updatedAt: exchangeRatesUpdatedAt });
           console.log('匯率更新成功', exchangeRates);
+          renderRateFreshness();
+          renderLedger();
+          renderHome();
         }
-      }).catch(() => { console.log('匯率更新失敗，使用預設備用匯率'); });
+      }).catch(() => {
+        console.log('匯率更新失敗，沿用快取或預設值');
+        renderRateFreshness();
+      });
   }
   fetchExchangeRates();
 
@@ -444,6 +519,8 @@
   /* 10. 記帳 */
     function renderLedger() {
     if (!$('#ledgerDate').value) $('#ledgerDate').value = todayKey();
+    // 限制日期選擇器不能選未來日期
+    $('#ledgerDate').max = todayKey();
     
     const now = new Date(); 
     const thisMonth = now.getFullYear() + '-' + pad(now.getMonth() + 1); 
@@ -503,7 +580,165 @@
         '<button class="mini del ledger-del" data-id="' + item.id + '" title="刪除">×</button>' +
       '</div>';
     }).join('');
+
+    renderRateFreshness();
   }
+
+  /* 記帳：新增與刪除事件 */
+  $('#ledgerAddBtn').addEventListener('click', function () {
+    const type = $('#ledgerType').value;
+    const currency = $('#ledgerCurrency').value;
+    const amountRaw = parseFloat($('#ledgerAmount').value);
+    const category = $('#ledgerCategory').value;
+    const date = $('#ledgerDate').value || todayKey();
+    const note = $('#ledgerNote').value.trim();
+
+    if (!amountRaw || amountRaw <= 0) { toast('請輸入有效金額'); $('#ledgerAmount').focus(); return; }
+    if (!date) { toast('請選擇日期'); return; }
+    if (date > todayKey()) { toast('不能選擇未來日期'); $('#ledgerDate').value = todayKey(); return; }
+
+    const rateToBase = exchangeRates[currency] || 1;
+    const amountInBase = amountRaw * rateToBase;
+
+    ledger.push({
+      id: uid(),
+      type: type,
+      currency: currency,
+      originalAmount: amountRaw,
+      amount: amountInBase,
+      category: category,
+      date: date,
+      note: note,
+      createdAt: Date.now()
+    });
+
+    save('ledger');
+    $('#ledgerAmount').value = '';
+    $('#ledgerNote').value = '';
+    renderLedger();
+    renderHome();
+    toast('已儲存這筆紀錄');
+  });
+
+  // 刪除記帳
+  $('#ledgerList').addEventListener('click', function (e) {
+    const btn = e.target.closest('.ledger-del');
+    if (!btn) return;
+    const id = btn.dataset.id;
+    if (!id) return;
+    customConfirm('確定要刪除這筆紀錄嗎？', '刪除後無法復原。', '刪除', '取消', true).then(function (ok) {
+      if (!ok) return;
+      ledger = ledger.filter(function (x) { return x.id !== id; });
+      save('ledger');
+      renderLedger();
+      renderHome();
+      toast('已刪除紀錄');
+    });
+  });
+
+  /* 11. 每週必做 */
+
+  /* 記帳：新增與刪除事件 */
+  $('#ledgerAddBtn').addEventListener('click', function () {
+    const type = $('#ledgerType').value;
+    const currency = $('#ledgerCurrency').value;
+    const amountRaw = parseFloat($('#ledgerAmount').value);
+    const category = $('#ledgerCategory').value;
+    const date = $('#ledgerDate').value || todayKey();
+    const note = $('#ledgerNote').value.trim();
+
+    if (!amountRaw || amountRaw <= 0) { toast('請輸入有效金額'); $('#ledgerAmount').focus(); return; }
+    if (!date) { toast('請選擇日期'); return; }
+    // 禁止未來日期
+    if (date > todayKey()) { toast('不能選擇未來日期'); $('#ledgerDate').value = todayKey(); return; }
+
+    // exchangeRates[cur] = 1 單位 cur 等於多少 TWD（目前基準為 TWD）
+    const rateToBase = exchangeRates[currency] || 1;
+    const amountInBase = amountRaw * rateToBase;
+
+    ledger.push({
+      id: uid(),
+      type: type,
+      currency: currency,
+      originalAmount: amountRaw,
+      amount: amountInBase,
+      category: category,
+      date: date,
+      note: note,
+      createdAt: Date.now()
+    });
+
+    save('ledger');
+    $('#ledgerAmount').value = '';
+    $('#ledgerNote').value = '';
+    renderLedger();
+    renderHome();
+    toast('已儲存這筆紀錄');
+  });
+
+  // 刪除記帳
+  $('#ledgerList').addEventListener('click', function (e) {
+    const btn = e.target.closest('.ledger-del');
+    if (!btn) return;
+    const id = btn.dataset.id;
+    if (!id) return;
+    if (!confirm('確定要刪除這筆紀錄嗎？')) return;
+    ledger = ledger.filter(function (x) { return x.id !== id; });
+    save('ledger');
+    renderLedger();
+    renderHome();
+    toast('已刪除紀錄');
+  });
+
+  /* 記帳：新增與刪除事件 */
+  $('#ledgerAddBtn').addEventListener('click', function () {
+    const type = $('#ledgerType').value;
+    const currency = $('#ledgerCurrency').value;
+    const amountRaw = parseFloat($('#ledgerAmount').value);
+    const category = $('#ledgerCategory').value;
+    const date = $('#ledgerDate').value || todayKey();
+    const note = $('#ledgerNote').value.trim();
+
+    if (!amountRaw || amountRaw <= 0) { toast('請輸入有效金額'); $('#ledgerAmount').focus(); return; }
+    if (!date) { toast('請選擇日期'); return; }
+
+    // exchangeRates[cur] = 1 單位 cur 等於多少 TWD（目前基準為 TWD）
+    const rateToBase = exchangeRates[currency] || 1;
+    const amountInBase = amountRaw * rateToBase;
+
+    ledger.push({
+      id: uid(),
+      type: type,
+      currency: currency,
+      originalAmount: amountRaw,
+      amount: amountInBase,
+      category: category,
+      date: date,
+      note: note,
+      createdAt: Date.now()
+    });
+
+    save('ledger');
+    $('#ledgerAmount').value = '';
+    $('#ledgerNote').value = '';
+    renderLedger();
+    renderHome();
+    toast('已儲存這筆紀錄');
+  });
+
+  // 刪除記帳
+  $('#ledgerList').addEventListener('click', function (e) {
+    const btn = e.target.closest('.ledger-del');
+    if (!btn) return;
+    const id = btn.dataset.id;
+    if (!id) return;
+    if (!confirm('確定要刪除這筆紀錄嗎？')) return;
+    ledger = ledger.filter(function (x) { return x.id !== id; });
+    save('ledger');
+    renderLedger();
+    renderHome();
+    toast('已刪除紀錄');
+  });
 
   /* 11. 每週必做 */
   function tagById(id) { return todos.tags.find(function (t) { return t.id === id; }) || null; }
@@ -794,12 +1029,24 @@
   $('#exportBtn').addEventListener('click', exportData); $('#aboutExportBtn').addEventListener('click', exportData);
 
   $('#clearAllBtn').addEventListener('click', function () {
-    const confirm1 = confirm('⚠️ 警告：這將永久刪除您所有的筆記、日記、照片與設定！\n\n您確定要清除所有資料嗎？'); if (!confirm1) return;
-    const confirm2 = confirm('最後確認：您是否已經匯出備份？\n如果沒有，請先點擊取消並匯出備份。'); if (!confirm2) return;
-    try { localStorage.clear(); } catch (e) {}
-    document.cookie.split(';').forEach(function (c) { document.cookie = c.replace(/^ +/, '').replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/'); });
-    if (IDB.available()) { ['photos', 'audio'].forEach(function (store) { IDB.getAll(store).then(function (rows) { rows.forEach(function (r) { IDB.del(store, r.id).catch(function () {}); }); }).catch(function () {}); }); }
-    toast('資料已清除，正在重新整理…'); setTimeout(function () { location.reload(); }, 1500);
+    customConfirm(
+      '⚠️ 警告：清除所有資料？',
+      '這將永久刪除您所有的筆記、日記、照片與設定。',
+      '確定清除', '取消', true
+    ).then(function (ok1) {
+      if (!ok1) return;
+      customConfirm(
+        '最後確認',
+        '您是否已經匯出備份？如果沒有，請先取消並匯出。',
+        '已備份，確定清除', '取消', true
+      ).then(function (ok2) {
+        if (!ok2) return;
+        try { localStorage.clear(); } catch (e) {}
+        document.cookie.split(';').forEach(function (c) { document.cookie = c.replace(/^ +/, '').replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/'); });
+        if (IDB.available()) { ['photos', 'audio'].forEach(function (store) { IDB.getAll(store).then(function (rows) { rows.forEach(function (r) { IDB.del(store, r.id).catch(function () {}); }); }).catch(function () {}); }); }
+        toast('資料已清除，正在重新整理…'); setTimeout(function () { location.reload(); }, 1500);
+      });
+    });
   });
 
   function validateBackup(data) {
@@ -818,17 +1065,23 @@
     reader.onload = function (ev) {
       let data; try { data = JSON.parse(ev.target.result); } catch (err) { toast('備份檔案解析失敗'); return; }
       const err = validateBackup(data); if (err) { toast('備份驗證失敗：' + err); return; }
-      if (!confirm('確定要匯入備份嗎？這將覆蓋目前所有資料。')) return;
-      if (data.todos) todos = migrateTodos(data.todos); if (data.events) events = data.events; if (data.diaries) diaries = data.diaries; if (data.notes) notes = data.notes; if (data.goals) goals = data.goals; if (data.bookmarks) bookmarks = data.bookmarks; if (data.countdowns) countdowns = data.countdowns;
-      if (data.ledger) ledger = data.ledger; else if (data.expenses) ledger = data.expenses.map(function (x) { return Object.assign({}, x, { type: 'expense' }); });
-      photoMeta = [];
-      const photoWrites = (data.photos || []).map(function (p) { photoMeta.push({ id: p.id, title: p.title || '' }); if (IDB.available() && p.src) { photoCache[p.id] = p.src; return IDB.put('photos', { id: p.id, src: p.src }).catch(function () {}); } return Promise.resolve(); });
-      if (data.prefs) { if (typeof data.prefs.lum === 'number') state.lum = Math.min(100, Math.max(0, data.prefs.lum)); if (typeof data.prefs.bg === 'string') state.bg = data.prefs.bg || null; applyTheme(); savePrefs(); }
-      if (data.pomoSoundType === 'synth' || data.pomoSoundType === 'custom') { soundType = data.pomoSoundType; LS.set('pomoSoundType', soundType); }
-      Promise.all(photoWrites).then(function () {
-        ['todos', 'events', 'diaries', 'notes', 'goals', 'bookmarks', 'ledger', 'countdowns'].forEach(save); save('photoMeta'); pruneEvents(); pruneDone();
-        renderTodos(); renderCalendar(); renderDiaries(); renderNotes(); renderPhotos(); renderGoals(); renderBookmarks(); renderLedger(); renderHome();
-        toast('備份匯入成功！'); closeSettings();
+      customConfirm(
+        '確定要匯入備份嗎？',
+        '這將覆蓋目前所有資料，請確認。',
+        '匯入', '取消', true
+      ).then(function (ok) {
+        if (!ok) return;
+        if (data.todos) todos = migrateTodos(data.todos); if (data.events) events = data.events; if (data.diaries) diaries = data.diaries; if (data.notes) notes = data.notes; if (data.goals) goals = data.goals; if (data.bookmarks) bookmarks = data.bookmarks; if (data.countdowns) countdowns = data.countdowns;
+        if (data.ledger) ledger = data.ledger; else if (data.expenses) ledger = data.expenses.map(function (x) { return Object.assign({}, x, { type: 'expense' }); });
+        photoMeta = [];
+        const photoWrites = (data.photos || []).map(function (p) { photoMeta.push({ id: p.id, title: p.title || '' }); if (IDB.available() && p.src) { photoCache[p.id] = p.src; return IDB.put('photos', { id: p.id, src: p.src }).catch(function () {}); } return Promise.resolve(); });
+        if (data.prefs) { if (typeof data.prefs.lum === 'number') state.lum = Math.min(100, Math.max(0, data.prefs.lum)); if (typeof data.prefs.bg === 'string') state.bg = data.prefs.bg || null; applyTheme(); savePrefs(); }
+        if (data.pomoSoundType === 'synth' || data.pomoSoundType === 'custom') { soundType = data.pomoSoundType; LS.set('pomoSoundType', soundType); }
+        Promise.all(photoWrites).then(function () {
+          ['todos', 'events', 'diaries', 'notes', 'goals', 'bookmarks', 'ledger', 'countdowns'].forEach(save); save('photoMeta'); pruneEvents(); pruneDone();
+          renderTodos(); renderCalendar(); renderDiaries(); renderNotes(); renderPhotos(); renderGoals(); renderBookmarks(); renderLedger(); renderHome();
+          toast('備份匯入成功！'); closeSettings();
+        });
       });
     };
     reader.readAsText(file);
@@ -844,15 +1097,12 @@
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').then((reg) => {
-        // 檢查是否有新版本正在等待
         reg.onupdatefound = () => {
           const installingWorker = reg.installing;
           installingWorker.onstatechange = () => {
             if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // 發現新版本，跳出確認視窗
-              if (confirm('✨ 網站已更新！點擊「確定」載入最新版本。')) {
-                window.location.reload();
-              }
+              const banner = $('#updateBanner');
+              if (banner) banner.hidden = false;
             }
           };
         };
@@ -861,5 +1111,17 @@
       });
     });
   }
+
+  // 更新橫幅按鈕
+  (function initUpdateBanner() {
+    const banner = $('#updateBanner');
+    if (!banner) return;
+    const applyBtn = $('#updateBannerApply');
+    const laterBtn = $('#updateBannerLater');
+    const closeBtn = $('#updateBannerClose');
+    if (applyBtn) applyBtn.addEventListener('click', function () { window.location.reload(); });
+    if (laterBtn) laterBtn.addEventListener('click', function () { banner.hidden = true; });
+    if (closeBtn) closeBtn.addEventListener('click', function () { banner.hidden = true; });
+  })();
 
 })();
