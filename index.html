@@ -296,11 +296,14 @@
             </select>
           </div>
           <input type="text" id="ledgerAmount" placeholder="輸入金額..." inputmode="decimal" style="font-size:20px;font-weight:600;">
-          <div class="row">
+          <div class="row" style="flex-direction: column; align-items: stretch; gap: 8px;">
             <input type="text" id="ledgerCategory" placeholder="輸入性質（如：飲食）" maxlength="20">
+            <div id="ledgerTags" class="tag-chips"></div>
+          </div>
+          <div class="row">
             <input type="date" id="ledgerDate">
           </div>
-          <input type="text" id="ledgerNote" placeholder="備註（選填，例如：午餐）" maxlength="50">
+          <input type="text" id="ledgerNote" placeholder="備註（選填，例如：和某某吃午餐）" maxlength="50">
           <button class="btn primary" id="ledgerAddBtn" style="margin-top:8px;">儲存這筆紀錄</button>
         </div>
         <div id="rateFreshness" style="font-size:11px;color:var(--fg-dim);margin-top:4px;"></div>
@@ -358,8 +361,8 @@
           <li>日曆（支援星星標記與快速跳轉）</li>
           <li>日記（支援編輯與上傳照片）</li>
           <li>筆記本與照片庫（自動壓縮）</li>
-          <li><strong>記帳</strong>（支援多幣別、自訂性質與收支統計）</li>
-          <li>番茄鐘（時分秒自訂、無級調節、鈴聲設定）</li>
+          <li><strong>記帳</strong>（支援多幣別、標籤與收支統計）</li>
+          <li>番茄鐘（時分秒自訂、精細按鈕動畫）</li>
           <li>資料備份匯出／匯入</li>
         </ul>
       </div>
@@ -397,7 +400,7 @@
   <button data-view="about">關於本站</button>
 </div>
 
-<!-- 番茄鐘懸浮窗 (全新設計) -->
+<!-- 番茄鐘懸浮窗 -->
 <button class="pomo-fab" id="pomoFab" title="番茄鐘">🍅</button>
 <div class="pomo-panel" id="pomoPanel">
   <div class="pomo-time-display" id="pomoTimeDisplay">00:00:00</div>

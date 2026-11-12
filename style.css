@@ -319,7 +319,7 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
 .ledger-layout { display: flex; gap: 20px; flex: 1 1 auto; min-height: 0; margin-top: 16px; }
 .ledger-form-card { flex: 0 0 320px; display: flex; flex-direction: column; gap: 12px; }
 .ledger-list-card { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
-.ledger-form input[type="number"] { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; padding: 12px; }
+.ledger-form input[type="number"], .ledger-form input#ledgerAmount { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; padding: 12px; }
 .ledger-form .row { align-items: stretch; }
 .ledger-form .row select, .ledger-form .row input { flex: 1 1 120px; }
 .ledger-summary { display: flex; justify-content: space-between; gap: 12px; flex: 0 0 auto; margin-bottom: 14px; flex-wrap: wrap; }
@@ -336,6 +336,11 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
 .ledger-amount.income { color: var(--income-color); }
 .ledger-amount.expense { color: var(--expense-color); }
 .ledger-del { flex: 0 0 auto; margin-left: 8px; }
+
+/* 記帳標籤建議 */
+.tag-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.tag-chip-ledger { font: inherit; font-size: 12px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--hover); color: var(--fg-dim); cursor: pointer; transition: all .2s var(--ease); }
+.tag-chip-ledger:hover { background: var(--panel-border); color: var(--fg); }
 
 /* ══════════ 彈窗 ══════════ */
 .modal { position: fixed; inset: 0; z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(10, 12, 16, .35); -webkit-backdrop-filter: blur(22px) saturate(140%); backdrop-filter: blur(22px) saturate(140%); }
@@ -416,29 +421,29 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
 .pomo-edit-label { font-size: 11px; color: var(--fg-dim); margin-top: 4px; }
 .pomo-edit-colon { font-size: 28px; font-weight: 700; color: var(--fg-dim); margin-top: 6px; }
 
-/* 按鈕：立體與固定效果 */
+/* 按鈕：精細立體與固定效果 */
 .pomo-actions { display: flex; gap: 12px; width: 100%; }
 .pomo-btn { flex: 1 1 auto; padding: 12px 0; font-size: 15px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; text-align: center; transition: all .15s ease; position: relative; color: #fff; }
-.pomo-btn:active { transform: translateY(2px); }
 
 /* 開始 (綠色) */
 .pomo-btn.start { background: #2e9e5e; box-shadow: 0 4px 0 #1f7041; }
-.pomo-btn.start:hover { background: #34b36b; }
-.pomo-btn.start:active { box-shadow: 0 2px 0 #1f7041; transform: translateY(2px); }
+.pomo-btn.start:hover:not(:disabled) { background: #34b36b; transform: translateY(-2px); box-shadow: 0 6px 0 #1f7041; }
+.pomo-btn.start:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 #1f7041; }
+.pomo-btn.start:disabled { background: #555; box-shadow: 0 4px 0 #333; cursor: not-allowed; opacity: 0.7; }
 
 /* 暫停/繼續 (黃色) */
-.pomo-btn.pause { background: #eab308; box-shadow: 0 4px 0 #a16207; color: #fff; }
-.pomo-btn.pause:hover { background: #facc15; }
+.pomo-btn.pause { background: #eab308; box-shadow: 0 4px 0 #a16207; }
+.pomo-btn.pause:hover { background: #facc15; transform: translateY(-2px); box-shadow: 0 6px 0 #a16207; }
+.pomo-btn.pause:active { transform: translateY(2px); box-shadow: 0 2px 0 #a16207; }
 
-/* 暫停後彈起狀態 (黃色) */
 .pomo-btn.resume { background: #eab308; box-shadow: 0 6px 0 #a16207; transform: translateY(-2px); }
-.pomo-btn.resume:hover { background: #facc15; }
+.pomo-btn.resume:hover { background: #facc15; transform: translateY(-4px); box-shadow: 0 8px 0 #a16207; }
 .pomo-btn.resume:active { transform: translateY(2px); box-shadow: 0 2px 0 #a16207; }
 
 /* 停止/重置 (紅色) */
 .pomo-btn.stop { background: #e5484d; box-shadow: 0 4px 0 #a32226; }
-.pomo-btn.stop:hover { background: #f2555a; }
-.pomo-btn.stop:active { box-shadow: 0 2px 0 #a32226; transform: translateY(2px); }
+.pomo-btn.stop:hover { background: #f2555a; transform: translateY(-2px); box-shadow: 0 6px 0 #a32226; }
+.pomo-btn.stop:active { transform: translateY(2px); box-shadow: 0 2px 0 #a32226; }
 
 /* 音量與鈴聲 */
 .pomo-volume-wrap { display: flex; align-items: center; gap: 6px; width: 100%; font-size: 12px; margin-top: 4px; }

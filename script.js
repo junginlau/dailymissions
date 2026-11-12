@@ -150,6 +150,8 @@
   let goals = LS.get('goals', []);
   let bookmarks = LS.get('bookmarks', []);
   let countdowns = LS.get('countdowns', []);
+  
+  let ledgerCategories = LS.get('ledgerCategories', ['飲食', '交通', '購物', '娛樂', '薪資', '投資', '其他']);
 
   let photoMeta = LS.get('photoMeta', null);
   const legacyPhotos = LS.get('photos', null);
@@ -208,7 +210,7 @@
 
   function save(key) {
     if (key === 'photoMeta') { const ok = LS.set('photoMeta', photoMeta); if (!ok) toast('照片清單儲存失敗'); return ok; }
-    const map = { todos: todos, events: events, diaries: diaries, notes: notes, goals: goals, bookmarks: bookmarks, ledger: ledger, countdowns: countdowns };
+    const map = { todos: todos, events: events, diaries: diaries, notes: notes, goals: goals, bookmarks: bookmarks, ledger: ledger, countdowns: countdowns, ledgerCategories: ledgerCategories };
     const ok = LS.set(key, map[key]); if (!ok) toast('儲存失敗，請檢查瀏覽器空間'); return ok;
   }
 
@@ -489,9 +491,22 @@
   $('#bmDelete').addEventListener('click', function () { if (!editingBmId) return; bookmarks = bookmarks.filter(function (x) { return x.id !== editingBmId; }); save('bookmarks'); renderBookmarks(); closeModal('#bmModal'); toast('已刪除書籤'); });
 
   /* 10. 記帳 */
+  function renderLedgerTags() {
+    const wrap = $('#ledgerTags'); if (!wrap) return;
+    if (!ledgerCategories.length) { wrap.innerHTML = ''; return; }
+    wrap.innerHTML = ledgerCategories.map(function(cat) { return '<button class="tag-chip-ledger" type="button" data-cat="' + escapeHtml(cat) + '">' + escapeHtml(cat) + '</button>'; }).join('');
+  }
+
+  $('#ledgerTags').addEventListener('click', function(e) {
+    const btn = e.target.closest('.tag-chip-ledger'); if (!btn) return;
+    $('#ledgerCategory').value = btn.dataset.cat;
+  });
+
   function renderLedger() {
     if (!$('#ledgerDate').value) $('#ledgerDate').value = todayKey();
     $('#ledgerDate').max = todayKey();
+    renderLedgerTags();
+
     const now = new Date(); const thisMonth = now.getFullYear() + '-' + pad(now.getMonth() + 1); const monthItems = ledger.filter(item => item.date.startsWith(thisMonth));
     let totalExpenseTWD = 0; let totalIncomeTWD = 0;
     monthItems.forEach(item => { if (item.type === 'income') totalIncomeTWD += item.amount; else totalExpenseTWD += item.amount; });
@@ -526,9 +541,17 @@
         const amountRaw = parseFloat($('#ledgerAmount').value);
         const category = $('#ledgerCategory').value.trim() || '其他';
         const date = $('#ledgerDate').value || todayKey(); const note = $('#ledgerNote').value.trim();
+        
         if (!amountRaw || amountRaw <= 0) { toast('請輸入有效金額'); $('#ledgerAmount').focus(); return; }
         if (!date) { toast('請選擇日期'); return; }
         if (date > todayKey()) { toast('不能選擇未來日期'); $('#ledgerDate').value = todayKey(); return; }
+        
+        // 儲存自訂標籤
+        if (!ledgerCategories.includes(category)) {
+          ledgerCategories.push(category);
+          save('ledgerCategories');
+        }
+
         const rateToBase = exchangeRates[currency] || 1; const amountInBase = amountRaw * rateToBase;
         ledger.push({ id: uid(), type: type, currency: currency, originalAmount: amountRaw, amount: amountInBase, category: category, date: date, note: note, createdAt: Date.now() });
         save('ledger'); $('#ledgerAmount').value = ''; $('#ledgerNote').value = ''; $('#ledgerCategory').value = ''; renderLedger(); renderHome(); toast('已儲存這筆紀錄');
@@ -751,7 +774,6 @@
           d.image = diaryImageData;
           save('photoMeta');
         } else if (!diaryImageData && d.image) {
-          // 如果移除了照片，可以選擇不清除圖庫（保留歷史），但更新日記
           d.image = null;
         } else if (diaryImageData) {
           d.image = diaryImageData;
@@ -847,7 +869,7 @@
 
   /* 16. 番茄鐘 (全新邏輯) */
   let pomoState = 'idle'; // idle | running | paused
-  let pomoRemaining = 25 * 60;
+  let pomoRemaining = 0;
   let pomoTotalSet = 25 * 60;
   let pomoInterval = null;
   
@@ -882,41 +904,43 @@
   }
 
   function updatePomoUI() {
+    pomoTimeDisplay.textContent = formatPomoTime(pomoRemaining);
+    pomoTimeDisplay.style.display = 'flex';
+    pomoEditor.classList.remove('active');
+    
     if (pomoState === 'idle') {
-      pomoTimeDisplay.textContent = formatPomoTime(pomoRemaining);
-      pomoTimeDisplay.style.display = 'flex';
-      pomoEditor.classList.remove('active');
-      
       pomoBtnLeft.textContent = '開始';
       pomoBtnLeft.className = 'pomo-btn start';
+      if (pomoRemaining === 0) {
+        pomoBtnLeft.disabled = true;
+      } else {
+        pomoBtnLeft.disabled = false;
+      }
       
       pomoBtnRight.textContent = '重置';
       pomoBtnRight.className = 'pomo-btn stop';
-    } else {
-      pomoTimeDisplay.textContent = formatPomoTime(pomoRemaining);
-      pomoTimeDisplay.style.display = 'flex';
-      pomoEditor.classList.remove('active');
+    } else if (pomoState === 'running') {
+      pomoBtnLeft.textContent = '暫停';
+      pomoBtnLeft.className = 'pomo-btn pause';
+      pomoBtnLeft.disabled = false;
       
       pomoBtnRight.textContent = '停止';
       pomoBtnRight.className = 'pomo-btn stop';
+    } else if (pomoState === 'paused') {
+      pomoBtnLeft.textContent = '繼續';
+      pomoBtnLeft.className = 'pomo-btn resume';
+      pomoBtnLeft.disabled = false;
       
-      if (pomoState === 'running') {
-        pomoBtnLeft.textContent = '暫停';
-        pomoBtnLeft.className = 'pomo-btn pause';
-      } else if (pomoState === 'paused') {
-        pomoBtnLeft.textContent = '繼續';
-        pomoBtnLeft.className = 'pomo-btn resume';
-      }
+      pomoBtnRight.textContent = '停止';
+      pomoBtnRight.className = 'pomo-btn stop';
     }
   }
 
-  // 數字加減與自動儲存
   function getInputSecs() {
     const h = parseInt($('#pomoInpH').value, 10) || 0;
     const m = parseInt($('#pomoInpM').value, 10) || 0;
     const s = parseInt($('#pomoInpS').value, 10) || 0;
     let total = h * 3600 + m * 60 + s;
-    if (total < 1) total = 1;
     if (total > 99 * 3600 + 99 * 60 + 99) total = 99 * 3600 + 99 * 60 + 99;
     return total;
   }
@@ -932,6 +956,7 @@
     pomoTotalSet = total;
     LS.set('pomoDuration', total);
     pomoTimeDisplay.textContent = formatPomoTime(total);
+    updatePomoUI();
   }
 
   pomoTimeDisplay.addEventListener('click', function () {
@@ -972,57 +997,54 @@
     }
   });
 
+  function startPomoTimer() {
+    pomoState = 'running';
+    updatePomoUI();
+    pomoInterval = setInterval(function() {
+      pomoRemaining--;
+      pomoTimeDisplay.textContent = formatPomoTime(pomoRemaining);
+      if (pomoRemaining <= 0) {
+        clearInterval(pomoInterval);
+        pomoState = 'idle';
+        pomoRemaining = pomoTotalSet;
+        updatePomoUI();
+        playBell();
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+        toast('時間到！休息一下吧 🍅');
+      }
+    }, 1000);
+  }
+
   pomoBtnLeft.addEventListener('click', function() {
     initAudio();
     if (pomoState === 'idle') {
-      pomoState = 'running';
-      updatePomoUI();
-      pomoInterval = setInterval(function() {
-        pomoRemaining--;
-        pomoTimeDisplay.textContent = formatPomoTime(pomoRemaining);
-        if (pomoRemaining <= 0) {
-          clearInterval(pomoInterval);
-          pomoState = 'idle';
-          pomoRemaining = pomoTotalSet;
-          updatePomoUI();
-          playBell();
-          if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-          toast('時間到！休息一下吧 🍅');
-        }
-      }, 1000);
+      if (pomoRemaining <= 0) return;
+      startPomoTimer();
     } else if (pomoState === 'running') {
       clearInterval(pomoInterval);
       pomoState = 'paused';
       updatePomoUI();
     } else if (pomoState === 'paused') {
-      pomoState = 'running';
-      updatePomoUI();
-      pomoInterval = setInterval(function() {
-        pomoRemaining--;
-        pomoTimeDisplay.textContent = formatPomoTime(pomoRemaining);
-        if (pomoRemaining <= 0) {
-          clearInterval(pomoInterval);
-          pomoState = 'idle';
-          pomoRemaining = pomoTotalSet;
-          updatePomoUI();
-          playBell();
-          if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-          toast('時間到！休息一下吧 🍅');
-        }
-      }, 1000);
+      startPomoTimer();
     }
   });
 
   pomoBtnRight.addEventListener('click', function() {
     clearInterval(pomoInterval);
-    pomoState = 'idle';
-    pomoRemaining = pomoTotalSet; // 重置為設定的時間
-    updatePomoUI();
+    if (pomoState === 'idle') {
+      // 重置為 00:00:00
+      pomoTotalSet = 0;
+      applyInputSecs(0);
+    } else {
+      // 停止：回到設定的時間
+      pomoState = 'idle';
+      pomoRemaining = pomoTotalSet; 
+      updatePomoUI();
+    }
   });
 
   const savedDur = LS.get('pomoDuration', null);
-  if (savedDur && savedDur >= 1) {
-    pomoRemaining = savedDur;
+  if (savedDur !== null && savedDur >= 0) {
     pomoTotalSet = savedDur;
   }
   applyInputSecs(pomoTotalSet);
@@ -1064,7 +1086,7 @@
   function exportData() {
     const exportPhotos = photoMeta.map(function (m) { return loadPhotoSrc(m.id).then(function (src) { return { id: m.id, title: m.title || '', src: src || '' }; }); });
     Promise.all(exportPhotos).then(function (photosData) {
-      const data = { version: BACKUP_VERSION, exportedAt: new Date().toISOString(), todos: todos, events: events, diaries: diaries, notes: notes, photos: photosData, goals: goals, bookmarks: bookmarks, ledger: ledger, countdowns: countdowns, prefs: { lum: state.lum, bg: state.bg }, pomoSoundType: soundType };
+      const data = { version: BACKUP_VERSION, exportedAt: new Date().toISOString(), todos: todos, events: events, diaries: diaries, notes: notes, photos: photosData, goals: goals, bookmarks: bookmarks, ledger: ledger, countdowns: countdowns, ledgerCategories: ledgerCategories, prefs: { lum: state.lum, bg: state.bg }, pomoSoundType: soundType };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a');
       a.href = url; a.download = 'my_space_backup_' + todayKey() + '.json'; a.click(); URL.revokeObjectURL(url); toast('備份檔案已下載（含照片本體）');
     });
@@ -1103,13 +1125,14 @@
       customConfirm('確定要匯入備份嗎？', '這將覆蓋目前所有資料，請確認。', '匯入', '取消', true).then(function (ok) {
         if (!ok) return;
         if (data.todos) todos = migrateTodos(data.todos); if (data.events) events = data.events; if (data.diaries) diaries = data.diaries; if (data.notes) notes = data.notes; if (data.goals) goals = data.goals; if (data.bookmarks) bookmarks = data.bookmarks; if (data.countdowns) countdowns = data.countdowns;
+        if (data.ledgerCategories) ledgerCategories = data.ledgerCategories;
         if (data.ledger) ledger = data.ledger; else if (data.expenses) ledger = data.expenses.map(function (x) { return Object.assign({}, x, { type: 'expense' }); });
         photoMeta = [];
         const photoWrites = (data.photos || []).map(function (p) { photoMeta.push({ id: p.id, title: p.title || '' }); if (IDB.available() && p.src) { photoCache[p.id] = p.src; return IDB.put('photos', { id: p.id, src: p.src }).catch(function () {}); } return Promise.resolve(); });
         if (data.prefs) { if (typeof data.prefs.lum === 'number') state.lum = Math.min(100, Math.max(0, data.prefs.lum)); if (typeof data.prefs.bg === 'string') state.bg = data.prefs.bg || null; applyTheme(); savePrefs(); }
         if (data.pomoSoundType === 'synth' || data.pomoSoundType === 'custom') { soundType = data.pomoSoundType; LS.set('pomoSoundType', soundType); }
         Promise.all(photoWrites).then(function () {
-          ['todos', 'events', 'diaries', 'notes', 'goals', 'bookmarks', 'ledger', 'countdowns'].forEach(save); save('photoMeta'); pruneEvents(); pruneDone();
+          ['todos', 'events', 'diaries', 'notes', 'goals', 'bookmarks', 'ledger', 'countdowns', 'ledgerCategories'].forEach(save); save('photoMeta'); pruneEvents(); pruneDone();
           renderTodos(); renderCalendar(); renderDiaries(); renderNotes(); renderPhotos(); renderGoals(); renderBookmarks(); renderLedger(); renderHome();
           toast('備份匯入成功！'); closeSettings();
         });
@@ -1124,7 +1147,6 @@
   if (!STORAGE_OK) { setTimeout(function () { toast('⚠️ 瀏覽器儲存空間不可用，資料將不會保留'); }, 900); }
   loadPrefs(); applyTheme(); pruneEvents(); pruneDone();
 
-  // 初始化渲染
   function safeRender(name, fn) {
     try { fn(); } catch (e) { console.warn('初始化渲染失敗：' + name, e); }
   }
@@ -1143,7 +1165,6 @@
     renderPhotos();
   }).catch(function () {});
 
-  /* Service Worker 更新提示 */
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').then((reg) => {
