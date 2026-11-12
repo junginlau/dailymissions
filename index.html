@@ -22,17 +22,18 @@
     <button class="logo-btn" id="logoBtn" aria-label="回到首頁" title="回到首頁">
       <img src="https://raw.githubusercontent.com/junginlau/photoshub/main/cssyellow.png" alt="Logo">
     </button>
-        <!-- 平板/縮小視窗專用的「...」下拉選單 -->
-    <div class="nav-more-wrap" id="navMoreWrap" style="position: relative; display: none;">
-      <button class="nav-btn" id="navMoreBtn" style="font-size: 20px; font-weight: bold; padding: 4px 12px;">選單</button>
-      <div class="nav-more-menu" id="navMoreMenu" style="display: none; position: absolute; top: 100%; left: 0; background: var(--panel-bg-solid); border: 1px solid var(--panel-border); border-radius: 12px; padding: 8px; z-index: 9999; box-shadow: 0 10px 30px rgba(0,0,0,.2); min-width: 120px; flex-direction: column; gap: 4px;">
-        <button data-view="todo" class="nav-btn" style="text-align: left; padding: 10px;">每週必做</button>
-        <button data-view="calendar" class="nav-btn" style="text-align: left; padding: 10px;">日曆</button>
-        <button data-view="diary" class="nav-btn" style="text-align: left; padding: 10px;">日記</button>
-        <button data-view="notes" class="nav-btn" style="text-align: left; padding: 10px;">筆記本</button>
-        <button data-view="photos" class="nav-btn" style="text-align: left; padding: 10px;">照片庫</button>
-        <button data-view="ledger" class="nav-btn" style="text-align: left; padding: 10px;">記帳</button>
-        <button data-view="about" class="nav-btn" style="text-align: left; padding: 10px;">關於本站</button>
+    
+    <!-- 平板/縮小視窗專用的「...」下拉選單 -->
+    <div class="nav-more-wrap" id="navMoreWrap">
+      <button class="nav-btn" id="navMoreBtn">選單</button>
+      <div class="nav-more-menu" id="navMoreMenu">
+        <button data-view="todo">每週必做</button>
+        <button data-view="calendar">日曆</button>
+        <button data-view="diary">日記</button>
+        <button data-view="notes">筆記本</button>
+        <button data-view="photos">照片庫</button>
+        <button data-view="ledger">記帳</button>
+        <button data-view="about">關於本站</button>
       </div>
     </div>
 
@@ -53,8 +54,7 @@
       <option value="youtube">YouTube</option>
     </select>
     <form class="search-form" id="searchForm" autocomplete="off" role="search">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-           stroke-linecap="round" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
         <circle cx="11" cy="11" r="7"/>
         <path d="m20 20-3.5-3.5"/>
       </svg>
@@ -64,8 +64,7 @@
 
   <div class="nav-right">
     <button class="icon-btn" id="gearBtn" aria-label="設定" title="設定">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="3.2"/>
         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
       </svg>
@@ -175,11 +174,9 @@
   <section class="view" id="view-todo">
     <h1>每週必做</h1>
     <p class="sub">今天該做的事，都在這裡。明天的事先放在旁邊。</p>
-
     <div class="row" style="justify-content: flex-end; margin-top: 10px;">
       <button class="btn ghost" id="todoSettingsBtn" style="font-size:13px;">⚙ 設定標籤</button>
     </div>
-
     <div class="today-layout">
       <aside class="tomorrow-col" id="tomorrowCol"></aside>
       <div class="today-col" id="todayCol"></div>
@@ -190,7 +187,6 @@
   <section class="view" id="view-calendar">
     <h1>日曆</h1>
     <p class="sub">點選任何一天，記下那天的重要事項。</p>
-
     <div class="cal-container">
       <div class="card cal-card">
         <div class="cal-head">
@@ -215,7 +211,6 @@
   <section class="view" id="view-diary">
     <h1>日記</h1>
     <p class="sub">寫下來的，才是真的留下來的。</p>
-
     <div class="card diary-compose">
       <input type="text" id="diaryTitle" placeholder="今天日記的標題…" maxlength="80">
       <div class="row">
@@ -237,7 +232,6 @@
       </div>
       <div class="lock-note">🔒 保存後將永久保留，不可修改、不可刪除。</div>
     </div>
-
     <div class="card diary-viewer">
       <div class="diary-toolbar">
         <button class="btn ghost" id="diaryDatePickerBtn" style="flex:1 1 auto;">全部日記（點擊選擇日期）</button>
@@ -251,7 +245,6 @@
   <section class="view" id="view-notes">
     <h1>筆記本</h1>
     <p class="sub">想法很小的時候，就要先記下來。</p>
-
     <div class="notes-scroll scroll-box">
       <div class="grid three" id="notesGrid"></div>
     </div>
@@ -262,12 +255,10 @@
   <section class="view" id="view-photos">
     <h1>照片庫</h1>
     <p class="sub">把喜歡的光線留在這裡。</p>
-
     <div class="photos-toolbar">
       <button class="btn primary" id="photoAdd">＋ 添加照片</button>
       <span style="font-size:12px;color:var(--fg-dim);">點擊照片可放大查看，下方可填寫標題。</span>
     </div>
-
     <div class="photos-scroll scroll-box">
       <div class="photo-grid" id="photoGrid"></div>
     </div>
@@ -277,7 +268,6 @@
   <section class="view" id="view-ledger">
     <h1>記帳</h1>
     <p class="sub">隨手記下一筆，掌握每一分錢的流向。</p>
-
     <div class="ledger-layout">
       <div class="card ledger-form-card">
         <h3 style="font-size:16px;font-weight:600;">新增紀錄</h3>
@@ -303,7 +293,6 @@
           <button class="btn primary" id="ledgerAddBtn" style="margin-top:8px;">儲存這筆紀錄</button>
         </div>
       </div>
-
       <div class="card ledger-list-card">
         <div class="ledger-summary">
           <div class="summary-item">
@@ -328,13 +317,11 @@
   <section class="view" id="view-about">
     <h1>關於本站</h1>
     <p class="sub">一個極簡、高效且充滿個人風格的數位生活儀表板。</p>
-
     <div class="about-layout mt-24">
       <div class="card about-card">
         <h3>📝 專案簡介</h3>
         <p>這個網站最初是為了打造一個「個人數位首頁」而誕生。它結合了搜尋引擎、書籤、待辦事項、日曆、日記、筆記、照片庫與記帳功能。所有資料皆儲存於瀏覽器本地端，無需註冊，隨開即用。</p>
       </div>
-
       <div class="card about-card">
         <h3>👨‍💻 開發者與技術棧</h3>
         <p>本專案由 <a href="https://github.com/junginlau" target="_blank" class="link">junginlau</a> 開發與維護。</p>
@@ -345,7 +332,6 @@
           <li>外部服務：Open-Meteo API（天氣）、Google Favicon API（書籤圖示）</li>
         </ul>
       </div>
-
       <div class="card about-card" style="border-color: #e5484d;">
         <h3 style="color: #e5484d;">⚠️ 資料隱私與備份聲明</h3>
         <p>本站不會將您的任何資料上傳至伺服器。所有資料僅保存在您當前的瀏覽器中。</p>
@@ -353,7 +339,6 @@
         <p><strong>外部連線揭露：</strong>書籤圖示透過 Google Favicon API 取得，會將書籤網域傳送給 Google；天氣功能會將您的粗略地理位置傳送給 Open-Meteo。其餘資料皆不外傳。</p>
         <button class="btn primary" id="aboutExportBtn" style="margin-top: 10px; background: #e5484d; border-color: transparent;">立即匯出備份</button>
       </div>
-
       <div class="card about-card">
         <h3>⌨️ 實用快捷鍵</h3>
         <ul>
@@ -362,7 +347,6 @@
           <li><kbd>Esc</kbd> 關閉所有彈窗與面板</li>
         </ul>
       </div>
-
       <div class="card about-card">
         <h3>💡 功能清單</h3>
         <ul>
@@ -419,7 +403,7 @@
 <button class="pomo-fab" id="pomoFab" title="番茄鐘">🍅</button>
 <div class="pomo-panel" id="pomoPanel">
   <div class="pomo-time" id="pomoTime">25:00</div>
-    <div class="pomo-select-wrap">
+  <div class="pomo-select-wrap">
     <select id="pomoPreset">
       <option value="15">15 分鐘</option>
       <option value="25" selected>25 分鐘</option>
@@ -452,24 +436,20 @@
       </div>
       <button class="x-btn" data-close="#soundModal" aria-label="關閉">×</button>
     </div>
-
     <div style="display:flex;flex-direction:column;gap:12px;">
       <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
         <input type="radio" name="soundType" value="synth" checked>
         <span>預設合成音（雙音階）</span>
       </label>
-
       <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
         <input type="radio" name="soundType" value="custom">
         <span>上傳自訂音效（支援 MP3, WAV）</span>
       </label>
-
       <div style="display:flex; flex-direction:column; gap:8px; padding-left: 24px;">
         <input type="file" id="soundFileInput" accept="audio/*" style="display:none;">
         <button class="btn ghost" id="soundFilePick" style="align-self:flex-start;">＋ 選擇音訊檔案</button>
         <span id="soundFileName" style="font-size:12px; color:var(--fg-dim);">尚未選擇檔案</span>
       </div>
-
       <div class="row" style="margin-top:8px; justify-content: flex-end;">
         <button class="btn primary" id="soundSaveBtn" style="flex:1 1 auto;">儲存設定</button>
       </div>
@@ -566,7 +546,6 @@
       </div>
       <button class="x-btn" data-close="#todoModal" aria-label="關閉">×</button>
     </div>
-
     <div class="tag-manager">
       <div class="tag-add-row">
         <input type="text" id="tagInput" placeholder="新增標籤（例如：運動、讀書）…" maxlength="30">
@@ -574,9 +553,7 @@
       </div>
       <div class="tag-pool" id="tagPool"></div>
     </div>
-
     <div class="schedule-grid" id="scheduleGrid"></div>
-
     <div class="row" style="margin-top:20px; justify-content: flex-end;">
       <button class="btn ghost" id="todoCancelBtn" style="display:none; color: #e5484d; border-color: rgba(229,72,77,.3);">取消變更</button>
       <button class="btn" id="todoSaveBtn" disabled style="background: var(--hover); color: var(--fg-dim); border-color: transparent;">儲存變更</button>
