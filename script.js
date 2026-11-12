@@ -150,6 +150,27 @@
   if (!photoMeta && Array.isArray(legacyPhotos) && legacyPhotos.length) { needsLegacyPhotoMigration = true; photoMeta = legacyPhotos.map(function (p) { return { id: p.id, title: p.title || '' }; }); }
   if (!Array.isArray(photoMeta)) photoMeta = [];
 
+    // 匯率快取（以 TWD 為基準，預設值防止 API 失敗）
+  let exchangeRates = { TWD: 1, USD: 32, JPY: 0.22, HKD: 4.1, EUR: 35, GBP: 41, CNY: 4.4 };
+  
+  function fetchExchangeRates() {
+    fetch('https://open.er-api.com/v6/latest/TWD')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.rates) {
+          // 將 API 回傳的匯率反轉（因為我們需要 1 外幣 = 多少 TWD）
+          exchangeRates.USD = 1 / data.rates.USD;
+          exchangeRates.JPY = 1 / data.rates.JPY;
+          exchangeRates.HKD = 1 / data.rates.HKD;
+          exchangeRates.EUR = 1 / data.rates.EUR;
+          exchangeRates.GBP = 1 / data.rates.GBP;
+          exchangeRates.CNY = 1 / data.rates.CNY;
+          console.log('匯率更新成功', exchangeRates);
+        }
+      }).catch(() => { console.log('匯率更新失敗，使用預設備用匯率'); });
+  }
+  fetchExchangeRates();
+
   let ledger = LS.get('ledger', null);
   if (!ledger) { const oldExp = LS.get('expenses', []); if (oldExp.length) { ledger = oldExp.map(e => ({ ...e, type: 'expense' })); LS.set('ledger', ledger); LS.remove('expenses'); } else { ledger = []; } }
 
@@ -238,9 +259,12 @@
     else if (e.key === 'Escape') { closeSettings(); $('#pomoPanel').classList.remove('open'); $$('.modal.open').forEach(function (m) { closeModal('#' + m.id); }); if ($('#lightbox').classList.contains('open')) closeLightbox(); }
   });
 
-  /* 7. 首頁 Widgets */
+   /* 7. 首頁 Widgets */
   // 自動更新版權年份
-  document.getElementById('copyrightYear').textContent = new Date().getFullYear();
+  const copyrightEl = document.getElementById('copyrightYear');
+  if (copyrightEl) {
+    copyrightEl.textContent = new Date().getFullYear();
+  }
 
   function updateClock() { const now = new Date(); let timeStr = pad(now.getHours()) + ':' + pad(now.getMinutes()); if (window.innerWidth > 768) timeStr += ':' + pad(now.getSeconds()); const days = ['日', '一', '二', '三', '四', '五', '六']; const dateStr = now.getFullYear() + ' 年 ' + (now.getMonth() + 1) + ' 月 ' + now.getDate() + ' 日 · 星期' + days[now.getDay()]; $('#clockTime').textContent = timeStr; $('#clockDate').textContent = dateStr; }
   setInterval(updateClock, 1000); updateClock(); window.addEventListener('resize', updateClock);
@@ -411,15 +435,57 @@
     const listWrap = $('#ledgerList'); if (!monthItems.length) { listWrap.innerHTML = '<div class="empty">本月還沒有任何記帳紀錄。</div>'; return; }
     const sorted = monthItems.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
     listWrap.innerHTML = sorted.map(function (item) {
-      const isIncome = item.type === 'income'; const sign = isIncome ? '+' : '-'; const colorClass = isIncome ? 'income' : 'expense';
-      return '<div class="ledger-item"><div class="ledger-date">' + item.date.slice(5) + '</div><div class="ledger-cat">' + escapeHtml(item.category) + '</div><div class="ledger-note">' + escapeHtml(item.note || '-') + '</div><div class="ledger-amount ' + colorClass + '">' + sign + '$' + item.amount + '</div><button class="mini del ledger-del" data-id="' + item.id + '" title="刪除">×</button></div>';
+      const isIncome = item.type === 'income'; 
+      const sign = isIncome ? '+' : '-'; 
+      const colorClass = isIncome ? 'income' : 'expense';
+      
+      // 處理多幣別顯示
+      let amountDisplay = sign + '$' + item.amount;
+      if (item.currency && item.currency !== 'TWD' && item.originalAmount) {
+        amountDisplay = sign + item.currency + ' ' + item.originalAmount + ' <span style="font-size:12px;color:var(--fg-dim)">(約$' + item.amount + ')</span>';
+      }
+
+      return '<div class="ledger-item"><div class="ledger-date">' + item.date.slice(5) + '</div><div class="ledger-cat">' + escapeHtml(item.category) + '</div><div class="ledger-note">' + escapeHtml(item.note || '-') + '</div><div class="ledger-amount ' + colorClass + '">' + amountDisplay + '</div><button class="mini del ledger-del" data-id="' + item.id + '" title="刪除">×</button></div>';
     }).join('');
   }
-  $('#ledgerAddBtn').addEventListener('click', function () {
-    const type = $('#ledgerType').value; const amount = parseFloat($('#ledgerAmount').value); const category = $('#ledgerCategory').value; const date = $('#ledgerDate').value; const note = $('#ledgerNote').value.trim();
-    if (!amount || amount <= 0) { toast('請輸入有效金額'); $('#ledgerAmount').focus(); return; }
+    $('#ledgerAddBtn').addEventListener('click', function () {
+    const type = $('#ledgerType').value; 
+    const originalAmount = parseFloat($('#ledgerAmount').value); 
+    const currency = $('#ledgerCurrency').value;
+    const category = $('#ledgerCategory').value; 
+    const date = $('#ledgerDate').value; 
+    const note = $('#ledgerNote').value.trim();
+    
+    if (!originalAmount || originalAmount <= 0) { toast('請輸入有效金額'); $('#ledgerAmount').focus(); return; }
     if (!date) { toast('請選擇日期'); $('#ledgerDate').focus(); return; }
-    ledger.push({ id: uid(), type: type, amount: amount, category: category, date: date, note: note }); save('ledger'); $('#ledgerAmount').value = ''; $('#ledgerNote').value = ''; renderLedger(); renderHome(); toast('已新增紀錄');
+
+    // 計算換算後的台幣金額（四捨五入到整數或小數第二位）
+    let rate = exchangeRates[currency] || 1;
+    let finalAmount = currency === 'TWD' ? originalAmount : Math.round(originalAmount * rate);
+
+    // 寫入紀錄（保留原幣與原金額供顯示）
+    ledger.push({ 
+      id: uid(), 
+      type: type, 
+      amount: finalAmount, 
+      originalAmount: originalAmount, 
+      currency: currency, 
+      category: category, 
+      date: date, 
+      note: note 
+    }); 
+    
+    save('ledger'); 
+    $('#ledgerAmount').value = ''; 
+    $('#ledgerNote').value = ''; 
+    renderLedger(); 
+    renderHome(); 
+    
+    if (currency !== 'TWD') {
+      toast(`已新增：${currency} ${originalAmount} (約 NT$ ${finalAmount})`);
+    } else {
+      toast('已新增紀錄');
+    }
   });
   $('#ledgerList').addEventListener('click', function (e) { const btn = e.target.closest('.ledger-del'); if (!btn) return; const id = btn.dataset.id; ledger = ledger.filter(function (x) { return x.id !== id; }); save('ledger'); renderLedger(); renderHome(); toast('已刪除紀錄'); });
 

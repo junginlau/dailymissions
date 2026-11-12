@@ -272,11 +272,22 @@
       <div class="card ledger-form-card">
         <h3 style="font-size:16px;font-weight:600;">新增紀錄</h3>
         <div class="ledger-form" style="display:flex;flex-direction:column;gap:12px;">
-          <select id="ledgerType">
-            <option value="expense">支出</option>
-            <option value="income">進帳</option>
-          </select>
-          <input type="number" id="ledgerAmount" placeholder="金額 (例如：150)" min="1" step="1">
+                    <div class="row" style="gap: 8px;">
+            <select id="ledgerType" style="flex: 1;">
+              <option value="expense">支出</option>
+              <option value="income">進帳</option>
+            </select>
+            <select id="ledgerCurrency" style="flex: 1;">
+              <option value="TWD">TWD (台幣)</option>
+              <option value="USD">USD (美元)</option>
+              <option value="JPY">JPY (日圓)</option>
+              <option value="HKD">HKD (港幣)</option>
+              <option value="EUR">EUR (歐元)</option>
+              <option value="GBP">GBP (英鎊)</option>
+              <option value="CNY">CNY (人民幣)</option>
+            </select>
+          </div>
+          <input type="number" id="ledgerAmount" placeholder="輸入金額..." min="0.01" step="any">
           <div class="row">
             <select id="ledgerCategory">
               <option value="飲食">飲食</option>

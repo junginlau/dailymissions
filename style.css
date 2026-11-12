@@ -546,3 +546,53 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
     padding-top: 0 !important;
   }
 }
+
+/* ═══════════════ PWA 與手機底部安全區域終極修正 ═══════════════ */
+
+/* 針對加入主畫面的 PWA 獨立模式 */
+@media all and (display-mode: standalone) {
+  /* 確保 Footer 不會被底部導覽列蓋住 */
+  .site-footer {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* 針對一般手機網頁瀏覽模式（Safari/Chrome） */
+@media (max-width: 768px) {
+  /* 確保 Footer 不會被 Safari 底部工具列切掉 */
+  .site-footer {
+    padding-bottom: calc(90px + env(safe-area-inset-bottom)) !important;
+  }
+
+  /* 強制修正底部導覽列的排版，避免圖示飄浮 */
+  .mobile-nav {
+    height: calc(60px + env(safe-area-inset-bottom)) !important;
+    padding: 0 4px !important;
+    padding-bottom: env(safe-area-inset-bottom) !important;
+    align-items: flex-start !important; /* 讓內容從頂部開始對齊 */
+  }
+  
+  .mobile-nav-btn {
+    height: 60px !important; /* 固定按鈕高度為 60px，不要被底下安全區域拉長 */
+    padding-top: 6px !important; /* 給一點頂部呼吸空間 */
+    justify-content: flex-start !important; /* 內容靠上對齊 */
+  }
+}
+
+/* ═══════════════ 日記排版修正 ═══════════════ */
+
+/* 1. 禁止 textarea 被拖拽拉長，避免撐破版面 */
+#diaryContent {
+  resize: none !important; 
+}
+
+/* 2. 確保日記的容器不會被無限撐開，維持原本的固定高度 */
+.diary-compose {
+  flex: 0 0 auto;
+}
+
+/* 3. 確保日記列表區塊可以正確佔用剩餘空間並滾動 */
+.diary-viewer {
+  flex: 1 1 auto;
+  min-height: 0;
+}
