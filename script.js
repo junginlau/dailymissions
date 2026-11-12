@@ -95,11 +95,14 @@
   function openModal(sel) { const m = $(sel); if (!m) return; m.classList.add('open'); document.body.classList.add('lock'); }
   function closeModal(sel) { const m = $(sel); if (m) m.classList.remove('open'); if (!document.querySelector('.modal.open, .lightbox.open')) document.body.classList.remove('lock'); }
 
-  // 自訂確認彈窗（回傳 Promise<boolean>）
+  // 自訂確認彈窗（回傳 Promise<boolean>，內建防重複機制）
+  let confirmActive = false;
   function customConfirm(title, message, okText, cancelText, danger) {
     return new Promise(function (resolve) {
+      if (confirmActive) { resolve(false); return; } // 已有彈窗掛起，直接拒絕
       const modal = $('#confirmModal');
       if (!modal) { resolve(window.confirm(title + '\n' + (message || ''))); return; }
+      confirmActive = true;
       $('#confirmTitle').textContent = title || '確定嗎？';
       $('#confirmSub').textContent = message || '';
       const okBtn = $('#confirmOk');
@@ -115,13 +118,13 @@
         okBtn.style.borderColor = '';
         okBtn.style.color = '';
       }
+      const closeTargets = modal.querySelectorAll('.x-btn, [data-close="#confirmModal"]');
       function cleanup() {
+        confirmActive = false;
         okBtn.removeEventListener('click', onOk);
         cancelBtn.removeEventListener('click', onCancel);
         modal.removeEventListener('click', onBackdrop);
-        modal.querySelectorAll('.x-btn, [data-close="#confirmModal"]').forEach(function (b) {
-          b.removeEventListener('click', onCancel);
-        });
+        closeTargets.forEach(function (b) { b.removeEventListener('click', onCancel); });
       }
       function onOk() { cleanup(); closeModal('#confirmModal'); resolve(true); }
       function onCancel() { cleanup(); closeModal('#confirmModal'); resolve(false); }
@@ -129,9 +132,7 @@
       okBtn.addEventListener('click', onOk);
       cancelBtn.addEventListener('click', onCancel);
       modal.addEventListener('click', onBackdrop);
-      modal.querySelectorAll('.x-btn, [data-close="#confirmModal"]').forEach(function (b) {
-        b.addEventListener('click', onCancel);
-      });
+      closeTargets.forEach(function (b) { b.addEventListener('click', onCancel); });
       openModal('#confirmModal');
     });
   }
@@ -584,57 +585,65 @@
     renderRateFreshness();
   }
 
-  /* 記帳：新增與刪除事件 */
-  $('#ledgerAddBtn').addEventListener('click', function () {
-    const type = $('#ledgerType').value;
-    const currency = $('#ledgerCurrency').value;
-    const amountRaw = parseFloat($('#ledgerAmount').value);
-    const category = $('#ledgerCategory').value;
-    const date = $('#ledgerDate').value || todayKey();
-    const note = $('#ledgerNote').value.trim();
+  /* 記帳：新增與刪除事件（確保只綁定一次） */
+  (function bindLedgerHandlers() {
+    const addBtn = $('#ledgerAddBtn');
+    const listEl = $('#ledgerList');
+    if (addBtn && !addBtn.dataset.bound) {
+      addBtn.dataset.bound = '1';
+      addBtn.addEventListener('click', function () {
+        const type = $('#ledgerType').value;
+        const currency = $('#ledgerCurrency').value;
+        const amountRaw = parseFloat($('#ledgerAmount').value);
+        const category = $('#ledgerCategory').value;
+        const date = $('#ledgerDate').value || todayKey();
+        const note = $('#ledgerNote').value.trim();
 
-    if (!amountRaw || amountRaw <= 0) { toast('請輸入有效金額'); $('#ledgerAmount').focus(); return; }
-    if (!date) { toast('請選擇日期'); return; }
-    if (date > todayKey()) { toast('不能選擇未來日期'); $('#ledgerDate').value = todayKey(); return; }
+        if (!amountRaw || amountRaw <= 0) { toast('請輸入有效金額'); $('#ledgerAmount').focus(); return; }
+        if (!date) { toast('請選擇日期'); return; }
+        if (date > todayKey()) { toast('不能選擇未來日期'); $('#ledgerDate').value = todayKey(); return; }
 
-    const rateToBase = exchangeRates[currency] || 1;
-    const amountInBase = amountRaw * rateToBase;
+        const rateToBase = exchangeRates[currency] || 1;
+        const amountInBase = amountRaw * rateToBase;
 
-    ledger.push({
-      id: uid(),
-      type: type,
-      currency: currency,
-      originalAmount: amountRaw,
-      amount: amountInBase,
-      category: category,
-      date: date,
-      note: note,
-      createdAt: Date.now()
-    });
+        ledger.push({
+          id: uid(),
+          type: type,
+          currency: currency,
+          originalAmount: amountRaw,
+          amount: amountInBase,
+          category: category,
+          date: date,
+          note: note,
+          createdAt: Date.now()
+        });
 
-    save('ledger');
-    $('#ledgerAmount').value = '';
-    $('#ledgerNote').value = '';
-    renderLedger();
-    renderHome();
-    toast('已儲存這筆紀錄');
-  });
-
-  // 刪除記帳
-  $('#ledgerList').addEventListener('click', function (e) {
-    const btn = e.target.closest('.ledger-del');
-    if (!btn) return;
-    const id = btn.dataset.id;
-    if (!id) return;
-    customConfirm('確定要刪除這筆紀錄嗎？', '刪除後無法復原。', '刪除', '取消', true).then(function (ok) {
-      if (!ok) return;
-      ledger = ledger.filter(function (x) { return x.id !== id; });
-      save('ledger');
-      renderLedger();
-      renderHome();
-      toast('已刪除紀錄');
-    });
-  });
+        save('ledger');
+        $('#ledgerAmount').value = '';
+        $('#ledgerNote').value = '';
+        renderLedger();
+        renderHome();
+        toast('已儲存這筆紀錄');
+      });
+    }
+    if (listEl && !listEl.dataset.bound) {
+      listEl.dataset.bound = '1';
+      listEl.addEventListener('click', function (e) {
+        const btn = e.target.closest('.ledger-del');
+        if (!btn) return;
+        const id = btn.dataset.id;
+        if (!id) return;
+        customConfirm('確定要刪除這筆紀錄嗎？', '刪除後無法復原。', '刪除', '取消', true).then(function (ok) {
+          if (!ok) return;
+          ledger = ledger.filter(function (x) { return x.id !== id; });
+          save('ledger');
+          renderLedger();
+          renderHome();
+          toast('已刪除紀錄');
+        });
+      });
+    }
+  })();
 
   /* 11. 每週必做 */
 
