@@ -557,25 +557,33 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
   }
 }
 
-/* 針對一般手機網頁瀏覽模式（Safari/Chrome） */
+/* 針對一般手機網頁瀏覽模式（Safari/Chrome）與 PWA */
 @media (max-width: 768px) {
   /* 確保 Footer 不會被 Safari 底部工具列切掉 */
   .site-footer {
     padding-bottom: calc(90px + env(safe-area-inset-bottom)) !important;
   }
 
-  /* 強制修正底部導覽列的排版，避免圖示飄浮 */
+  /* 強制修正底部導覽列的排版 */
   .mobile-nav {
     height: calc(60px + env(safe-area-inset-bottom)) !important;
     padding: 0 4px !important;
     padding-bottom: env(safe-area-inset-bottom) !important;
-    align-items: flex-start !important; /* 讓內容從頂部開始對齊 */
+    /* 改用 flex-end，把按鈕往下壓 */
+    align-items: flex-end !important; 
   }
   
   .mobile-nav-btn {
-    height: 60px !important; /* 固定按鈕高度為 60px，不要被底下安全區域拉長 */
-    padding-top: 6px !important; /* 給一點頂部呼吸空間 */
-    justify-content: flex-start !important; /* 內容靠上對齊 */
+    height: 60px !important; 
+    /* 確保內容在按鈕範圍內垂直置中 */
+    justify-content: center !important; 
+    /* 稍微加一點底部留白，讓文字不要貼齊感應條 */
+    padding-bottom: 8px !important; 
+  }
+
+  /* 把番茄鐘再往上提，避開導覽列的高度 */
+  .pomo-fab {
+    bottom: calc(80px + env(safe-area-inset-bottom)) !important;
   }
 }
 
