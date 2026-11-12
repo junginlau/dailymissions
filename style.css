@@ -521,7 +521,7 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
 .toast.show { opacity: 1; transform: translateX(-50%); }
 
 /* Footer */
-.site-footer { text-align: center; padding: 20px; font-size: 12px; color: var(--fg-dim); opacity: 0.8; z-index: 1; position: relative; flex-shrink: 0; margin-top: auto; }
+.site-footer { text-align: center; padding: 15px; font-size: 12px; color: var(--fg-dim); opacity: 0.8; z-index: 1; position: relative; flex-shrink: 0; margin-top: auto; }
 .site-footer a { color: var(--fg); text-decoration: none; font-weight: 500; transition: color 0.2s; }
 .site-footer a:hover { color: #6AA9FF; }
 
