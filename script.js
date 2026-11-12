@@ -482,7 +482,12 @@
   function renderLedgerTags() {
     const wrap = $('#ledgerTags'); if (!wrap) return;
     if (!ledgerCategories.length) { wrap.innerHTML = ''; return; }
-    wrap.innerHTML = ledgerCategories.map(function(cat) { return '<button class="tag-chip-ledger" type="button" data-cat="' + escapeHtml(cat) + '">' + escapeHtml(cat) + '</button>'; }).join('');
+    wrap.innerHTML = ledgerCategories.map(function(cat) { 
+      return '<div class="tag-chip-ledger-wrap">' +
+               '<span class="tag-chip-ledger" data-cat="' + escapeHtml(cat) + '">' + escapeHtml(cat) + '</span>' +
+               '<button class="tag-del-btn" type="button" data-del-cat="' + escapeHtml(cat) + '" title="刪除標籤" aria-label="刪除標籤">×</button>' +
+             '</div>'; 
+    }).join('');
   }
 
   (function bindLedgerDropdown() {
@@ -499,7 +504,22 @@
     });
 
     wrap.addEventListener('click', function(e) {
-      const btn = e.target.closest('.tag-chip-ledger'); if (!btn) return;
+      const delBtn = e.target.closest('.tag-del-btn');
+      if (delBtn) {
+        e.stopPropagation();
+        const catToDelete = delBtn.dataset.delCat;
+        customConfirm('刪除性質標籤', '確定要刪除「' + escapeHtml(catToDelete) + '」這個標籤嗎？', '刪除', '取消', true).then(function(ok) {
+          if (!ok) return;
+          ledgerCategories = ledgerCategories.filter(function(c) { return c !== catToDelete; });
+          save('ledgerCategories');
+          renderLedgerTags();
+          toast('已刪除標籤');
+        });
+        return;
+      }
+
+      const btn = e.target.closest('.tag-chip-ledger'); 
+      if (!btn) return;
       inp.value = btn.dataset.cat;
       wrap.classList.remove('open');
     });

@@ -353,8 +353,49 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
 .dropdown-menu.open { display: flex; }
 .dropdown-menu::-webkit-scrollbar { width: 6px; }
 .dropdown-menu::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 999px; }
-.tag-chip-ledger { font: inherit; font-size: 12px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--hover); color: var(--fg-dim); cursor: pointer; transition: all .2s var(--ease); }
-.tag-chip-ledger:hover { background: var(--panel-border); color: var(--fg); }
+.tag-chip-ledger-wrap { 
+  position: relative; 
+  display: inline-flex; 
+  align-items: center; 
+  background: var(--hover); 
+  border: 1px solid var(--panel-border); 
+  border-radius: 999px; 
+  overflow: hidden; /* 防止內部元素超出圓角 */
+  transition: all .2s var(--ease); 
+}
+.tag-chip-ledger-wrap:hover { 
+  background: var(--panel-border); 
+}
+.tag-chip-ledger { 
+  font: inherit; 
+  font-size: 12px; 
+  padding: 5px 4px 5px 10px; 
+  color: var(--fg-dim); 
+  cursor: pointer; 
+  transition: color .2s var(--ease); 
+  user-select: none;
+}
+.tag-chip-ledger:hover { 
+  color: var(--fg); 
+}
+.tag-del-btn { 
+  font: inherit;
+  font-size: 14px; 
+  font-weight: bold;
+  padding: 4px 8px 5px 6px; 
+  border: none; 
+  background: transparent; 
+  color: var(--fg-dim); 
+  cursor: pointer; 
+  line-height: 1; 
+  display: flex; 
+  align-items: center; 
+  transition: color .2s var(--ease), background .2s var(--ease); 
+}
+.tag-del-btn:hover { 
+  color: #e5484d; 
+  background: rgba(229, 72, 77, 0.1);
+}
 
 /* ══════════ 彈窗 ══════════ */
 .modal { position: fixed; inset: 0; z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(10, 12, 16, .35); -webkit-backdrop-filter: blur(22px) saturate(140%); backdrop-filter: blur(22px) saturate(140%); }
@@ -585,12 +626,6 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
 /* ═══════════════ PWA 與手機底部安全區域終極修正 ═══════════════ */
 @media all and (display-mode: standalone) {
   .site-footer { padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important; }
-}
-@media (max-width: 768px) {
-  .site-footer { padding-bottom: calc(90px + env(safe-area-inset-bottom)) !important; }
-  .mobile-nav { height: calc(60px + env(safe-area-inset-bottom)) !important; padding: 0 4px !important; padding-bottom: env(safe-area-inset-bottom) !important; align-items: flex-end !important; }
-  .mobile-nav-btn { height: 60px !important; justify-content: center !important; padding-bottom: 8px !important; }
-  .pomo-fab { bottom: calc(80px + env(safe-area-inset-bottom)) !important; }
 }
 #diaryContent { resize: none !important; }
 .diary-compose { flex: 0 0 auto; }
