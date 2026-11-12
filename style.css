@@ -2004,3 +2004,22 @@ main.app > .view.active {
 #navMoreMenu button:hover {
   background: var(--hover);
 }
+
+/* ═══════════════ iPad 平板專屬修正 ═══════════════ */
+@media (min-width: 769px) and (max-width: 1024px) {
+  /* 1. 確保底部導覽列不會貼著螢幕最底端，留出安全距離 */
+  .mobile-nav {
+    padding-bottom: max(env(safe-area-inset-bottom), 12px) !important;
+  }
+
+  /* 2. 確保主內容區塊底部有足夠的空間，不會被導覽列蓋住 */
+  .app {
+    padding-bottom: 100px !important; 
+  }
+
+  /* 3. 如果 iPad 直向或橫向切換時，讓主內容保持順暢 */
+  .view {
+    min-height: auto;
+    height: auto;
+  }
+}
