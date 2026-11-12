@@ -155,6 +155,7 @@
   const DEFAULT_RATES = { TWD: 1, USD: 32, JPY: 0.22, HKD: 4.1, EUR: 35, GBP: 41, CNY: 4.4 };
   let exchangeRates = Object.assign({}, DEFAULT_RATES);
   let exchangeRatesUpdatedAt = 0;
+  const photoCache = {}; // [NEW] 提前宣告，供雲端備份與照片庫共用
   const RATE_MIN_INTERVAL = 60 * 60 * 1000;
   (function loadCachedRates() {
     const cached = LS.get('exchangeRates', null);
@@ -857,7 +858,7 @@
   });
   $('#noteDelete').addEventListener('click', function () { if (!editingNoteId) return; notes = notes.filter(function (x) { return x.id !== editingNoteId; }); save('notes'); renderNotes(); closeModal('#noteModal'); toast('已刪除筆記'); });
 
-  const photoCache = {};
+    /* 15. 照片庫 */
   function loadPhotoSrc(id) {
     if (photoCache[id]) return Promise.resolve(photoCache[id]);
     const fallbackLegacy = function () { const legacy = (legacyPhotos || []).find(function (p) { return p.id === id; }); if (legacy && legacy.src) { photoCache[id] = legacy.src; return legacy.src; } return null; };
@@ -1189,7 +1190,162 @@
     };
     reader.readAsText(file);
   });
+  // ── [NEW] Google Drive 雲端備份邏輯 ──
+  const CLIENT_ID = '355931371376-sdu9qo95t0ghojgsb6eicqgc5nd6i31o.apps.googleusercontent.com'; // ⚠️ 請替換成你申請到的 Client ID
+  const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
+  let tokenClient = null;
+  let accessToken = null;
 
+  const gLoginBtn = $('#gLoginBtn');
+  const gBackupBtn = $('#gBackupBtn');
+  const gRestoreBtn = $('#gRestoreBtn');
+  const gStatus = $('#gStatus');
+  const gActionWrap = $('#gActionWrap');
+
+  function updateGoogleUI() {
+    if (accessToken) {
+      gLoginBtn.style.display = 'none';
+      gActionWrap.style.display = 'flex';
+      gStatus.textContent = '已連接 Google 雲端';
+      gStatus.style.color = 'var(--income-color)';
+    } else {
+      gLoginBtn.style.display = 'block';
+      gActionWrap.style.display = 'none';
+      gStatus.textContent = '尚未登入';
+      gStatus.style.color = 'var(--fg-dim)';
+    }
+  }
+
+  function initGoogleAuth() {
+    if (typeof google === 'undefined') {
+      gStatus.textContent = 'Google API 載入失敗，請檢查網路。';
+      return;
+    }
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES,
+      callback: (tokenResponse) => {
+        if (tokenResponse && tokenResponse.access_token) {
+          accessToken = tokenResponse.access_token;
+          updateGoogleUI();
+          toast('已成功連接 Google 雲端');
+        } else {
+          toast('登入失敗或已取消');
+        }
+      },
+    });
+    gLoginBtn.addEventListener('click', () => {
+      tokenClient.requestAccessToken({ prompt: 'consent' });
+    });
+  }
+
+  window.addEventListener('load', () => {
+    setTimeout(initGoogleAuth, 1000);
+  });
+
+  gBackupBtn.addEventListener('click', async () => {
+    if (!accessToken) return;
+    toast('正在上傳至雲端…');
+    try {
+      const exportPhotos = photoMeta.map(function (m) { return loadPhotoSrc(m.id).then(function (src) { return { id: m.id, title: m.title || '', src: src || '' }; }); });
+      const photosData = await Promise.all(exportPhotos);
+      const data = { version: BACKUP_VERSION, exportedAt: new Date().toISOString(), todos: todos, events: events, diaries: diaries, notes: notes, photos: photosData, goals: goals, bookmarks: bookmarks, ledger: ledger, countdowns: countdowns, ledgerCategories: ledgerCategories, prefs: { lum: state.lum, bg: state.bg }, pomoSoundType: soundType };
+      const jsonString = JSON.stringify(data);
+
+      const searchRes = await fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder', {
+        headers: { 'Authorization': 'Bearer ' + accessToken }
+      });
+      const searchData = await searchRes.json();
+      let fileId = null;
+      if (searchData.files && searchData.files.length > 0) {
+        fileId = searchData.files[0].id;
+      }
+
+      const boundary = '-------314159265358979323846';
+      const delimiter = "\r\n--" + boundary + "\r\n";
+      const close_delim = "\r\n--" + boundary + "--";
+      
+      let metadata = { name: 'my_space_backup.json', mimeType: 'application/json' };
+      if (!fileId) metadata.parents = ['appDataFolder'];
+      
+      const multipartRequestBody =
+        delimiter + 'Content-Type: application/json\r\n\r\n' + JSON.stringify(metadata) + 
+        delimiter + 'Content-Type: application/json\r\n\r\n' + jsonString + 
+        close_delim;
+
+      let url = 'https://www.googleapis.com/upload/drive/v3/files';
+      let method = 'POST';
+      if (fileId) { url += '/' + fileId; method = 'PATCH'; }
+      url += '?uploadType=multipart';
+
+      const res = await fetch(url, {
+        method: method,
+        headers: {
+          'Authorization': 'Bearer ' + accessToken,
+          'Content-Type': 'multipart/related; boundary="' + boundary + '"'
+        },
+        body: multipartRequestBody
+      });
+
+      if (res.ok) toast('已成功備份至 Google 雲端');
+      else toast('備份失敗，請重新登入');
+    } catch (err) {
+      console.error(err);
+      toast('備份失敗，請檢查網路或重新登入');
+    }
+  });
+
+  gRestoreBtn.addEventListener('click', async () => {
+    if (!accessToken) return;
+    const ok = await customConfirm('從雲端還原', '這將覆蓋目前所有資料，確定嗎？', '還原', '取消', true);
+    if (!ok) return;
+
+    toast('正在從雲端下載…');
+    try {
+      const searchRes = await fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder', {
+        headers: { 'Authorization': 'Bearer ' + accessToken }
+      });
+      const searchData = await searchRes.json();
+      if (!searchData.files || searchData.files.length === 0) { toast('雲端上沒有找到備份檔案'); return; }
+      
+      const fileId = searchData.files[0].id;
+      const fileRes = await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media', {
+        headers: { 'Authorization': 'Bearer ' + accessToken }
+      });
+      const data = await fileRes.json();
+
+      if (data.todos) todos = migrateTodos(data.todos); 
+      if (data.events) events = data.events; 
+      if (data.diaries) diaries = data.diaries; 
+      if (data.notes) notes = data.notes; 
+      if (data.goals) goals = data.goals; 
+      if (data.bookmarks) bookmarks = data.bookmarks; 
+      if (data.countdowns) countdowns = data.countdowns;
+      if (data.ledgerCategories) ledgerCategories = data.ledgerCategories;
+      if (data.ledger) ledger = data.ledger; else if (data.expenses) ledger = data.expenses.map(x => Object.assign({}, x, { type: 'expense' }));
+      
+      photoMeta = [];
+      const photoWrites = (data.photos || []).map(p => { 
+        photoMeta.push({ id: p.id, title: p.title || '' }); 
+        if (IDB.available() && p.src) { photoCache[p.id] = p.src; return IDB.put('photos', { id: p.id, src: p.src }).catch(()=>{}); } 
+        return Promise.resolve(); 
+      });
+      
+      if (data.prefs) { if (typeof data.prefs.lum === 'number') state.lum = Math.min(100, Math.max(0, data.prefs.lum)); if (typeof data.prefs.bg === 'string') state.bg = data.prefs.bg || null; applyTheme(); savePrefs(); }
+      if (data.pomoSoundType === 'synth' || data.pomoSoundType === 'custom') { soundType = data.pomoSoundType; LS.set('pomoSoundType', soundType); }
+
+      await Promise.all(photoWrites);
+      ['todos', 'events', 'diaries', 'notes', 'goals', 'bookmarks', 'ledger', 'countdowns', 'ledgerCategories'].forEach(save); save('photoMeta'); pruneEvents(); pruneDone();
+      renderTodos(); renderCalendar(); renderDiaries(); renderNotes(); renderPhotos(); renderGoals(); renderBookmarks(); renderLedger(); renderHome();
+      toast('雲端還原成功！');
+    } catch (err) {
+      console.error(err);
+      toast('下載失敗，請重新登入');
+    }
+  });
+
+  updateGoogleUI();
+  // ── [NEW] Google Drive 邏輯結束 ──
   $$('[data-close]').forEach(function (btn) { btn.addEventListener('click', function () { closeModal(btn.dataset.close); }); });
   $$('.modal').forEach(function (m) { m.addEventListener('click', function (e) { if (e.target === m) closeModal('#' + m.id); }); });
 
