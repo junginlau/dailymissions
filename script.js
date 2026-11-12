@@ -370,7 +370,17 @@
   let cdInterval = null; let cdIndex = 0; let cdListData = [];
   function collectUpcomingEvents() {
     const today = new Date(); today.setHours(0, 0, 0, 0); const list = [];
-    Object.keys(events).forEach(function (k) { const target = new Date(k); target.setHours(0, 0, 0, 0); if (target < today) return; (events[k] || []).forEach(function (ev) { list.push({ date: k, time: ev.time || '', title: ev.title }); }); });
+    Object.keys(events).forEach(function (k) {
+      const target = new Date(k); target.setHours(0, 0, 0, 0); if (target < today) return;
+      (events[k] || []).forEach(function (ev) {
+        list.push({ kind: 'event', id: ev.id, date: k, time: ev.time || '', title: ev.title });
+      });
+    });
+    (countdowns || []).forEach(function (cd) {
+      if (!cd || !cd.date) return;
+      const target = new Date(cd.date); target.setHours(0, 0, 0, 0); if (target < today) return;
+      list.push({ kind: 'countdown', id: cd.id, date: cd.date, time: '', title: cd.title });
+    });
     list.sort(function (a, b) { if (a.date !== b.date) return a.date < b.date ? -1 : 1; if (!a.time && !b.time) return 0; if (!a.time) return -1; if (!b.time) return 1; return a.time < b.time ? -1 : (a.time > b.time ? 1 : 0); });
     return list.slice(0, 3);
   }
@@ -382,7 +392,8 @@
       const target = new Date(cd.date); target.setHours(0, 0, 0, 0); const diff = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
       let text = diff === 0 ? '就是今天！' : '還有 ' + diff + ' 天'; const urgentClass = (diff >= 0 && diff <= 3) ? ' urgent' : '';
       const d = keyToDate(cd.date); const dateLabel = (d.getMonth() + 1) + '/' + d.getDate(); const timeStr = cd.time ? ' ' + cd.time : '';
-      return '<div class="cd-item"><span class="cd-title">' + escapeHtml(cd.title) + ' <span class="cd-date">' + dateLabel + timeStr + '</span></span><span class="cd-days' + urgentClass + '">' + text + '</span></div>';
+      const delBtn = cd.kind === 'countdown' ? '<button class="cd-del mini del" data-cd-id="' + cd.id + '" title="刪除倒數日" aria-label="刪除倒數日" style="width:20px;height:20px;font-size:11px;margin-left:6px;">×</button>' : '';
+      return '<div class="cd-item"><span class="cd-title">' + escapeHtml(cd.title) + ' <span class="cd-date">' + dateLabel + timeStr + '</span></span><span class="cd-days' + urgentClass + '">' + text + '</span>' + delBtn + '</div>';
     }
     if (cdListData.length === 1) { list.innerHTML = buildItem(cdListData[0]); return; }
     cdIndex = 0; list.innerHTML = buildItem(cdListData[0]);
@@ -395,6 +406,52 @@
       }, 500);
     }, 4000);
   }
+
+  // 倒數日：新增、刪除事件
+  (function bindCountdownHandlers() {
+    const addBtn = $('#cdAddBtn');
+    const saveBtn = $('#cdSave');
+    const listEl = $('#countdownList');
+    if (addBtn && !addBtn.dataset.bound) {
+      addBtn.dataset.bound = '1';
+      addBtn.addEventListener('click', function () {
+        $('#cdTitle').value = '';
+        $('#cdDate').value = '';
+        openModal('#cdModal');
+        setTimeout(function () { $('#cdTitle').focus(); }, 80);
+      });
+    }
+    if (saveBtn && !saveBtn.dataset.bound) {
+      saveBtn.dataset.bound = '1';
+      saveBtn.addEventListener('click', function () {
+        const title = $('#cdTitle').value.trim();
+        const date = $('#cdDate').value;
+        if (!title) { toast('請填寫事件名稱'); $('#cdTitle').focus(); return; }
+        if (!date) { toast('請選擇日期'); $('#cdDate').focus(); return; }
+        countdowns.push({ id: uid(), title: title, date: date });
+        save('countdowns');
+        closeModal('#cdModal');
+        renderCountdowns();
+        toast('已新增倒數日');
+      });
+    }
+    if (listEl && !listEl.dataset.bound) {
+      listEl.dataset.bound = '1';
+      listEl.addEventListener('click', function (e) {
+        const btn = e.target.closest('.cd-del');
+        if (!btn) return;
+        const id = btn.dataset.cdId;
+        if (!id) return;
+        customConfirm('確定要刪除這個倒數日嗎？', '刪除後無法復原。', '刪除', '取消', true).then(function (ok) {
+          if (!ok) return;
+          countdowns = countdowns.filter(function (c) { return c.id !== id; });
+          save('countdowns');
+          renderCountdowns();
+          toast('已刪除倒數日');
+        });
+      });
+    }
+  })();
 
   function countTodayTags() { const tk = dayKeyOf(new Date()); return (todos.schedule[tk] || []).length; }
   function countUpcoming(days) { const now = new Date(); let n = 0; for (let i = 0; i < days; i++) { const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i); const list = events[dateKey(d)]; if (list) n += list.length; } return n; }
@@ -825,7 +882,19 @@
 
   /* 15. 照片庫 */
   const photoCache = {};
-  function loadPhotoSrc(id) { if (photoCache[id]) return Promise.resolve(photoCache[id]); if (!IDB.available()) return Promise.resolve(null); return IDB.get('photos', id).then(function (rec) { if (rec && rec.src) { photoCache[id] = rec.src; return rec.src; } return null; }).catch(function () { return null; }); }
+  function loadPhotoSrc(id) {
+    if (photoCache[id]) return Promise.resolve(photoCache[id]);
+    const fallbackLegacy = function () {
+      const legacy = (legacyPhotos || []).find(function (p) { return p.id === id; });
+      if (legacy && legacy.src) { photoCache[id] = legacy.src; return legacy.src; }
+      return null;
+    };
+    if (!IDB.available()) return Promise.resolve(fallbackLegacy());
+    return IDB.get('photos', id).then(function (rec) {
+      if (rec && rec.src) { photoCache[id] = rec.src; return rec.src; }
+      return fallbackLegacy();
+    }).catch(function () { return fallbackLegacy(); });
+  }
   function renderPhotos() {
     const grid = $('#photoGrid'); if (!photoMeta.length) { grid.innerHTML = '<div class="empty" style="grid-column:1/-1;">還沒有照片，點「添加照片」上傳。</div>'; return; }
     grid.innerHTML = photoMeta.map(function (p) { return '<button class="photo" data-id="' + p.id + '"><img alt="" data-photo="' + p.id + '"></button>'; }).join('');
