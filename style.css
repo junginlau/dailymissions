@@ -2005,45 +2005,46 @@ main.app > .view.active {
   background: var(--hover);
 }
 
-/* ═══════════════ iPad 平板專屬修正 ═══════════════ */
-@media (min-width: 769px) and (max-width: 1024px) {
-  /* 1. 讓「每週必做」的今天卡片不要無限拉長 */
+/* ═══════════════ 平板與桌面版面強制修正 ═══════════════ */
+
+/* 1. 強制解除高度鎖定，讓內容自然往下長 */
+html, body, .app {
+  height: auto !important;
+  overflow: visible !important;
+}
+
+/* 2. 針對平板與縮小視窗，讓「每週必做」的卡片不要撐滿 */
+@media (min-width: 769px) {
   .today-layout {
-    min-height: auto;
-    flex-direction: row;
-    gap: 16px;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-start !important;
+    gap: 16px !important;
   }
+  
   .today-card {
-    flex: 1 1 auto;
-    min-height: 200px; /* 給一個基本高度，但不撐滿整個螢幕 */
-  }
-
-  /* 2. 確保主內容區塊（.app）不會強制撐滿 100vh，讓 Footer 自然貼底 */
-  .app {
+    flex: 1 1 auto !important;
+    min-height: 300px !important; /* 給個基本高度就好，不要撐滿 */
     height: auto !important;
-    min-height: 100vh;
-    padding-bottom: 20px;
   }
-
-  /* 3. 確保 Footer 乖乖在最下面 */
+  
+  .tomorrow-col {
+    flex: 0 0 200px !important;
+  }
+  
+  /* 讓 Footer 乖乖待在內容最下方 */
   .site-footer {
     margin-top: auto !important;
-    padding-bottom: 20px !important;
-  }
-
-  /* 4. 頂部導覽列如果擠壓，讓它顯示「...」選單（隱藏橫向選單） */
-  .nav-links {
-    display: flex; /* 保持顯示，因為平板橫向夠寬 */
-    overflow-x: auto;
+    padding-bottom: 30px !important;
   }
 }
 
-/* 針對更小的平板（例如直向） */
-@media (min-width: 769px) and (max-width: 900px) {
-  .nav-links {
-    display: none !important; /* 寬度不夠就隱藏橫向選單 */
+/* 3. 確保手機版依然是原本的上下排列，不受平板設定影響 */
+@media (max-width: 768px) {
+  .today-layout {
+    flex-direction: column !important;
   }
-  .nav-more-wrap {
-    display: block !important; /* 顯示「...」按鈕 */
+  .today-card {
+    min-height: auto !important;
   }
 }
