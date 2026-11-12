@@ -99,7 +99,7 @@
   let confirmActive = false;
   function customConfirm(title, message, okText, cancelText, danger) {
     return new Promise(function (resolve) {
-      if (confirmActive) { resolve(false); return; } // 已有彈窗掛起，直接拒絕
+      if (confirmActive) { resolve(false); return; }
       const modal = $('#confirmModal');
       if (!modal) { resolve(window.confirm(title + '\n' + (message || ''))); return; }
       confirmActive = true;
@@ -196,9 +196,8 @@
   const DEFAULT_RATES = { TWD: 1, USD: 32, JPY: 0.22, HKD: 4.1, EUR: 35, GBP: 41, CNY: 4.4 };
   let exchangeRates = Object.assign({}, DEFAULT_RATES);
   let exchangeRatesUpdatedAt = 0;
-  const RATE_MIN_INTERVAL = 60 * 60 * 1000; // 最短請求間隔：1 小時
+  const RATE_MIN_INTERVAL = 60 * 60 * 1000;
 
-  // 從 LocalStorage 載入已快取的匯率（若有）
   (function loadCachedRates() {
     const cached = LS.get('exchangeRates', null);
     if (cached && cached.rates && cached.updatedAt) {
@@ -207,10 +206,7 @@
     }
   })();
 
-  // 主要顯示貨幣設定（預設 HKD）
   let mainCurrency = LS.get('mainCurrency', 'HKD');
-
-  // 幣別符號對應表
   const currencySymbols = { TWD: 'NT$', USD: '$', JPY: '¥', HKD: 'HK$', EUR: '€', GBP: '£', CNY: '¥' };
 
   function renderRateFreshness() {
@@ -342,7 +338,6 @@
   });
 
    /* 7. 首頁 Widgets */
-  // 自動更新版權年份
   const copyrightEl = document.getElementById('copyrightYear');
   if (copyrightEl) {
     copyrightEl.textContent = new Date().getFullYear();
@@ -368,6 +363,7 @@
   $('#quoteText').textContent = QUOTES[Math.floor(Math.random() * QUOTES.length)];
 
   let cdInterval = null; let cdIndex = 0; let cdListData = [];
+  // [NEW] 合併 events 與 countdowns
   function collectUpcomingEvents() {
     const today = new Date(); today.setHours(0, 0, 0, 0); const list = [];
     Object.keys(events).forEach(function (k) {
@@ -388,6 +384,7 @@
     const list = $('#countdownList'); if (cdInterval) { clearInterval(cdInterval); cdInterval = null; }
     cdListData = collectUpcomingEvents(); if (!cdListData.length) { list.innerHTML = '<div class="empty small" style="padding:6px 0;">近期沒有要事。</div>'; return; }
     const today = new Date(); today.setHours(0, 0, 0, 0);
+    // [NEW] 倒數日顯示刪除按鈕
     function buildItem(cd) {
       const target = new Date(cd.date); target.setHours(0, 0, 0, 0); const diff = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
       let text = diff === 0 ? '就是今天！' : '還有 ' + diff + ' 天'; const urgentClass = (diff >= 0 && diff <= 3) ? ' urgent' : '';
@@ -407,7 +404,7 @@
     }, 4000);
   }
 
-  // 倒數日：新增、刪除事件
+  // [NEW] 倒數日：新增、刪除事件
   (function bindCountdownHandlers() {
     const addBtn = $('#cdAddBtn');
     const saveBtn = $('#cdSave');
@@ -461,7 +458,6 @@
     ledger.forEach(item => {
       if (item.date === tk && item.type === 'expense') totalTWD += item.amount; // amount 是台幣
     });
-    // 將台幣換算成主要貨幣
     const rate = exchangeRates[mainCurrency] || 1;
     return Math.round(totalTWD / rate);
   }
@@ -577,7 +573,6 @@
   /* 10. 記帳 */
     function renderLedger() {
     if (!$('#ledgerDate').value) $('#ledgerDate').value = todayKey();
-    // 限制日期選擇器不能選未來日期
     $('#ledgerDate').max = todayKey();
     
     const now = new Date(); 
@@ -591,7 +586,6 @@
       else totalExpenseTWD += item.amount; 
     });
 
-    // 根據主要貨幣反算金額
     const currentRate = exchangeRates[mainCurrency] || 1;
     const showExpense = Math.round(totalExpenseTWD / currentRate);
     const showIncome = Math.round(totalIncomeTWD / currentRate);
@@ -599,14 +593,13 @@
 
     const symbol = currencySymbols[mainCurrency] || '$';
 
-    // 更新 UI
     $('#monthExpenseTotal').textContent = symbol + ' ' + showExpense; 
     $('#monthIncomeTotal').textContent = symbol + ' ' + showIncome; 
     $('#monthBalanceTotal').textContent = symbol + ' ' + showBalance; 
     $('#monthBalanceTotal').style.color = showBalance >= 0 ? 'var(--income-color)' : 'var(--expense-color)';
 
     const listWrap = $('#ledgerList'); 
-    if (!monthItems.length) { listWrap.innerHTML = '<div class="empty">本月還沒有任何記帳紀錄。</div>'; return; }
+    if (!monthItems.length) { listWrap.innerHTML = '<div class="empty">本月還沒有任何記帳紀錄。</div>'; renderRateFreshness(); return; }
     
     const sorted = monthItems.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
     
@@ -618,7 +611,6 @@
       let amountDisplay = '';
       let extraNote = '';
 
-      // 如果這筆紀錄的幣別跟主要貨幣不同，就顯示原幣與換算
       if (item.currency && item.currency !== mainCurrency && item.originalAmount) {
         amountDisplay = sign + item.currency + ' ' + item.originalAmount;
         const itemInTWD = item.amount;
@@ -882,6 +874,7 @@
 
   /* 15. 照片庫 */
   const photoCache = {};
+  // [NEW] fallback legacy
   function loadPhotoSrc(id) {
     if (photoCache[id]) return Promise.resolve(photoCache[id]);
     const fallbackLegacy = function () {
@@ -924,7 +917,14 @@
   let pomoInterval = null; let pomoSeconds = 25 * 60; let pomoRunning = false;
   const pomoTime = $('#pomoTime'); const pomoPanel = $('#pomoPanel'); const pomoFab = $('#pomoFab');
   let audioCtx = null; let customAudioData = null; let soundType = LS.get('pomoSoundType', 'synth'); let pomoVolume = LS.get('pomoVolume', 70); let pomoBaseSeconds = 25 * 60;
-  function loadCustomAudio() { if (!IDB.available()) return Promise.resolve(); return IDB.get('audio', 'pomo').then(function (rec) { if (rec && rec.data) customAudioData = rec.data; }).catch(function () {}); }
+  // [NEW] 載入完成後主動刷新 UI
+  function loadCustomAudio() {
+    if (!IDB.available()) return Promise.resolve();
+    return IDB.get('audio', 'pomo').then(function (rec) {
+      if (rec && rec.data) { customAudioData = rec.data; }
+      if (typeof updateSoundUI === 'function') updateSoundUI();
+    }).catch(function () {});
+  }
   function updatePomoDisplay() { const m = Math.floor(pomoSeconds / 60); const s = pomoSeconds % 60; pomoTime.textContent = pad(m) + ':' + pad(s); }
   pomoFab.addEventListener('click', function () { pomoPanel.classList.toggle('open'); });
   $('#pomoSetBtn').addEventListener('click', function () {
@@ -1066,6 +1066,26 @@
 
   if (!STORAGE_OK) { setTimeout(function () { toast('⚠️ 瀏覽器儲存空間不可用，資料將不會保留'); }, 900); }
   loadPrefs(); applyTheme(); pruneEvents(); pruneDone();
+
+  // [NEW] 初始化渲染（每個視圖獨立保護，避免單一錯誤中斷全部）
+  function safeRender(name, fn) {
+    try { fn(); } catch (e) { console.warn('初始化渲染失敗：' + name, e); }
+  }
+  safeRender('home', renderHome);
+  safeRender('todos', renderTodos);
+  safeRender('calendar', renderCalendar);
+  safeRender('diaries', renderDiaries);
+  safeRender('notes', renderNotes);
+  safeRender('photos', renderPhotos);
+  safeRender('goals', renderGoals);
+  safeRender('bookmarks', renderBookmarks);
+  safeRender('ledger', renderLedger);
+
+  // [NEW] 非同步載入：鈴聲 + 舊照片遷移
+  Promise.all([loadCustomAudio(), migrateLegacyPhotos()]).then(function () {
+    if (typeof updateSoundUI === 'function') updateSoundUI();
+    renderPhotos();
+  }).catch(function () {});
 
   /* ═══════════════ Service Worker 更新提示 ═══════════════ */
   if ('serviceWorker' in navigator) {
