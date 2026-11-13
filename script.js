@@ -529,8 +529,8 @@
   // ==========================================
   function renderRateFreshness() {
     const el = $('#rateFreshness'); if (!el) return;
-    if (!exchangeRatesUpdatedAt) { el.textContent = '匯率：使用預設值（尚未取得即時匯率）'; return; }
-    el.textContent = '匯率最後更新：' + fmtDateTime(new Date(exchangeRatesUpdatedAt)) + '（以 TWD 為基準）';
+    if (!exchangeRatesUpdatedAt) { el.textContent = window.I18N[currentLang].ledgerRateNote || '匯率：使用預設值（尚未取得即時匯率）'; return; }
+    el.textContent = window.I18N[currentLang].ledgerRateNote + '：' + fmtDateTime(new Date(exchangeRatesUpdatedAt));
   }
 
   function fetchExchangeRates() {
@@ -613,7 +613,7 @@
     const showExpense = Math.round(totalExpenseTWD / currentRate); const showIncome = Math.round(totalIncomeTWD / currentRate); const showBalance = showIncome - showExpense;
     const symbol = currencySymbols[mainCurrency] || '$';
     $('#monthExpenseTotal').textContent = symbol + ' ' + showExpense; $('#monthIncomeTotal').textContent = symbol + ' ' + showIncome; $('#monthBalanceTotal').textContent = symbol + ' ' + showBalance; $('#monthBalanceTotal').style.color = showBalance >= 0 ? 'var(--income-color)' : 'var(--expense-color)';
-    const listWrap = $('#ledgerList'); if (!monthItems.length) { listWrap.innerHTML = '<div class="empty">本月還沒有任何記帳紀錄。</div>'; renderRateFreshness(); return; }
+    const listWrap = $('#ledgerList'); if (!monthItems.length) { listWrap.innerHTML = '<div class="empty">' + (window.I18N[currentLang].ledgerEmpty || '本月還沒有任何記帳紀錄。') + '</div>'; renderRateFreshness(); return; }
     const sorted = monthItems.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
     listWrap.innerHTML = sorted.map(function (item) {
       const isIncome = item.type === 'income'; const sign = isIncome ? '+' : '-'; const colorClass = isIncome ? 'income' : 'expense';

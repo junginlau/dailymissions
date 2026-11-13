@@ -54,13 +54,13 @@
     <div class="nav-more-wrap" id="navMoreWrap">
       <button class="nav-btn" id="navMoreBtn">選單</button>
       <div class="nav-more-menu" id="navMoreMenu">
-        <button data-view="todo">每週必做</button>
-        <button data-view="calendar">日曆</button>
-        <button data-view="diary">日記</button>
-        <button data-view="notes">筆記本</button>
-        <button data-view="photos">照片庫</button>
-        <button data-view="ledger">記帳</button>
-        <button data-view="about">關於本站</button>
+        <button data-view="todo" data-i18n="navTodo">每週必做</button>
+        <button data-view="calendar" data-i18n="navCalendar">日曆</button>
+        <button data-view="diary" data-i18n="navDiary">日記</button>
+        <button data-view="notes" data-i18n="navNotes">筆記本</button>
+        <button data-view="photos" data-i18n="navPhotos">照片庫</button>
+        <button data-view="ledger" data-i18n="navLedger">記帳</button>
+        <button data-view="about" data-i18n="navAbout">關於本站</button>
       </div>
     </div>
 
@@ -100,9 +100,9 @@
   </div>
 
   <div class="settings" id="settings">
-    <div class="set-title"><span>背景亮度</span><span id="lumVal">55</span></div>
+    <div class="set-title"><span data-i18n="setLum">背景亮度</span><span id="lumVal">55</span></div>
     <input type="range" id="lumRange" min="0" max="100" step="1" value="55">
-    <div class="set-title" style="margin-top: 12px;"><span>主要顯示貨幣</span></div>
+    <div class="set-title" style="margin-top: 12px;"><span data-i18n="setCurrency">主要顯示貨幣</span></div>
     <select id="mainCurrencySelect" style="width: 100%; margin-bottom: 16px;">
       <option value="TWD">TWD (台幣)</option>
       <option value="USD">USD (美元)</option>
@@ -113,27 +113,27 @@
       <option value="CNY">CNY (人民幣)</option>
     </select>
     <div class="set-actions">
-      <button class="set-btn" id="pickBg">插入背景圖片</button>
-      <button class="set-btn ghost" id="clearBg">移除背景</button>
+      <button class="set-btn" id="pickBg" data-i18n="setBgPick">插入背景圖片</button>
+      <button class="set-btn ghost" id="clearBg" data-i18n="setBgClear">移除背景</button>
     </div>
-    <div class="set-actions"><button class="set-btn" id="themeToggle">切換深/淺色</button></div>
+    <div class="set-actions"><button class="set-btn" id="themeToggle" data-i18n="setTheme">切換深/淺色</button></div>
     <div class="set-actions">
-      <button class="set-btn" id="exportBtn">匯出備份</button>
-      <button class="set-btn ghost" id="importBtn">匯入備份</button>
+      <button class="set-btn" id="exportBtn" data-i18n="setExport">匯出備份</button>
+      <button class="set-btn ghost" id="importBtn" data-i18n="setImport">匯入備份</button>
     </div>
-    <div class="set-title" style="margin-top: 16px;"><span>Google 雲端備份</span></div>
+    <div class="set-title" style="margin-top: 16px;"><span data-i18n="setGTitle">Google 雲端備份</span></div>
     <div class="set-actions" style="flex-direction: column; gap: 8px;">
       <button class="set-btn ghost" id="gLoginBtn" data-i18n="gLoginBtn">登入 Google 帳號</button>
       <div id="gStatus" data-i18n="gStatusNone" style="font-size: 11px; color: var(--fg-dim); margin-top: 4px;">尚未登入</div>
       <div class="row" style="gap: 8px; width: 100%; display: none;" id="gActionWrap">
-        <button class="set-btn" id="gBackupBtn" style="flex: 1;">上傳備份</button>
-        <button class="set-btn ghost" id="gRestoreBtn" style="flex: 1;">從雲端還原</button>
+        <button class="set-btn" id="gBackupBtn" style="flex: 1;" data-i18n="setGBackup">上傳備份</button>
+        <button class="set-btn ghost" id="gRestoreBtn" style="flex: 1;" data-i18n="setGRestore">從雲端還原</button>
       </div>
     </div>
     <div class="set-actions" style="margin-top: 16px;">
-      <button class="set-btn" id="clearAllBtn" style="color: #e5484d; border-color: rgba(229,72,77,.3);">清除所有資料</button>
+      <button class="set-btn" id="clearAllBtn" style="color: #e5484d; border-color: rgba(229,72,77,.3);" data-i18n="setClearAll">清除所有資料</button>
     </div>
-    <div class="set-note">設定會自動記憶，下次開啟時自動套用。</div>
+    <div class="set-note" data-i18n="setNote">設定會自動記憶，下次開啟時自動套用。</div>
   </div>
 </header>
 
@@ -154,39 +154,39 @@
           「我的空間」是一個極簡的個人數位儀表板，提供待辦事項、日記、記帳與 Google Drive 雲端備份功能。本服務不使用 Google API 生成未經同意的親密影像 (NCI)。
         </p>
         <div class="stats">
-          <div class="stat"><b id="statTodo">0</b><span>今天必做</span></div>
-          <div class="stat"><b id="statEvent">0</b><span>未來 7 天要事</span></div>
-          <div class="stat"><b id="statDiary">0</b><span>日記篇數</span></div>
-          <div class="stat"><b id="statExpense">0</b><span>今日支出</span></div>
+          <div class="stat"><b id="statTodo">0</b><span data-i18n="statTodo">今天必做</span></div>
+          <div class="stat"><b id="statEvent">0</b><span data-i18n="statEvent">未來 7 天要事</span></div>
+          <div class="stat"><b id="statDiary">0</b><span data-i18n="statDiary">日記篇數</span></div>
+          <div class="stat"><b id="statExpense">0</b><span data-i18n="statExpense">今日支出</span></div>
         </div>
 
         <div class="card goal-card">
           <div class="goal-head">
-            <h3>我的目標 <span class="badge" id="goalBadge">0 / 0</span></h3>
-            <button class="btn ghost" id="goalAddBtn" style="padding:6px 14px;font-size:13px;">＋ 新增目標</button>
+            <h3><span data-i18n="goalTitle">我的目標</span> <span class="badge" id="goalBadge">0 / 0</span></h3>
+            <button class="btn ghost" id="goalAddBtn" style="padding:6px 14px;font-size:13px;" data-i18n="goalAdd">＋ 新增目標</button>
           </div>
           <div class="goal-list" id="goalList"></div>
         </div>
 
         <div class="shortcuts-grid">
-          <button class="card shortcut" data-go="todo"><div class="k">每週必做</div><div class="d">把這週最重要的事挑出來，先做那幾件。</div><div class="arrow">前往 →</div></button>
-          <button class="card shortcut" data-go="calendar"><div class="k">日曆</div><div class="d">看看這個月的節奏，安排一下空檔。</div><div class="arrow">前往 →</div></button>
-          <button class="card shortcut" data-go="diary"><div class="k">日記</div><div class="d">寫下今天的一件小事，留給以後的自己。</div><div class="arrow">前往 →</div></button>
-          <button class="card shortcut" data-go="notes"><div class="k">筆記本</div><div class="d">靈感來的時候，先把它接住。</div><div class="arrow">前往 →</div></button>
+          <button class="card shortcut" data-go="todo"><div class="k" data-i18n="shortcutTodoK">每週必做</div><div class="d" data-i18n="shortcutTodoD">把這週最重要的事挑出來，先做那幾件。</div><div class="arrow">前往 →</div></button>
+          <button class="card shortcut" data-go="calendar"><div class="k" data-i18n="shortcutCalK">日曆</div><div class="d" data-i18n="shortcutCalD">看看這個月的節奏，安排一下空檔。</div><div class="arrow">前往 →</div></button>
+          <button class="card shortcut" data-go="diary"><div class="k" data-i18n="shortcutDiaryK">日記</div><div class="d" data-i18n="shortcutDiaryD">寫下今天的一件小事，留給以後的自己。</div><div class="arrow">前往 →</div></button>
+          <button class="card shortcut" data-go="notes"><div class="k" data-i18n="shortcutNoteK">筆記本</div><div class="d" data-i18n="shortcutNoteD">靈感來的時候，先把它接住。</div><div class="arrow">前往 →</div></button>
         </div>
       </div>
 
       <aside class="home-side scroll-box">
         <div class="card countdown-card">
           <div class="countdown-head">
-            <h3>最近的要事</h3>
+            <h3 data-i18n="upcomingTitle">最近的要事</h3>
             <button class="mini" id="cdAddBtn" title="新增倒數日" aria-label="新增倒數日">＋</button>
           </div>
           <div class="countdown-list" id="countdownList"></div>
         </div>
         <div class="card bookmarks" aria-label="書籤">
           <div class="bm-head">
-            <span class="bm-title">書籤（可拖拽排序）</span>
+            <span class="bm-title" data-i18n="bmTitle">書籤（可拖拽排序）</span>
             <button class="mini" id="bmAddBtn" title="新增書籤" aria-label="新增書籤">＋</button>
           </div>
           <div class="bm-list scroll-box" id="bmList"></div>
@@ -210,8 +210,8 @@
 
   <!-- 日曆 -->
   <section class="view" id="view-calendar">
-    <h1>日曆</h1>
-    <p class="sub">點選任何一天，記下那天的重要事項。</p>
+    <h1 data-i18n="viewCalendarTitle">日曆</h1>
+    <p class="sub" data-i18n="viewCalendarSub">點選任何一天，記下那天的重要事項。</p>
     <div class="cal-container">
       <div class="card cal-card">
         <div class="cal-head">
@@ -234,8 +234,8 @@
 
   <!-- 日記 -->
   <section class="view" id="view-diary">
-    <h1>日記</h1>
-    <p class="sub">寫下來的，才是真的留下來的。</p>
+    <h1 data-i18n="viewDiaryTitle">日記</h1>
+    <p class="sub" data-i18n="viewDiarySub">寫下來的，才是真的留下來的。</p>
     <div class="card diary-compose" id="diaryCompose">
       <input type="text" id="diaryTitle" placeholder="今天日記的標題…" maxlength="80">
       <div class="row">
@@ -278,8 +278,8 @@
 
   <!-- 筆記本 -->
   <section class="view" id="view-notes">
-    <h1>筆記本</h1>
-    <p class="sub">想法很小的時候，就要先記下來。</p>
+    <h1 data-i18n="viewNotesTitle">筆記本</h1>
+    <p class="sub" data-i18n="viewNotesSub">想法很小的時候，就要先記下來。</p>
     <div class="notes-scroll scroll-box">
       <div class="grid three" id="notesGrid"></div>
     </div>
@@ -288,8 +288,8 @@
 
   <!-- 照片庫 -->
   <section class="view" id="view-photos">
-    <h1>照片庫</h1>
-    <p class="sub">把喜歡的光線留在這裡。</p>
+    <h1 data-i18n="viewPhotosTitle">照片庫</h1>
+    <p class="sub" data-i18n="viewPhotosSub">把喜歡的光線留在這裡。</p>
     <div class="photos-toolbar">
       <button class="btn primary" id="photoAdd">＋ 添加照片</button>
       <span style="font-size:12px;color:var(--fg-dim);">點擊照片可放大查看，下方可填寫標題。</span>
@@ -301,16 +301,16 @@
 
   <!-- 記帳頁面 -->
   <section class="view" id="view-ledger">
-    <h1>記帳</h1>
-    <p class="sub">隨手記下一筆，掌握每一分錢的流向。</p>
+    <h1 data-i18n="viewLedgerTitle">記帳</h1>
+    <p class="sub" data-i18n="viewLedgerSub">隨手記下一筆，掌握每一分錢的流向。</p>
     <div class="ledger-layout">
       <div class="card ledger-form-card">
-        <h3 style="font-size:16px;font-weight:600;">新增紀錄</h3>
+        <h3 style="font-size:16px;font-weight:600;" data-i18n="ledgerNewRecord">新增紀錄</h3>
         <div class="ledger-form" style="display:flex;flex-direction:column;gap:12px;">
           <div class="row" style="gap: 8px;">
             <select id="ledgerType" style="flex: 1;">
-              <option value="expense">支出</option>
-              <option value="income">進帳</option>
+              <option value="expense" data-i18n="ledgerExpense">支出</option>
+              <option value="income" data-i18n="ledgerIncome">進帳</option>
             </select>
             <select id="ledgerCurrency" style="flex: 1;">
               <option value="TWD">TWD (台幣)</option>
@@ -322,27 +322,27 @@
               <option value="CNY">CNY (人民幣)</option>
             </select>
           </div>
-          <input type="text" id="ledgerAmount" placeholder="輸入金額..." inputmode="decimal" style="font-size:20px;font-weight:600;">
+          <input type="text" id="ledgerAmount" placeholder="輸入金額..." data-i18n-placeholder="ledgerAmountPlaceholder" inputmode="decimal" style="font-size:20px;font-weight:600;">
           
           <div class="dropdown-wrap">
-            <input type="text" id="ledgerCategory" class="ledger-input-sm" placeholder="輸入性質（如：飲食）" maxlength="20" autocomplete="off">
+            <input type="text" id="ledgerCategory" class="ledger-input-sm" placeholder="輸入性質（如：飲食）" data-i18n-placeholder="ledgerCategoryPlaceholder" maxlength="20" autocomplete="off">
             <div class="dropdown-menu" id="ledgerTags"></div>
           </div>
 
           <div class="row">
             <input type="date" id="ledgerDate">
           </div>
-          <input type="text" id="ledgerNote" placeholder="備註（選填，例如：和某某吃午餐）" maxlength="50">
-          <button class="btn primary" id="ledgerAddBtn" style="margin-top:8px;">儲存這筆紀錄</button>
+          <input type="text" id="ledgerNote" placeholder="備註（選填，例如：和某某吃午餐）" data-i18n-placeholder="ledgerNotePlaceholder" maxlength="50">
+          <button class="btn primary" id="ledgerAddBtn" style="margin-top:8px;" data-i18n="ledgerSave">儲存這筆紀錄</button>
         </div>
         <div id="rateFreshness" style="font-size:11px;color:var(--fg-dim);margin-top:4px;"></div>
-        <div class="lock-note" style="margin-top:4px;">💡 歷史紀錄以「記帳當下匯率」換算。</div>
+        <div class="lock-note" style="margin-top:4px;" data-i18n="ledgerHistoryNote">💡 歷史紀錄以「記帳當下匯率」換算。</div>
       </div>
       <div class="card ledger-list-card">
         <div class="ledger-summary">
-          <div class="summary-item"><span>本月支出</span><b style="color: var(--expense-color);"><span id="monthExpenseTotal">0</span></b></div>
-          <div class="summary-item"><span>本月進帳</span><b style="color: var(--income-color);"><span id="monthIncomeTotal">0</span></b></div>
-          <div class="summary-item"><span>本月結餘</span><b id="monthBalanceTotal">$0</b></div>
+          <div class="summary-item"><span data-i18n="ledgerMonthExpense">本月支出</span><b style="color: var(--expense-color);"><span id="monthExpenseTotal">0</span></b></div>
+          <div class="summary-item"><span data-i18n="ledgerMonthIncome">本月進帳</span><b style="color: var(--income-color);"><span id="monthIncomeTotal">0</span></b></div>
+          <div class="summary-item"><span data-i18n="ledgerMonthBalance">本月結餘</span><b id="monthBalanceTotal">$0</b></div>
         </div>
         <div class="ledger-items scroll-box" id="ledgerList"></div>
       </div>
@@ -351,8 +351,8 @@
 
   <!-- 關於本站 -->
   <section class="view" id="view-about">
-    <h1>關於本站</h1>
-    <p class="sub">一個極簡、高效且充滿個人風格的數位生活儀表板。</p>
+    <h1 data-i18n="viewAboutTitle">關於本站</h1>
+    <p class="sub" data-i18n="viewAboutSub">一個極簡、高效且充滿個人風格的數位生活儀表板。</p>
     <div class="about-layout mt-24">
       <div class="card about-card">
         <h3>📝 專案簡介</h3>
@@ -478,23 +478,23 @@
 <div class="modal" id="soundModal">
   <div class="modal-card narrow">
     <div class="modal-head">
-      <div><h3>番茄鐘鈴聲設定</h3><div class="sub2">選擇一個你喜歡的提醒音效</div></div>
+      <div><h3 data-i18n="pomoSoundTitle">番茄鐘鈴聲設定</h3><div class="sub2" data-i18n="pomoSoundSub">選擇一個你喜歡的提醒音效</div></div>
       <button class="x-btn" data-close="#soundModal" aria-label="關閉">×</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:12px;">
       <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-        <input type="radio" name="soundType" value="synth" checked><span>預設合成音（雙音階）</span>
+        <input type="radio" name="soundType" value="synth" checked><span data-i18n="pomoSoundSynth">預設合成音（雙音階）</span>
       </label>
       <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-        <input type="radio" name="soundType" value="custom"><span>上傳自訂音效（支援 MP3, WAV）</span>
+        <input type="radio" name="soundType" value="custom"><span data-i18n="pomoSoundCustom">上傳自訂音效（支援 MP3, WAV）</span>
       </label>
       <div style="display:flex; flex-direction:column; gap:8px; padding-left: 24px;">
         <input type="file" id="soundFileInput" accept="audio/*" style="display:none;">
-        <button class="btn ghost" id="soundFilePick" style="align-self:flex-start;">＋ 選擇音訊檔案</button>
-        <span id="soundFileName" style="font-size:12px; color:var(--fg-dim);">尚未選擇檔案</span>
+        <button class="btn ghost" id="soundFilePick" style="align-self:flex-start;" data-i18n="pomoSoundFilePick">＋ 選擇音訊檔案</button>
+        <span id="soundFileName" style="font-size:12px; color:var(--fg-dim);" data-i18n="pomoSoundNoFile">尚未選擇檔案</span>
       </div>
       <div class="row" style="margin-top:8px; justify-content: flex-end;">
-        <button class="btn primary" id="soundSaveBtn" style="flex:1 1 auto;">儲存設定</button>
+        <button class="btn primary" id="soundSaveBtn" style="flex:1 1 auto;" data-i18n="pomoSoundSave">儲存設定</button>
       </div>
     </div>
   </div>
