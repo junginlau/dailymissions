@@ -128,14 +128,15 @@
       if (dict[key]) el.placeholder = dict[key];
     });
 
-    // 3. 更新切換按鈕文字
+    // 3. 更新切換按鈕文字（動態顯示下一種語言）
+    const nextLangMap = { 'zh-TW': 'EN', 'en': '日本語', 'ja': '中文' };
     const switchBtn = $('#langSwitchBtn');
     if (switchBtn) {
-      switchBtn.textContent = lang === 'zh-TW' ? 'EN' : '中文';
+      switchBtn.textContent = nextLangMap[lang] || 'EN';
     }
     const landingLangBtn = $('#landingLangBtn');
     if (landingLangBtn) {
-      landingLangBtn.textContent = lang === 'zh-TW' ? 'EN' : '中文';
+      landingLangBtn.textContent = nextLangMap[lang] || 'EN';
     }
 
     // 4. 重新渲染動態內容（讓首頁卡片、清單立刻切換語言）
@@ -1601,29 +1602,27 @@
   currentLang = LS.get('userLang', 'zh-TW'); 
   applyLanguage(currentLang);
 
+  // [NEW] 多語系輪替函式
+  const LANG_CYCLE = ['zh-TW', 'en', 'ja'];
+  function cycleLanguage() {
+    const currentIndex = LANG_CYCLE.indexOf(currentLang);
+    currentLang = LANG_CYCLE[(currentIndex + 1) % LANG_CYCLE.length];
+    applyLanguage(currentLang);
+    toast(window.I18N[currentLang].welcomeLangSwitched);
+  }
+
   // [NEW] 主程式語系切換
   const langSwitchBtn = $('#langSwitchBtn');
   if (langSwitchBtn && !langSwitchBtn.dataset.bound) {
     langSwitchBtn.dataset.bound = '1';
-    langSwitchBtn.addEventListener('click', function() {
-      const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-      currentLang = currentLang === 'zh-TW' ? 'en' : 'zh-TW';
-      applyLanguage(currentLang);
-      toast(currentLang === 'en' ? dict.welcomeLangSwitchedEn : dict.welcomeLangSwitched);
-    });
+    langSwitchBtn.addEventListener('click', cycleLanguage);
   }
 
   // [NEW] Landing Page 語系切換
   const landingLangBtn = $('#landingLangBtn');
   if (landingLangBtn && !landingLangBtn.dataset.bound) {
     landingLangBtn.dataset.bound = '1';
-    landingLangBtn.addEventListener('click', function() {
-      const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-      currentLang = currentLang === 'zh-TW' ? 'en' : 'zh-TW';
-      applyLanguage(currentLang);
-      // 因為 Landing Page 的按鈕文字是在 applyLanguage 處理，這邊只要更新按鈕本身的文字就好
-      landingLangBtn.textContent = currentLang === 'zh-TW' ? 'EN' : '中文';
-    });
+    landingLangBtn.addEventListener('click', cycleLanguage);
   }
 
   function safeRender(name, fn) {
