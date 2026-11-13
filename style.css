@@ -658,3 +658,8 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
 .update-banner-close { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; border-radius: 50%; border: none; background: transparent; color: var(--fg-dim); font-size: 18px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .2s var(--ease), color .2s var(--ease); }
 .update-banner-close:hover { background: var(--hover); color: var(--fg); }
 @media (max-width: 768px) { .update-banner { font-size: 12px; padding: 8px 40px 8px 12px; justify-content: flex-start; } .update-banner-btn { padding: 5px 12px; font-size: 12px; } }
+
+/* 隱藏未啟用的語言元素 */
+[data-i18n]:empty {
+  display: none;
+}

@@ -1,11 +1,11 @@
-const CACHE_NAME = 'my-space-cache-v1.0.7-released-beta-a';
+const CACHE_NAME = 'my-space-cache-v1.0.7-released-beta-b';
 
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './script.js',
-  './lang.js', // [NEW]
+  './lang.js', // [NEW] 加入語言檔
   './manifest.json',
   './images/logo.png',
   './images/icon.png'
@@ -15,7 +15,6 @@ self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
-  // 讓新的 Service Worker 立刻進入等待接管狀態
   self.skipWaiting();
 });
 
@@ -29,16 +28,22 @@ self.addEventListener('activate', (e) => {
       );
     })
   );
-  // 接管所有頁面
   self.clients.claim();
 });
 
 self.addEventListener('fetch', (e) => {
   if (!e.request.url.startsWith(self.location.origin)) return;
   
+  // 使用 Network First 策略，確保拿到最新檔案
   e.respondWith(
-    caches.match(e.request).then((cached) => {
-      return cached || fetch(e.request);
+    fetch(e.request).then((response) => {
+      const responseClone = response.clone();
+      caches.open(CACHE_NAME).then((cache) => {
+        cache.put(e.request, responseClone);
+      });
+      return response;
+    }).catch(() => {
+      return caches.match(e.request);
     })
   );
 });
