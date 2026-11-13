@@ -17,8 +17,8 @@
 <body>
 
 <!-- [NEW] 未登入狀態下的公開首頁說明 (Landing Page) -->
-<div id="public-landing" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; height: 100vh; overflow-y: auto; padding: 20px; text-align: center; z-index: 10; position: relative;">
-  <div class="card" style="max-width: 600px; padding: 40px; display: flex; flex-direction: column; gap: 20px; background: var(--panel); border: 1px solid var(--panel-border); backdrop-filter: blur(18px);">
+<div id="public-landing" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; height: 100vh; overflow-y: auto; padding: 20px; text-align: center; z-index: 100; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg);">
+  <div class="card" style="max-width: 600px; padding: 40px; display: flex; flex-direction: column; gap: 20px; background: var(--panel); border: 1px solid var(--panel-border); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);">
     <h1 style="font-size: 2rem; font-weight: 700;">My Space - 個人數位儀表板</h1>
     <p style="font-size: 1rem; line-height: 1.7; color: var(--fg);">
       這是一個極簡的個人數位生活儀表板。提供<strong>待辦事項、日記、記帳、筆記</strong>與 <strong>Google Drive 雲端備份</strong>功能。
