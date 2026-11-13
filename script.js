@@ -101,6 +101,39 @@
     });
   }
 
+  // [NEW] 語言切換邏輯
+  function applyLanguage(lang) {
+    if (!window.I18N || !window.I18N[lang]) return;
+    const dict = window.I18N[lang];
+    
+    // 1. 替換一般文字
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+      const key = el.dataset.i18n;
+      if (dict[key]) {
+        if (key === 'landingDesc' || key === 'landingPrivacy' || key === 'welcomeDesc') {
+          el.innerHTML = dict[key]; // 允許 HTML
+        } else {
+          el.textContent = dict[key];
+        }
+      }
+    });
+
+    // 2. 替換 Placeholder
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+      const key = el.dataset.i18nPlaceholder;
+      if (dict[key]) el.placeholder = dict[key];
+    });
+
+    // 3. 更新切換按鈕文字
+    const switchBtn = $('#langSwitchBtn');
+    if (switchBtn) {
+      switchBtn.textContent = lang === 'zh-TW' ? 'EN' : '中文';
+    }
+
+    // 4. 儲存語言設定
+    LS.set('userLang', lang);
+  }
+
   // ==========================================
   // 2. 主題與設定 (Theme & Prefs)
   // ==========================================
@@ -375,7 +408,8 @@
       const homeMain = document.querySelector('.home-main');
       if (homeMain && !document.getElementById('welcomeCard')) {
         const card = document.createElement('div'); card.id = 'welcomeCard'; card.className = 'card welcome-card';
-        card.innerHTML = `<div style="font-weight:600; margin-bottom:6px;">歡迎來到我的空間 👋</div><div style="font-size:13px; line-height:1.6; color:var(--fg-dim); margin-bottom:10px;">所有資料都存在你的瀏覽器裡，不會上傳。從「每週必做」開始安排今天，或直接點任何分頁探索。<br>記得定期用右上角齒輪匯出備份！</div><button class="btn primary" id="welcomeCloseBtn" style="font-size:12px; padding:6px 12px;">開始使用</button>`;
+        const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+        card.innerHTML = `<div style="font-weight:600; margin-bottom:6px;">${dict.welcomeTitle}</div><div style="font-size:13px; line-height:1.6; color:var(--fg-dim); margin-bottom:10px;">${dict.welcomeDesc}</div><button class="btn primary" id="welcomeCloseBtn" style="font-size:12px; padding:6px 12px;">${dict.welcomeBtn}</button>`;
         homeMain.prepend(card);
         document.getElementById('welcomeCloseBtn').addEventListener('click', () => { LS.set('onboarded', true); card.remove(); });
       }
@@ -1148,6 +1182,21 @@
   // ==========================================
   // 14. 設定面板與備份
   // ==========================================
+
+  // [NEW] 初始化語言
+  let currentLang = LS.get('userLang', 'zh-TW'); // 預設中文
+  applyLanguage(currentLang);
+
+  const langSwitchBtn = $('#langSwitchBtn');
+  if (langSwitchBtn && !langSwitchBtn.dataset.bound) {
+    langSwitchBtn.dataset.bound = '1';
+    langSwitchBtn.addEventListener('click', function() {
+      currentLang = currentLang === 'zh-TW' ? 'en' : 'zh-TW';
+      applyLanguage(currentLang);
+      toast(currentLang === 'en' ? 'Switched to English' : '已切換回中文');
+    });
+  }
+
   const settings = $('#settings'); const gearBtn = $('#gearBtn');
   function openSettings() { settings.classList.add('open'); gearBtn.classList.add('open'); }
   function closeSettings() { settings.classList.remove('open'); gearBtn.classList.remove('open'); }

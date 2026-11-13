@@ -1,10 +1,11 @@
-const CACHE_NAME = 'my-space-cache-v1.0.4-released-beta-l';
+const CACHE_NAME = 'my-space-cache-v1.0.7-released-beta-a';
 
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './script.js',
+  './lang.js', // [NEW]
   './manifest.json',
   './images/logo.png',
   './images/icon.png'
