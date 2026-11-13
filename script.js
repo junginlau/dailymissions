@@ -372,7 +372,10 @@
     let dateStr;
     if (currentLang === 'en') {
       const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      dateStr = monthNames[now.getMonth()] + ' ' + now.getDate() + ', ' + now.getFullYear() + ' · ' + dict.weekdays[now.getDay()];
+      dateStr = monthNames[now.getMonth()] + ' ' + now.getDate() + ', ' + now.getFullYear() + ' · ' + days[now.getDay()];
+    } else if (currentLang === 'ja') {
+      const monthNamesJa = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+      dateStr = now.getFullYear() + '年 ' + monthNamesJa[now.getMonth()] + now.getDate() + '日 (' + days[now.getDay()] + ')';
     } else {
       dateStr = now.getFullYear() + ' 年 ' + (now.getMonth() + 1) + ' 月 ' + now.getDate() + ' 日 · 星期' + days[now.getDay()];
     }
@@ -397,7 +400,8 @@
 
   const QUOTES = {
     'zh-TW': ['慢慢來，比較快。', '今天所做的事，決定明天的你。', '不要因為走得太遠，而忘記為什麼出發。', '專注當下，一切都是最好的安排。', '你不需要很厲害才能開始，但你需要開始才會很厲害。', '把每一天當作新的開始。', '千里之行，始於足下。'],
-    'en': ['Slow is smooth, smooth is fast.', 'What you do today determines who you are tomorrow.', 'Do not go so far that you forget why you started.', 'Focus on the present; everything is perfectly arranged.', 'You don\'t have to be great to start, but you have to start to be great.', 'Treat every day as a new beginning.', 'A journey of a thousand miles begins with a single step.']
+    'en': ['Slow is smooth, smooth is fast.', 'What you do today determines who you are tomorrow.', 'Do not go so far that you forget why you started.', 'Focus on the present; everything is perfectly arranged.', 'You don\'t have to be great to start, but you have to start to be great.', 'Treat every day as a new beginning.', 'A journey of a thousand miles begins with a single step.'],
+    'ja': ['急がば回れ。', '今日の行いが、明日のあなたを決める。', '遠くへ行きすぎて、なぜ出発したかを忘れないで。', '今に集中すれば、すべてが最高の配置になる。', '上手く始める必要はない、始めることが上手くなる秘訣だ。', '毎日を新しいスタートとして捉えよう。', '千里の道も一歩から。']
   };
   function updateQuote() {
     const list = QUOTES[currentLang] || QUOTES['zh-TW'];
