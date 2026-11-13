@@ -1400,10 +1400,19 @@
     const nav = document.querySelector('.nav');
     const appMain = document.querySelector('.app');
     const mobileNav = document.querySelector('.mobile-nav');
-    const token = LS.get('googleToken', null); // 檢查是否有暫存的 Token
+    
+    // 安全檢查：確保 LS 存在，避免報錯
+    let hasToken = false;
+    try {
+      if (typeof LS !== 'undefined' && typeof LS.get === 'function') {
+        hasToken = !!LS.get('googleToken', null);
+      }
+    } catch (e) {
+      console.warn('無法讀取 Token 狀態', e);
+    }
 
     // 判斷是否有 Token 來決定顯示哪個介面
-    if (token) {
+    if (hasToken) {
       if (landing) landing.style.display = 'none';
       if (nav) nav.style.display = 'flex';
       if (appMain) appMain.style.display = 'flex';
