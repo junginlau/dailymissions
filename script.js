@@ -101,41 +101,41 @@
     });
   }
 
-  // [NEW] 語言切換邏輯
+  // ==========================================
+  // 2. 語言切換與初始化
+  // ==========================================
+  let currentLang = LS.get('userLang', 'zh-TW');
+
   function applyLanguage(lang) {
     if (!window.I18N || !window.I18N[lang]) return;
     const dict = window.I18N[lang];
     
-    // 1. 替換一般文字
     document.querySelectorAll('[data-i18n]').forEach(function(el) {
       const key = el.dataset.i18n;
       if (dict[key]) {
         if (key === 'landingDesc' || key === 'landingPrivacy' || key === 'welcomeDesc') {
-          el.innerHTML = dict[key]; // 允許 HTML
+          el.innerHTML = dict[key];
         } else {
           el.textContent = dict[key];
         }
       }
     });
 
-    // 2. 替換 Placeholder
     document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
       const key = el.dataset.i18nPlaceholder;
       if (dict[key]) el.placeholder = dict[key];
     });
 
-    // 3. 更新切換按鈕文字
     const switchBtn = $('#langSwitchBtn');
     if (switchBtn) {
       switchBtn.textContent = lang === 'zh-TW' ? 'EN' : '中文';
     }
 
-    // 4. 儲存語言設定
     LS.set('userLang', lang);
   }
 
   // ==========================================
-  // 2. 主題與設定 (Theme & Prefs)
+  // 3. 主題與設定
   // ==========================================
   const root = document.documentElement; const bgLayer = $('#bgLayer'); const DEFAULT_LUM = 55; const state = { lum: DEFAULT_LUM, bg: null };
   function getCookie(name) { const m = document.cookie.match('(?:^|; )' + name + '=([^;]*)'); return m ? decodeURIComponent(m[1]) : null; }
@@ -166,7 +166,7 @@
   }
 
   // ==========================================
-  // 3. 資料初始化與儲存
+  // 4. 資料初始化
   // ==========================================
   const WEEKDAYS = [{ key: 'mon', label: '星期一' }, { key: 'tue', label: '星期二' }, { key: 'wed', label: '星期三' }, { key: 'thu', label: '星期四' }, { key: 'fri', label: '星期五' }, { key: 'sat', label: '星期六' }, { key: 'sun', label: '星期日' }];
   const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
@@ -237,7 +237,7 @@
   function pruneDone() { const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 60); const minKey = dateKey(cutoff); let changed = false; Object.keys(todos.done || {}).forEach(function (k) { if (k < minKey) { delete todos.done[k]; changed = true; } }); if (changed) save('todos'); }
 
   // ==========================================
-  // 4. 視圖切換與導覽列
+  // 5. 視圖切換與導覽列
   // ==========================================
   const views = $$('.view'); const navBtns = $$('.nav-btn'); const mobileNavBtns = $$('.mobile-nav-btn'); const mobileMoreMenu = $('#mobileMoreMenu');
   let currentView = 'home';
@@ -279,12 +279,11 @@
   mobileMoreMenu.addEventListener('click', function (e) { const btn = e.target.closest('button'); if (btn) { showView(btn.dataset.view); mobileMoreMenu.classList.remove('open'); } });
   document.addEventListener('click', function (e) { if (mobileMoreMenu.classList.contains('open') && !mobileMoreMenu.contains(e.target) && !e.target.closest('.mobile-nav-btn[data-view="more"]')) mobileMoreMenu.classList.remove('open'); });
   
-  // 修正缺失的括號
   $('#logoBtn').addEventListener('click', function () { showView('home'); closeSettings(); });
   $$('[data-go]').forEach(function (el) { el.addEventListener('click', function () { showView(el.dataset.go); }); });
 
   // ==========================================
-  // 5. 搜尋與快捷鍵
+  // 6. 搜尋與快捷鍵
   // ==========================================
   function doSearch(raw) {
     const q = String(raw || '').trim(); if (!q) return;
@@ -308,7 +307,7 @@
   if (copyrightEl) copyrightEl.textContent = new Date().getFullYear();
 
   // ==========================================
-  // 6. 首頁 (時鐘、天氣、名言、統計、目標、書籤)
+  // 7. 首頁 (時鐘、天氣、名言、統計、目標、書籤)
   // ==========================================
   function updateClock() { const now = new Date(); let timeStr = pad(now.getHours()) + ':' + pad(now.getMinutes()); if (window.innerWidth > 768) timeStr += ':' + pad(now.getSeconds()); const days = ['日', '一', '二', '三', '四', '五', '六']; const dateStr = now.getFullYear() + ' 年 ' + (now.getMonth() + 1) + ' 月 ' + now.getDate() + ' 日 · 星期' + days[now.getDay()]; $('#clockTime').textContent = timeStr; $('#clockDate').textContent = dateStr; }
   setInterval(updateClock, 1000); updateClock(); window.addEventListener('resize', updateClock);
@@ -511,7 +510,7 @@
   $('#bmDelete').addEventListener('click', function () { if (!editingBmId) return; bookmarks = bookmarks.filter(function (x) { return x.id !== editingBmId; }); save('bookmarks'); renderBookmarks(); closeModal('#bmModal'); toast('已刪除書籤'); });
 
   // ==========================================
-  // 7. 記帳與匯率
+  // 8. 記帳與匯率
   // ==========================================
   function renderRateFreshness() {
     const el = $('#rateFreshness'); if (!el) return;
@@ -654,7 +653,7 @@
   })();
 
   // ==========================================
-  // 8. 每週必做
+  // 9. 每週必做
   // ==========================================
   function tagById(id) { return todos.tags.find(function (t) { return t.id === id; }) || null; }
   function tagsForDay(dayKey) { return (todos.schedule[dayKey] || []).map(tagById).filter(Boolean); }
@@ -720,7 +719,7 @@
   $('#todoSettingsBtn').addEventListener('click', openTodoSettings);
 
   // ==========================================
-  // 9. 日曆
+  // 10. 日曆
   // ==========================================
   const TIMEZONE = (function () { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || '本地時區'; } catch (e) { return '本地時區'; } })();
   let calCursor = new Date(); calCursor.setDate(1);
@@ -781,7 +780,7 @@
   }
 
   // ==========================================
-  // 10. 日記
+  // 11. 日記
   // ==========================================
   let diaryFilterDate = '';
   let editingDiaryId = null;
@@ -896,7 +895,7 @@
   $('#diaryClearFilter').addEventListener('click', function () { diaryFilterDate = ''; $('#diaryDatePickerBtn').textContent = '全部日記（點擊選擇日期）'; $('#diaryClearFilter').hidden = true; renderDiaries(); });
 
   // ==========================================
-  // 11. 筆記本
+  // 12. 筆記本
   // ==========================================
   function renderNotes() {
     const grid = $('#notesGrid'); if (!notes.length) { grid.innerHTML = ''; return; }
@@ -927,7 +926,7 @@
   $('#noteDelete').addEventListener('click', function () { if (!editingNoteId) return; notes = notes.filter(function (x) { return x.id !== editingNoteId; }); save('notes'); renderNotes(); closeModal('#noteModal'); toast('已刪除筆記'); });
 
   // ==========================================
-  // 12. 照片庫
+  // 13. 照片庫
   // ==========================================
   function loadPhotoSrc(id) {
     if (photoCache[id]) return Promise.resolve(photoCache[id]);
@@ -961,7 +960,7 @@
   $('#lightboxDel').addEventListener('click', function () { if (!lightboxId) return; const id = lightboxId; photoMeta = photoMeta.filter(function (x) { return x.id !== id; }); delete photoCache[id]; save('photoMeta'); if (IDB.available()) IDB.del('photos', id).catch(function () {}); renderPhotos(); closeLightbox(); toast('已刪除照片'); });
 
   // ==========================================
-  // 13. 番茄鐘
+  // 14. 番茄鐘
   // ==========================================
   let pomoState = 'idle'; 
   let pomoRemaining = 0;
@@ -1180,23 +1179,8 @@
   });
 
   // ==========================================
-  // 14. 設定面板與備份
+  // 15. 設定面板與備份
   // ==========================================
-
-  // [NEW] 初始化語言
-  let currentLang = LS.get('userLang', 'zh-TW'); // 預設中文
-  applyLanguage(currentLang);
-
-  const langSwitchBtn = $('#langSwitchBtn');
-  if (langSwitchBtn && !langSwitchBtn.dataset.bound) {
-    langSwitchBtn.dataset.bound = '1';
-    langSwitchBtn.addEventListener('click', function() {
-      currentLang = currentLang === 'zh-TW' ? 'en' : 'zh-TW';
-      applyLanguage(currentLang);
-      toast(currentLang === 'en' ? 'Switched to English' : '已切換回中文');
-    });
-  }
-
   const settings = $('#settings'); const gearBtn = $('#gearBtn');
   function openSettings() { settings.classList.add('open'); gearBtn.classList.add('open'); }
   function closeSettings() { settings.classList.remove('open'); gearBtn.classList.remove('open'); }
@@ -1273,7 +1257,7 @@
   });
 
   // ==========================================
-  // 15. Google Drive 雲端備份邏輯
+  // 16. Google Drive 雲端備份邏輯
   // ==========================================
   const CLIENT_ID = '355931371376-sdu9qo95t0ghojgsb6eicqgc5nd6i31o.apps.googleusercontent.com';
   const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
@@ -1430,8 +1414,8 @@
 
   updateGoogleUI();
 
-   // ==========================================
-  // 16. 初始化與 Landing Page 切換
+  // ==========================================
+  // 17. 初始化與 Landing Page 切換
   // ==========================================
   $$('[data-close]').forEach(function (btn) { btn.addEventListener('click', function () { closeModal(btn.dataset.close); }); });
   $$('.modal').forEach(function (m) { m.addEventListener('click', function (e) { if (e.target === m) closeModal('#' + m.id); }); });
@@ -1440,7 +1424,7 @@
   loadPrefs(); applyTheme(); pruneEvents(); pruneDone();
 
   // [NEW] 初始化語言與切換按鈕
-  let currentLang = LS.get('userLang', 'zh-TW'); 
+  currentLang = LS.get('userLang', 'zh-TW'); 
   applyLanguage(currentLang);
 
   const langSwitchBtn = $('#langSwitchBtn');
@@ -1502,15 +1486,18 @@
     const appMain = document.querySelector('.app');
     const mobileNav = document.querySelector('.mobile-nav');
     const pomoFab = document.getElementById('pomoFab');
-    const enterBtn = document.getElementById('enterDashboardBtn');
 
-    const showDashboard = () => {
+    // 定義全域切換函數（供 HTML onclick 呼叫）
+    window.enterDashboard = function() {
       if (landing) landing.style.display = 'none';
       if (nav) nav.style.display = 'flex';
       if (appMain) appMain.style.display = 'flex';
       if (mobileNav && window.innerWidth <= 768) mobileNav.style.display = 'flex';
       if (pomoFab) pomoFab.style.display = 'flex';
       if (typeof renderHome === 'function') renderHome();
+      
+      // 記錄已進入狀態，避免下次重整又卡在 Landing Page
+      try { localStorage.setItem('guestEntered', 'true'); } catch(err) {}
     };
 
     const showLanding = () => {
@@ -1521,17 +1508,7 @@
       if (pomoFab) pomoFab.style.display = 'none';
     };
 
-    if (enterBtn) {
-      const newEnterBtn = enterBtn.cloneNode(true);
-      enterBtn.parentNode.replaceChild(newEnterBtn, enterBtn);
-      
-      newEnterBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        showDashboard();
-        try { localStorage.setItem('guestEntered', 'true'); } catch(err) {}
-      });
-    }
-
+    // 決定初始畫面
     let hasToken = false;
     try {
       if (typeof LS !== 'undefined' && typeof LS.get === 'function') {
@@ -1543,11 +1520,12 @@
 
     const isGuest = localStorage.getItem('guestEntered') === 'true';
 
+    // 如果已經有 Token，或者訪客已經點過「進入儀表板」，就直接顯示主程式
     if (hasToken || isGuest) {
-      showDashboard();
+      window.enterDashboard();
     } else {
       showLanding();
     }
   })();
 
-})(); // <- 這裡是補齊的結尾
+})(); // <- 這裡是補齊的結尾，非常重要！
