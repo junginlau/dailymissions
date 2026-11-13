@@ -1,6 +1,9 @@
 (function () {
   'use strict';
 
+  // ==========================================
+  // 1. 工具函式與變數宣告
+  // ==========================================
   const $  = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.prototype.slice.call(r.querySelectorAll(s));
 
@@ -98,6 +101,9 @@
     });
   }
 
+  // ==========================================
+  // 2. 主題與設定 (Theme & Prefs)
+  // ==========================================
   const root = document.documentElement; const bgLayer = $('#bgLayer'); const DEFAULT_LUM = 55; const state = { lum: DEFAULT_LUM, bg: null };
   function getCookie(name) { const m = document.cookie.match('(?:^|; )' + name + '=([^;]*)'); return m ? decodeURIComponent(m[1]) : null; }
   function setCookie(name, value) { try { document.cookie = name + '=' + encodeURIComponent(value) + '; path=/; max-age=31536000; SameSite=Lax'; return getCookie(name) !== null; } catch (e) { return false; } }
@@ -126,6 +132,9 @@
     $('#lumRange').value = state.lum; $('#lumVal').textContent = Math.round(state.lum);
   }
 
+  // ==========================================
+  // 3. 資料初始化與儲存
+  // ==========================================
   const WEEKDAYS = [{ key: 'mon', label: '星期一' }, { key: 'tue', label: '星期二' }, { key: 'wed', label: '星期三' }, { key: 'thu', label: '星期四' }, { key: 'fri', label: '星期五' }, { key: 'sat', label: '星期六' }, { key: 'sun', label: '星期日' }];
   const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
   function emptyTodoData() { return { tags: [], schedule: { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] }, done: {} }; }
@@ -155,7 +164,7 @@
   const DEFAULT_RATES = { TWD: 1, USD: 32, JPY: 0.22, HKD: 4.1, EUR: 35, GBP: 41, CNY: 4.4 };
   let exchangeRates = Object.assign({}, DEFAULT_RATES);
   let exchangeRatesUpdatedAt = 0;
-  const photoCache = {}; // [NEW] 提前宣告，供雲端備份與照片庫共用
+  const photoCache = {};
   const RATE_MIN_INTERVAL = 60 * 60 * 1000;
   (function loadCachedRates() {
     const cached = LS.get('exchangeRates', null);
@@ -167,29 +176,6 @@
 
   let mainCurrency = LS.get('mainCurrency', 'HKD');
   const currencySymbols = { TWD: 'NT$', USD: '$', JPY: '¥', HKD: 'HK$', EUR: '€', GBP: '£', CNY: '¥' };
-
-  function renderRateFreshness() {
-    const el = $('#rateFreshness'); if (!el) return;
-    if (!exchangeRatesUpdatedAt) { el.textContent = '匯率：使用預設值（尚未取得即時匯率）'; return; }
-    el.textContent = '匯率最後更新：' + fmtDateTime(new Date(exchangeRatesUpdatedAt)) + '（以 TWD 為基準）';
-  }
-
-  function fetchExchangeRates() {
-    const now = Date.now();
-    if (exchangeRatesUpdatedAt && (now - exchangeRatesUpdatedAt) < RATE_MIN_INTERVAL) { renderRateFreshness(); return; }
-    fetch('https://open.er-api.com/v6/latest/TWD')
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.rates) {
-          const newRates = Object.assign({}, DEFAULT_RATES);
-          ['USD', 'JPY', 'HKD', 'EUR', 'GBP', 'CNY'].forEach(function (cur) { if (data.rates[cur]) newRates[cur] = 1 / data.rates[cur]; });
-          exchangeRates = newRates; exchangeRatesUpdatedAt = Date.now();
-          LS.set('exchangeRates', { rates: newRates, updatedAt: exchangeRatesUpdatedAt });
-          renderRateFreshness(); renderLedger(); renderHome();
-        }
-      }).catch(() => { renderRateFreshness(); });
-  }
-  fetchExchangeRates();
 
   let ledger = LS.get('ledger', null);
   if (!ledger) { const oldExp = LS.get('expenses', []); if (oldExp.length) { ledger = oldExp.map(e => ({ ...e, type: 'expense' })); LS.set('ledger', ledger); LS.remove('expenses'); } else { ledger = []; } }
@@ -217,6 +203,9 @@
   function dayLabelOf(key) { const map = { mon: '星期一', tue: '星期二', wed: '星期三', thu: '星期四', fri: '星期五', sat: '星期六', sun: '星期日' }; return map[key] || key; }
   function pruneDone() { const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 60); const minKey = dateKey(cutoff); let changed = false; Object.keys(todos.done || {}).forEach(function (k) { if (k < minKey) { delete todos.done[k]; changed = true; } }); if (changed) save('todos'); }
 
+  // ==========================================
+  // 4. 視圖切換與導覽列
+  // ==========================================
   const views = $$('.view'); const navBtns = $$('.nav-btn'); const mobileNavBtns = $$('.mobile-nav-btn'); const mobileMoreMenu = $('#mobileMoreMenu');
   let currentView = 'home';
 
@@ -256,9 +245,14 @@
   mobileNavBtns.forEach(function (btn) { btn.addEventListener('click', function () { const view = this.dataset.view; if (view === 'more') { mobileMoreMenu.classList.toggle('open'); } else { showView(view); } }); });
   mobileMoreMenu.addEventListener('click', function (e) { const btn = e.target.closest('button'); if (btn) { showView(btn.dataset.view); mobileMoreMenu.classList.remove('open'); } });
   document.addEventListener('click', function (e) { if (mobileMoreMenu.classList.contains('open') && !mobileMoreMenu.contains(e.target) && !e.target.closest('.mobile-nav-btn[data-view="more"]')) mobileMoreMenu.classList.remove('open'); });
+  
+  // 修正缺失的括號
   $('#logoBtn').addEventListener('click', function () { showView('home'); closeSettings(); });
   $$('[data-go]').forEach(function (el) { el.addEventListener('click', function () { showView(el.dataset.go); }); });
 
+  // ==========================================
+  // 5. 搜尋與快捷鍵
+  // ==========================================
   function doSearch(raw) {
     const q = String(raw || '').trim(); if (!q) return;
     if (/^https?:\/\//i.test(q)) { window.open(q, '_blank', 'noopener'); return; }
@@ -280,6 +274,9 @@
   const copyrightEl = document.getElementById('copyrightYear');
   if (copyrightEl) copyrightEl.textContent = new Date().getFullYear();
 
+  // ==========================================
+  // 6. 首頁 (時鐘、天氣、名言、統計、目標、書籤)
+  // ==========================================
   function updateClock() { const now = new Date(); let timeStr = pad(now.getHours()) + ':' + pad(now.getMinutes()); if (window.innerWidth > 768) timeStr += ':' + pad(now.getSeconds()); const days = ['日', '一', '二', '三', '四', '五', '六']; const dateStr = now.getFullYear() + ' 年 ' + (now.getMonth() + 1) + ' 月 ' + now.getDate() + ' 日 · 星期' + days[now.getDay()]; $('#clockTime').textContent = timeStr; $('#clockDate').textContent = dateStr; }
   setInterval(updateClock, 1000); updateClock(); window.addEventListener('resize', updateClock);
 
@@ -479,7 +476,32 @@
   });
   $('#bmDelete').addEventListener('click', function () { if (!editingBmId) return; bookmarks = bookmarks.filter(function (x) { return x.id !== editingBmId; }); save('bookmarks'); renderBookmarks(); closeModal('#bmModal'); toast('已刪除書籤'); });
 
-  /* 10. 記帳 */
+  // ==========================================
+  // 7. 記帳與匯率
+  // ==========================================
+  function renderRateFreshness() {
+    const el = $('#rateFreshness'); if (!el) return;
+    if (!exchangeRatesUpdatedAt) { el.textContent = '匯率：使用預設值（尚未取得即時匯率）'; return; }
+    el.textContent = '匯率最後更新：' + fmtDateTime(new Date(exchangeRatesUpdatedAt)) + '（以 TWD 為基準）';
+  }
+
+  function fetchExchangeRates() {
+    const now = Date.now();
+    if (exchangeRatesUpdatedAt && (now - exchangeRatesUpdatedAt) < RATE_MIN_INTERVAL) { renderRateFreshness(); return; }
+    fetch('https://open.er-api.com/v6/latest/TWD')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.rates) {
+          const newRates = Object.assign({}, DEFAULT_RATES);
+          ['USD', 'JPY', 'HKD', 'EUR', 'GBP', 'CNY'].forEach(function (cur) { if (data.rates[cur]) newRates[cur] = 1 / data.rates[cur]; });
+          exchangeRates = newRates; exchangeRatesUpdatedAt = Date.now();
+          LS.set('exchangeRates', { rates: newRates, updatedAt: exchangeRatesUpdatedAt });
+          renderRateFreshness(); renderLedger(); renderHome();
+        }
+      }).catch(() => { renderRateFreshness(); });
+  }
+  fetchExchangeRates();
+
   function renderLedgerTags() {
     const wrap = $('#ledgerTags'); if (!wrap) return;
     if (!ledgerCategories.length) { wrap.innerHTML = ''; return; }
@@ -597,6 +619,9 @@
     }
   })();
 
+  // ==========================================
+  // 8. 每週必做
+  // ==========================================
   function tagById(id) { return todos.tags.find(function (t) { return t.id === id; }) || null; }
   function tagsForDay(dayKey) { return (todos.schedule[dayKey] || []).map(tagById).filter(Boolean); }
   function renderTodos() {
@@ -660,6 +685,9 @@
   $('#todoCancelBtn').addEventListener('click', function () { todoDraft = JSON.parse(JSON.stringify(todos)); renderTagPool(); renderSchedule(); checkTodoChanged(); toast('已撤銷變更'); });
   $('#todoSettingsBtn').addEventListener('click', openTodoSettings);
 
+  // ==========================================
+  // 9. 日曆
+  // ==========================================
   const TIMEZONE = (function () { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || '本地時區'; } catch (e) { return '本地時區'; } })();
   let calCursor = new Date(); calCursor.setDate(1);
   function monthIndex(y, m) { return y * 12 + m; }
@@ -718,6 +746,9 @@
     Object.keys(events).forEach(function (k) { if (k < minKey || k > maxKey) { delete events[k]; changed = true; } }); if (changed) save('events');
   }
 
+  // ==========================================
+  // 10. 日記
+  // ==========================================
   let diaryFilterDate = '';
   let editingDiaryId = null;
   let diaryImageData = null;
@@ -830,6 +861,9 @@
   });
   $('#diaryClearFilter').addEventListener('click', function () { diaryFilterDate = ''; $('#diaryDatePickerBtn').textContent = '全部日記（點擊選擇日期）'; $('#diaryClearFilter').hidden = true; renderDiaries(); });
 
+  // ==========================================
+  // 11. 筆記本
+  // ==========================================
   function renderNotes() {
     const grid = $('#notesGrid'); if (!notes.length) { grid.innerHTML = ''; return; }
     grid.innerHTML = notes.map(function (n) { const excerpt = (n.content || '').replace(/\s+/g, ' ').slice(0, 70); return '<button class="card note" data-id="' + n.id + '">' + (n.image ? '<div class="note-thumb" style="background-image:url(\'' + n.image + '\')"></div>' : '') + '<div class="note-h">' + escapeHtml(n.title || '無標題') + '</div><div class="note-b">' + escapeHtml(excerpt) + '</div><div class="note-d">' + escapeHtml(n.date || '') + '</div></button>'; }).join('');
@@ -858,7 +892,9 @@
   });
   $('#noteDelete').addEventListener('click', function () { if (!editingNoteId) return; notes = notes.filter(function (x) { return x.id !== editingNoteId; }); save('notes'); renderNotes(); closeModal('#noteModal'); toast('已刪除筆記'); });
 
-    /* 15. 照片庫 */
+  // ==========================================
+  // 12. 照片庫
+  // ==========================================
   function loadPhotoSrc(id) {
     if (photoCache[id]) return Promise.resolve(photoCache[id]);
     const fallbackLegacy = function () { const legacy = (legacyPhotos || []).find(function (p) { return p.id === id; }); if (legacy && legacy.src) { photoCache[id] = legacy.src; return legacy.src; } return null; };
@@ -890,7 +926,9 @@
   $('#lightboxCaption').addEventListener('input', function () { if (!lightboxId) return; const meta = photoMeta.find(function (x) { return x.id === lightboxId; }); if (meta) { meta.title = $('#lightboxCaption').value; save('photoMeta'); } });
   $('#lightboxDel').addEventListener('click', function () { if (!lightboxId) return; const id = lightboxId; photoMeta = photoMeta.filter(function (x) { return x.id !== id; }); delete photoCache[id]; save('photoMeta'); if (IDB.available()) IDB.del('photos', id).catch(function () {}); renderPhotos(); closeLightbox(); toast('已刪除照片'); });
 
-  /* 16. 番茄鐘 (優化儲存) */
+  // ==========================================
+  // 13. 番茄鐘
+  // ==========================================
   let pomoState = 'idle'; 
   let pomoRemaining = 0;
   let pomoTotalSet = 25 * 60;
@@ -964,7 +1002,6 @@
     return total;
   }
 
-  // 只在關閉編輯器時儲存
   function savePomoSettings() {
     const total = getInputSecs();
     pomoTotalSet = total;
@@ -1000,7 +1037,6 @@
       else { val = Math.max(0, val - 1); }
       inp.value = pad(val);
       
-      // 即時更新畫面上顯示的時間，但不存檔
       const tempTotal = getInputSecs();
       pomoTimeDisplay.textContent = formatPomoTime(tempTotal);
     });
@@ -1010,7 +1046,6 @@
   $('#pomoInpM').addEventListener('change', function() { this.value = pad(Math.min(99, Math.max(0, parseInt(this.value,10)||0))); pomoTimeDisplay.textContent = formatPomoTime(getInputSecs()); });
   $('#pomoInpS').addEventListener('change', function() { this.value = pad(Math.min(99, Math.max(0, parseInt(this.value,10)||0))); pomoTimeDisplay.textContent = formatPomoTime(getInputSecs()); });
 
-  // 關閉編輯器並儲存
   function closePomoEditor() {
     if (pomoEditor.classList.contains('active')) {
       savePomoSettings();
@@ -1019,7 +1054,6 @@
     }
   }
 
-  // 點擊編輯器內的空白處不觸發任何事，避免冒泡
   pomoEditor.addEventListener('click', function(e) {
     e.stopPropagation();
   });
@@ -1045,10 +1079,9 @@
   pomoBtnLeft.addEventListener('click', function() {
     initAudio();
     
-    // 如果編輯器開著，先關閉並儲存
     if (pomoEditor.classList.contains('active')) {
       closePomoEditor();
-      return; // 這一下點擊只負責關閉編輯器，不啟動計時
+      return;
     }
     
     if (pomoState === 'idle') {
@@ -1064,7 +1097,6 @@
   });
 
   pomoBtnRight.addEventListener('click', function() {
-    // 如果編輯器開著，先關閉並儲存
     if (pomoEditor.classList.contains('active')) {
       closePomoEditor();
       return;
@@ -1073,13 +1105,11 @@
     clearInterval(pomoInterval);
     
     if (pomoState === 'idle') {
-      // 重置為 00:00:00
       pomoTotalSet = 0;
       pomoRemaining = 0;
       LS.set('pomoDuration', 0);
       updatePomoUI();
     } else {
-      // 停止：回到設定的時間
       pomoState = 'idle';
       pomoRemaining = pomoTotalSet; 
       updatePomoUI();
@@ -1109,13 +1139,15 @@
 
   $('#pomoFab').addEventListener('click', function () { $('#pomoPanel').classList.toggle('open'); });
 
-  // 全域點擊：點擊編輯器與時間顯示以外的地方，安全收起並儲存
   document.addEventListener('click', function(e) {
     if (pomoEditor.classList.contains('active') && !pomoEditor.contains(e.target) && !pomoTimeDisplay.contains(e.target)) {
       closePomoEditor();
     }
   });
 
+  // ==========================================
+  // 14. 設定面板與備份
+  // ==========================================
   const settings = $('#settings'); const gearBtn = $('#gearBtn');
   function openSettings() { settings.classList.add('open'); gearBtn.classList.add('open'); }
   function closeSettings() { settings.classList.remove('open'); gearBtn.classList.remove('open'); }
@@ -1190,8 +1222,11 @@
     };
     reader.readAsText(file);
   });
-  // ── [NEW] Google Drive 雲端備份邏輯 ──
-  const CLIENT_ID = '355931371376-sdu9qo95t0ghojgsb6eicqgc5nd6i31o.apps.googleusercontent.com'; // ⚠️ 請替換成你申請到的 Client ID
+
+  // ==========================================
+  // 15. Google Drive 雲端備份邏輯
+  // ==========================================
+  const CLIENT_ID = '355931371376-sdu9qo95t0ghojgsb6eicqgc5nd6i31o.apps.googleusercontent.com';
   const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
   let tokenClient = null;
   let accessToken = null;
@@ -1345,7 +1380,10 @@
   });
 
   updateGoogleUI();
-  // ── [NEW] Google Drive 邏輯結束 ──
+
+  // ==========================================
+  // 16. 初始化與 Landing Page 切換
+  // ==========================================
   $$('[data-close]').forEach(function (btn) { btn.addEventListener('click', function () { closeModal(btn.dataset.close); }); });
   $$('.modal').forEach(function (m) { m.addEventListener('click', function (e) { if (e.target === m) closeModal('#' + m.id); }); });
 
@@ -1394,7 +1432,7 @@
     if (closeBtn) closeBtn.addEventListener('click', function () { banner.hidden = true; });
   })();
 
-  // [NEW] 處理未登入時的公開 Landing Page 顯示邏輯 (強化防呆與事件綁定)
+  // [NEW] 處理未登入時的公開 Landing Page 顯示邏輯
   (function initPublicLanding() {
     const landing = document.getElementById('public-landing');
     const nav = document.querySelector('.nav');
@@ -1403,7 +1441,6 @@
     const pomoFab = document.getElementById('pomoFab');
     const enterBtn = document.getElementById('enterDashboardBtn');
 
-    // 核心切換函式
     const showDashboard = () => {
       if (landing) landing.style.display = 'none';
       if (nav) nav.style.display = 'flex';
@@ -1421,21 +1458,17 @@
       if (pomoFab) pomoFab.style.display = 'none';
     };
 
-    // 1. 綁定「進入儀表板」按鈕
     if (enterBtn) {
-      // 為了防止重複綁定，我們直接替換按鈕節點
       const newEnterBtn = enterBtn.cloneNode(true);
       enterBtn.parentNode.replaceChild(newEnterBtn, enterBtn);
       
       newEnterBtn.addEventListener('click', (e) => {
         e.preventDefault();
         showDashboard();
-        // 點擊後可寫入一個標記，讓下次重新整理時直接進儀表板
         try { localStorage.setItem('guestEntered', 'true'); } catch(err) {}
       });
     }
 
-    // 2. 決定初始畫面
     let hasToken = false;
     try {
       if (typeof LS !== 'undefined' && typeof LS.get === 'function') {
@@ -1447,10 +1480,11 @@
 
     const isGuest = localStorage.getItem('guestEntered') === 'true';
 
-    // 如果已經有 Token，或者訪客已經點過「進入儀表板」，就直接顯示主程式
     if (hasToken || isGuest) {
       showDashboard();
     } else {
       showLanding();
     }
   })();
+
+})(); // <- 這裡是補齊的結尾
