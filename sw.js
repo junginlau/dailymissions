@@ -1,11 +1,11 @@
-const CACHE_NAME = 'my-space-cache-v1.0.7-released-beta-b';
+const CACHE_NAME = 'my-space-cache-v1.0.7-released-beta-c';
 
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './script.js',
-  './lang.js', // [NEW] 加入語言檔
+  './lang.js', 
   './manifest.json',
   './images/logo.png',
   './images/icon.png'
@@ -34,7 +34,6 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   if (!e.request.url.startsWith(self.location.origin)) return;
   
-  // 使用 Network First 策略，確保拿到最新檔案
   e.respondWith(
     fetch(e.request).then((response) => {
       const responseClone = response.clone();

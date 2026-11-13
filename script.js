@@ -1430,7 +1430,7 @@
 
   updateGoogleUI();
 
-  // ==========================================
+   // ==========================================
   // 16. 初始化與 Landing Page 切換
   // ==========================================
   $$('[data-close]').forEach(function (btn) { btn.addEventListener('click', function () { closeModal(btn.dataset.close); }); });
@@ -1438,6 +1438,20 @@
 
   if (!STORAGE_OK) { setTimeout(function () { toast('⚠️ 瀏覽器儲存空間不可用，資料將不會保留'); }, 900); }
   loadPrefs(); applyTheme(); pruneEvents(); pruneDone();
+
+  // [NEW] 初始化語言與切換按鈕
+  let currentLang = LS.get('userLang', 'zh-TW'); 
+  applyLanguage(currentLang);
+
+  const langSwitchBtn = $('#langSwitchBtn');
+  if (langSwitchBtn && !langSwitchBtn.dataset.bound) {
+    langSwitchBtn.dataset.bound = '1';
+    langSwitchBtn.addEventListener('click', function() {
+      currentLang = currentLang === 'zh-TW' ? 'en' : 'zh-TW';
+      applyLanguage(currentLang);
+      toast(currentLang === 'en' ? 'Switched to English' : '已切換回中文');
+    });
+  }
 
   function safeRender(name, fn) {
     try { fn(); } catch (e) { console.warn('初始化渲染失敗：' + name, e); }
