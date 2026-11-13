@@ -320,9 +320,39 @@
 
   document.addEventListener('keydown', function (e) {
     const tag = document.activeElement.tagName; if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-    if (e.key === '/') { e.preventDefault(); $('#searchInput').focus(); }
-    else if ((e.key === 'n' || e.key === 'N') && (currentView === 'home' || currentView === 'notes')) { e.preventDefault(); openNoteModal(null); }
-    else if (e.key === 'Escape') { closeSettings(); $('#pomoPanel').classList.remove('open'); $$('.modal.open').forEach(function (m) { closeModal('#' + m.id); }); if ($('#lightbox').classList.contains('open')) closeLightbox(); }
+
+    // 1. Esc 關閉所有彈窗與面板
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closeSettings();
+      $('#pomoPanel').classList.remove('open');
+      closePomoEditor(); // 確保關閉番茄鐘編輯器
+      $$('.modal.open').forEach(function (m) { closeModal('#' + m.id); });
+      if ($('#lightbox').classList.contains('open')) closeLightbox();
+      return;
+    }
+
+    // 2. / 快速聚焦搜尋欄
+    if (e.key === '/') {
+      e.preventDefault();
+      $('#searchInput').focus();
+      return;
+    }
+
+    // 3. n 快速新增筆記
+    if ((e.key === 'n' || e.key === 'N') && (currentView === 'home' || currentView === 'notes')) {
+      e.preventDefault();
+      openNoteModal(null);
+      return;
+    }
+
+    // 4. 數字鍵 1-6 切換分頁
+    if (['1', '2', '3', '4', '5', '6'].includes(e.key)) {
+      e.preventDefault();
+      const views = { '1': 'home', '2': 'todo', '3': 'calendar', '4': 'diary', '5': 'notes', '6': 'ledger' };
+      showView(views[e.key]);
+      return;
+    }
   });
 
   const copyrightEl = document.getElementById('copyrightYear');
