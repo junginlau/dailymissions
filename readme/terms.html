@@ -5,45 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>服務條款 - 我的空間</title>
     <style>
-        /* 沿用你的 Glassmorphism 風格基礎，此處為獨立樣式以確保頁面可讀性 */
+        /* 樣式與 privacy.html 完全相同 */
         :root {
-            --bg: #f0f2f5;
-            --text: #1a1a2e;
-            --glass-bg: rgba(255, 255, 255, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.5);
-            --link: #007aff;
+            --bg: #f0f2f5; --text: #1a1a2e; --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.5); --link: #007aff; --btn-bg: rgba(0, 122, 255, 0.1);
         }
         @media (prefers-color-scheme: dark) {
             :root {
-                --bg: #0f0f1a;
-                --text: #e0e0e0;
-                --glass-bg: rgba(30, 30, 46, 0.7);
-                --glass-border: rgba(255, 255, 255, 0.1);
-                --link: #0a84ff;
+                --bg: #0f0f1a; --text: #e0e0e0; --glass-bg: rgba(30, 30, 46, 0.7);
+                --glass-border: rgba(255, 255, 255, 0.1); --link: #0a84ff; --btn-bg: rgba(10, 132, 255, 0.2);
             }
         }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.7;
-            margin: 0;
-            padding: 20px;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-        }
-        .container {
-            max-width: 800px;
-            width: 100%;
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            padding: 40px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; margin: 0; padding: 20px; min-height: 100vh; display: flex; justify-content: center; }
+        .container { max-width: 800px; width: 100%; background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 24px; padding: 40px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); position: relative; }
         h1 { font-size: 2rem; margin-bottom: 0.5rem; font-weight: 700; }
         h2 { font-size: 1.4rem; margin-top: 2rem; margin-bottom: 1rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; }
         p, li { margin-bottom: 0.8rem; }
@@ -51,65 +25,99 @@
         a { color: var(--link); text-decoration: none; }
         a:hover { text-decoration: underline; }
         .last-updated { font-size: 0.9rem; opacity: 0.7; margin-bottom: 2rem; }
-        .highlight-box {
-            background: rgba(0, 122, 255, 0.1);
-            border-left: 4px solid var(--link);
-            padding: 1rem;
-            border-radius: 8px;
-            margin: 1.5rem 0;
-        }
-        .back-btn {
-            display: inline-block;
-            margin-top: 2rem;
-            padding: 10px 24px;
-            background: var(--link);
-            color: #fff;
-            border-radius: 50px;
-            font-weight: 600;
-            transition: opacity 0.2s;
-        }
+        .back-btn { display: inline-block; margin-top: 2rem; padding: 10px 24px; background: var(--link); color: #fff; border-radius: 50px; font-weight: 600; transition: opacity 0.2s; }
         .back-btn:hover { opacity: 0.8; text-decoration: none; }
+        
+        .lang-toggle { position: absolute; top: 40px; right: 40px; background: var(--btn-bg); border: 1px solid var(--glass-border); color: var(--text); padding: 6px 16px; border-radius: 999px; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; }
+        .lang-toggle:hover { background: var(--link); color: #fff; border-color: transparent; }
+
+        .lang-en, .lang-zh { display: none; }
+        .show-en .lang-en { display: block; }
+        .show-zh .lang-zh { display: block; }
     </style>
 </head>
-<body>
+<body class="show-zh">
     <div class="container">
-        <h1>服務條款</h1>
-        <p class="last-updated">最後更新日期：2026 年 11 月 13 日</p>
+        <button class="lang-toggle" id="langToggle">English / 中文</button>
 
-        <p>歡迎使用「我的空間」（以下簡稱「本應用程式」）。當你存取或使用本應用程式時，即表示你同意遵守以下服務條款。若你不同意，請停止使用本應用程式。</p>
+        <!-- 中文條款 -->
+        <div class="lang-zh">
+            <h1>服務條款</h1>
+            <p class="last-updated">最後更新日期：2026 年 11 月 13 日</p>
 
-        <h2>1. 服務說明</h2>
-        <p>本應用程式是一個免費、開源的個人數位儀表板，提供待辦事項、日曆、日記、筆記、照片庫、記帳及 Google Drive 雲端備份等功能。本應用程式以「現狀」提供，開發者保留隨時修改、暫停或終止服務的權利。</p>
+            <p>歡迎使用「我的空間」（以下簡稱「本應用程式」）。當你存取或使用本應用程式時，即表示你同意遵守以下服務條款。若你不同意，請停止使用本應用程式。</p>
 
-        <h2>2. 資料所有權與隱私</h2>
-        <ul>
-            <li>你保存在本應用程式中的所有資料（包含日記、記帳、照片等）均<strong>屬於你個人所有</strong>。</li>
-            <li>所有資料預設儲存於你的瀏覽器本地端（LocalStorage / IndexedDB），開發者無法存取。</li>
-            <li>當你使用 Google Drive 備份功能時，資料會加密傳輸並儲存於<strong>你自己的 Google 雲端硬碟</strong>中，開發者同樣無法讀取。</li>
-            <li>詳細資料處理方式請參閱 <a href="./privacy.html">隱私權政策</a>。</li>
-        </ul>
+            <h2>1. 服務說明</h2>
+            <p>本應用程式是一個免費、開源的個人數位儀表板，提供待辦事項、日曆、日記、筆記、照片庫、記帳及 Google Drive 雲端備份等功能。本應用程式以「現狀」提供，開發者保留隨時修改、暫停或終止服務的權利。</p>
 
-        <h2>3. 使用規範</h2>
-        <p>你同意不會將本應用程式用於以下行為：</p>
-        <ul>
-            <li>違反任何適用的法律或法規。</li>
-            <li>生成、處理或散佈任何未經同意的親密影像（Non-Consensual Intimate Imagery, NCII）。</li>
-            <li>進行任何惡意攻擊、逆向工程或試圖破壞本應用程式運作的行為。</li>
-        </ul>
+            <h2>2. 資料所有權與隱私</h2>
+            <ul>
+                <li>你保存在本應用程式中的所有資料（包含日記、記帳、照片等）均<strong>屬於你個人所有</strong>。</li>
+                <li>所有資料預設儲存於你的瀏覽器本地端，開發者無法存取。</li>
+                <li>當你使用 Google Drive 備份功能時，資料會加密傳輸並儲存於<strong>你自己的 Google 雲端硬碟</strong>中，開發者同樣無法讀取。</li>
+                <li>詳細資料處理方式請參閱 <a href="./privacy.html">隱私權政策</a>。</li>
+            </ul>
 
-        <h2>4. 免責聲明</h2>
-        <p>本應用程式為免費提供，開發者不對資料遺失、裝置損壞或任何因使用本應用程式而導致的直接或間接損失負責。<strong>強烈建議你定期使用內建的「匯出備份」功能保存資料。</strong></p>
+            <h2>3. 使用規範</h2>
+            <p>你同意不會將本應用程式用於以下行為：</p>
+            <ul>
+                <li>違反任何適用的法律或法規。</li>
+                <li>生成、處理或散佈任何未經同意的親密影像（Non-Consensual Intimate Imagery, NCII）。</li>
+                <li>進行任何惡意攻擊、逆向工程或試圖破壞本應用程式運作的行為。</li>
+            </ul>
 
-        <h2>5. 第三方服務</h2>
-        <p>本應用程式整合了 Google API（用於 Google Drive 備份），你必須遵守 <a href="https://developers.google.com/terms" target="_blank" rel="noopener">Google 的服務條款</a>。此外，本應用程式亦使用 Open-Meteo API（天氣）與 ExchangeRate API（匯率），開發者不對這些第三方服務的可用性與準確性負責。</p>
+            <h2>4. 免責聲明</h2>
+            <p>本應用程式為免費提供，開發者不對資料遺失、裝置損壞或任何因使用本應用程式而導致的直接或間接損失負責。<strong>強烈建議你定期使用內建的「匯出備份」功能保存資料。</strong></p>
 
-        <h2>6. 條款變更</h2>
-        <p>我們可能不定期更新本服務條款。更新後的條款將發布於此頁面，並更新「最後更新日期」。繼續使用本應用程式即視為同意更新後的條款。</p>
+            <a href="https://junginlau.github.io/dailymissions/" class="back-btn">← 返回我的空間</a>
+        </div>
 
-        <h2>7. 聯絡我們</h2>
-        <p>若你對本服務條款有任何疑問，請透過 <a href="https://github.com/junginlau" target="_blank" rel="noopener">GitHub 專案頁面</a> 與開發者聯繫。</p>
+        <!-- 英文條款 -->
+        <div class="lang-en">
+            <h1>Terms of Service</h1>
+            <p class="last-updated">Last updated: November 13, 2026</p>
 
-        <a href="https://junginlau.github.io/dailymissions/" class="back-btn">← 返回我的空間</a>
+            <p>Welcome to "My Space" (hereinafter referred to as "the Application"). By accessing or using the Application, you agree to comply with the following Terms of Service. If you do not agree, please stop using the Application.</p>
+
+            <h2>1. Service Description</h2>
+            <p>The Application is a free, open-source personal digital dashboard that provides to-do lists, calendars, diaries, notes, photo galleries, ledgers, and Google Drive backup features. The Application is provided "as is," and the developer reserves the right to modify, suspend, or terminate the service at any time.</p>
+
+            <h2>2. Data Ownership and Privacy</h2>
+            <ul>
+                <li>All data you save in the Application (including diaries, ledgers, photos, etc.) is <strong>entirely owned by you</strong>.</li>
+                <li>All data is stored locally in your browser by default, and the developer cannot access it.</li>
+                <li>When you use the Google Drive backup feature, data is encrypted in transit and stored in <strong>your own Google Drive</strong>, which the developer also cannot access.</li>
+                <li>For details on data processing, please refer to the <a href="./privacy.html">Privacy Policy</a>.</li>
+            </ul>
+
+            <h2>3. Usage Guidelines</h2>
+            <p>You agree not to use the Application for the following:</p>
+            <ul>
+                <li>Violating any applicable laws or regulations.</li>
+                <li>Generating, processing, or distributing any Non-Consensual Intimate Imagery (NCII).</li>
+                <li>Engaging in any malicious attacks, reverse engineering, or attempts to disrupt the operation of the Application.</li>
+            </ul>
+
+            <h2>4. Disclaimer</h2>
+            <p>The Application is provided free of charge. The developer is not responsible for data loss, device damage, or any direct or indirect damages resulting from the use of the Application. <strong>We strongly recommend that you regularly use the built-in "Export Backup" feature to save your data.</strong></p>
+
+            <a href="https://junginlau.github.io/dailymissions/" class="back-btn">← Back to My Space</a>
+        </div>
     </div>
+
+    <script>
+        const toggleBtn = document.getElementById('langToggle');
+        const body = document.body;
+
+        toggleBtn.addEventListener('click', () => {
+            if (body.classList.contains('show-zh')) {
+                body.classList.remove('show-zh');
+                body.classList.add('show-en');
+            } else {
+                body.classList.remove('show-en');
+                body.classList.add('show-zh');
+            }
+        });
+    </script>
 </body>
 </html>
