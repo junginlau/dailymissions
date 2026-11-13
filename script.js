@@ -110,6 +110,7 @@
     if (!window.I18N || !window.I18N[lang]) return;
     const dict = window.I18N[lang];
     
+    // 1. 替換所有帶有 data-i18n 的靜態元素
     document.querySelectorAll('[data-i18n]').forEach(function(el) {
       const key = el.dataset.i18n;
       if (dict[key]) {
@@ -121,16 +122,30 @@
       }
     });
 
+    // 2. 替換所有帶有 data-i18n-placeholder 的輸入框
     document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
       const key = el.dataset.i18nPlaceholder;
       if (dict[key]) el.placeholder = dict[key];
     });
 
+    // 3. 更新切換按鈕文字
     const switchBtn = $('#langSwitchBtn');
     if (switchBtn) {
       switchBtn.textContent = lang === 'zh-TW' ? 'EN' : '中文';
     }
 
+    // 4. 重新渲染動態內容（讓首頁卡片、清單立刻切換語言）
+    if (typeof renderHome === 'function') renderHome();
+    if (typeof renderTodos === 'function') renderTodos();
+    if (typeof renderCalendar === 'function') renderCalendar();
+    if (typeof renderDiaries === 'function') renderDiaries();
+    if (typeof renderNotes === 'function') renderNotes();
+    if (typeof renderPhotos === 'function') renderPhotos();
+    if (typeof renderGoals === 'function') renderGoals();
+    if (typeof renderBookmarks === 'function') renderBookmarks();
+    if (typeof renderLedger === 'function') renderLedger();
+
+    // 5. 儲存語言設定
     LS.set('userLang', lang);
   }
 
@@ -345,7 +360,7 @@
   }
   function renderCountdowns() {
     const list = $('#countdownList'); if (cdInterval) { clearInterval(cdInterval); cdInterval = null; }
-    cdListData = collectUpcomingEvents(); if (!cdListData.length) { list.innerHTML = '<div class="empty small" style="padding:6px 0;">近期沒有要事。</div>'; return; }
+    cdListData = collectUpcomingEvents(); if (!cdListData.length) { list.innerHTML = '<div class="empty small" style="padding:6px 0;">' + (window.I18N[currentLang].upcomingEmpty || '近期沒有要事。') + '</div>'; return; }
     const today = new Date(); today.setHours(0, 0, 0, 0);
     function buildItem(cd) {
       const target = new Date(cd.date); target.setHours(0, 0, 0, 0); const diff = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
@@ -407,9 +422,7 @@
       const homeMain = document.querySelector('.home-main');
       if (homeMain && !document.getElementById('welcomeCard')) {
         const card = document.createElement('div'); card.id = 'welcomeCard'; card.className = 'card welcome-card';
-        // 防呆：如果 I18N 沒載入，給予預設值
-        const safeDict = window.I18N || { 'zh-TW': { welcomeTitle: '歡迎來到我的空間 👋', welcomeDesc: '所有資料都存在你的瀏覽器裡，不會上傳。<br>記得定期用右上角齒輪匯出備份！', welcomeBtn: '開始使用' } };
-        const dict = safeDict[currentLang] || safeDict['zh-TW'];
+        const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
         card.innerHTML = `<div style="font-weight:600; margin-bottom:6px;">${dict.welcomeTitle}</div><div style="font-size:13px; line-height:1.6; color:var(--fg-dim); margin-bottom:10px;">${dict.welcomeDesc}</div><button class="btn primary" id="welcomeCloseBtn" style="font-size:12px; padding:6px 12px;">${dict.welcomeBtn}</button>`;
         homeMain.prepend(card);
         document.getElementById('welcomeCloseBtn').addEventListener('click', () => { LS.set('onboarded', true); card.remove(); });
@@ -421,7 +434,7 @@
 
   function renderGoals() {
     const wrap = $('#goalList'); const badge = $('#goalBadge');
-    if (!goals.length) { wrap.innerHTML = '<div class="empty small">還沒有目標，點右上角「新增目標」開始吧。</div>'; badge.textContent = '0 / 0'; return; }
+    if (!goals.length) { wrap.innerHTML = '<div class="empty small">' + (window.I18N[currentLang].goalEmpty || '還沒有目標。') + '</div>'; badge.textContent = '0 / 0'; return; }
     const doneCount = goals.filter(function (g) { return g.done; }).length; badge.textContent = doneCount + ' / ' + goals.length;
     wrap.innerHTML = goals.map(function (g) {
       const prog = g.progress || 0;
@@ -461,7 +474,7 @@
   let editingBmId = null;
   function faviconUrl(url) { return 'https://www.google.com/s2/favicons?sz=64&domain_url=' + encodeURIComponent(url); }
   function renderBookmarks() {
-    const list = $('#bmList'); if (!bookmarks.length) { list.innerHTML = '<div class="empty small">還沒有書籤<br>點右上角 ＋ 新增</div>'; return; }
+    const list = $('#bmList'); if (!bookmarks.length) { list.innerHTML = '<div class="empty small">' + (window.I18N[currentLang].bmEmpty || '還沒有書籤') + '</div>'; return; }
     list.innerHTML = bookmarks.map(function (b) {
       let host = ''; try { host = new URL(b.url).hostname; } catch (e) { host = ''; } const name = b.name || host || b.url;
       return '<div class="bm-item" data-id="' + b.id + '" title="' + escapeHtml(name) + '"><span class="bm-drag-handle">⠿</span><img class="bm-fav" src="' + faviconUrl(b.url) + '" alt="" onerror="this.style.display=\'none\'"><span class="bm-name">' + escapeHtml(name) + '</span><div class="bm-acts"><button class="bm-act" data-act="edit" title="編輯" aria-label="編輯書籤">編</button><button class="bm-act del" data-act="del" title="刪除" aria-label="刪除書籤">×</button></div></div>';
@@ -1276,12 +1289,12 @@
     if (accessToken) {
       gLoginBtn.style.display = 'none';
       gActionWrap.style.display = 'flex';
-      gStatus.textContent = '已連接 Google 雲端';
+      gStatus.textContent = window.I18N[currentLang].gStatusConnected || '已連接 Google 雲端';
       gStatus.style.color = 'var(--income-color)';
     } else {
       gLoginBtn.style.display = 'block';
       gActionWrap.style.display = 'none';
-      gStatus.textContent = '尚未登入';
+      gStatus.textContent = window.I18N[currentLang].gStatusNone || '尚未登入';
       gStatus.style.color = 'var(--fg-dim)';
     }
   }

@@ -9,6 +9,7 @@ const I18N = {
     btnTerms: '服務條款',
     
     // Nav
+    navHome: '首頁',
     navTodo: '每週必做',
     navCalendar: '日曆',
     navDiary: '日記',
@@ -16,6 +17,7 @@ const I18N = {
     navPhotos: '照片庫',
     navLedger: '記帳',
     navAbout: '關於本站',
+    navMore: '更多',
 
     // View Titles
     viewTodoTitle: '每週必做',
@@ -37,9 +39,49 @@ const I18N = {
     searchPlaceholder: '搜尋或輸入網址…',
     gLoginBtn: '登入 Google 帳號',
     gStatusNone: '尚未登入',
+    gStatusConnected: '已連接 Google 雲端',
     welcomeTitle: '歡迎來到我的空間 👋',
     welcomeDesc: '所有資料都存在你的瀏覽器裡，不會上傳。從「每週必做」開始安排今天，或直接點任何分頁探索。<br>記得定期用右上角齒輪匯出備份！',
-    welcomeBtn: '開始使用'
+    welcomeBtn: '開始使用',
+    
+    // Home Dashboard
+    statTodo: '今天必做',
+    statEvent: '未來 7 天要事',
+    statDiary: '日記篇數',
+    statExpense: '今日支出',
+    goalTitle: '我的目標',
+    goalAdd: '＋ 新增目標',
+    goalEmpty: '還沒有目標，點右上角「新增目標」開始吧。',
+    upcomingTitle: '最近的要事',
+    upcomingEmpty: '近期沒有要事。',
+    bmTitle: '書籤（可拖拽排序）',
+    bmEmpty: '還沒有書籤<br>點右上角 ＋ 新增',
+    shortcutTodoK: '每週必做', shortcutTodoD: '把這週最重要的事挑出來，先做那幾件。',
+    shortcutCalK: '日曆', shortcutCalD: '看看這個月的節奏，安排一下空檔。',
+    shortcutDiaryK: '日記', shortcutDiaryD: '寫下今天的一件小事，留給以後的自己。',
+    shortcutNoteK: '筆記本', shortcutNoteD: '靈感來的時候，先把它接住。',
+    
+    // Buttons
+    btnAdd: '新增',
+    btnSave: '保存',
+    btnCancel: '取消',
+    btnDelete: '刪除',
+    btnEdit: '編輯',
+    btnClear: '清除',
+    
+    // Settings
+    setLum: '背景亮度',
+    setCurrency: '主要顯示貨幣',
+    setBgPick: '插入背景圖片',
+    setBgClear: '移除背景',
+    setTheme: '切換深/淺色',
+    setExport: '匯出備份',
+    setImport: '匯入備份',
+    setGTitle: 'Google 雲端備份',
+    setGBackup: '上傳備份',
+    setGRestore: '從雲端還原',
+    setClearAll: '清除所有資料',
+    setNote: '設定會自動記憶，下次開啟時自動套用。'
   },
   'en': {
     // Landing Page
@@ -51,6 +93,7 @@ const I18N = {
     btnTerms: 'Terms of Service',
     
     // Nav
+    navHome: 'Home',
     navTodo: 'Weekly To-Do',
     navCalendar: 'Calendar',
     navDiary: 'Diary',
@@ -58,6 +101,7 @@ const I18N = {
     navPhotos: 'Gallery',
     navLedger: 'Ledger',
     navAbout: 'About',
+    navMore: 'More',
 
     // View Titles
     viewTodoTitle: 'Weekly To-Do',
@@ -79,9 +123,49 @@ const I18N = {
     searchPlaceholder: 'Search or enter URL...',
     gLoginBtn: 'Sign in with Google',
     gStatusNone: 'Not signed in',
+    gStatusConnected: 'Connected to Google Drive',
     welcomeTitle: 'Welcome to My Space 👋',
     welcomeDesc: 'All data is stored in your browser and will not be uploaded. Start planning from "Weekly To-Do" or explore other tabs.<br>Remember to export a backup from the top-right gear icon!',
-    welcomeBtn: 'Get Started'
+    welcomeBtn: 'Get Started',
+    
+    // Home Dashboard
+    statTodo: 'Today\'s To-Do',
+    statEvent: 'Upcoming 7 Days',
+    statDiary: 'Diary Entries',
+    statExpense: 'Today\'s Expense',
+    goalTitle: 'My Goals',
+    goalAdd: '＋ Add Goal',
+    goalEmpty: 'No goals yet. Click "Add Goal" to start.',
+    upcomingTitle: 'Upcoming Events',
+    upcomingEmpty: 'No upcoming events.',
+    bmTitle: 'Bookmarks (Draggable)',
+    bmEmpty: 'No bookmarks yet.<br>Click + to add.',
+    shortcutTodoK: 'Weekly To-Do', shortcutTodoD: 'Pick the most important things this week and do them first.',
+    shortcutCalK: 'Calendar', shortcutCalD: 'Check the rhythm of this month and schedule some free time.',
+    shortcutDiaryK: 'Diary', shortcutDiaryD: 'Write down one small thing today for your future self.',
+    shortcutNoteK: 'Notes', shortcutNoteD: 'Catch inspiration when it comes.',
+    
+    // Buttons
+    btnAdd: 'Add',
+    btnSave: 'Save',
+    btnCancel: 'Cancel',
+    btnDelete: 'Delete',
+    btnEdit: 'Edit',
+    btnClear: 'Clear',
+    
+    // Settings
+    setLum: 'Brightness',
+    setCurrency: 'Main Currency',
+    setBgPick: 'Pick Background',
+    setBgClear: 'Clear Background',
+    setTheme: 'Toggle Theme',
+    setExport: 'Export Backup',
+    setImport: 'Import Backup',
+    setGTitle: 'Google Drive Backup',
+    setGBackup: 'Backup to Cloud',
+    setGRestore: 'Restore from Cloud',
+    setClearAll: 'Clear All Data',
+    setNote: 'Settings are saved automatically.'
   }
 };
 
