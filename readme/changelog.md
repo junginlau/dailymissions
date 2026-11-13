@@ -1,5 +1,13 @@
 # 📝 更新日誌 (Changelog)
 
+## v0.5.1 (全域 v1.0.4-beta-b) - 2026-11-13
+### 修正
+- **解決 Google OAuth 審查退回問題**：
+  - `index.html` 新增未登入狀態下的「公開 Landing Page」，清楚說明應用程式用途與隱私聲明。
+  - `script.js` 加入登入狀態偵測，無 Token 顯示 Landing Page，點擊「進入儀表板」後才顯示主程式。
+  - 確保 `privacy.html` 與 `terms.html` 均能在未登入狀態下直接點擊閱覽。
+- `sw.js` 快取版本更新至 `my-space-cache-v1.0.4-released-beta-b`。
+
 ## [2026-11-13] - v1.0.3 雲端備份與全域升級（底層 v0.5.0）
 
 ### ☁️ 全域與底層大功能更新 (Features)

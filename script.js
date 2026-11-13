@@ -1394,4 +1394,40 @@
     if (closeBtn) closeBtn.addEventListener('click', function () { banner.hidden = true; });
   })();
 
+  // [NEW] 處理未登入時的公開 Landing Page 顯示邏輯
+  (function initPublicLanding() {
+    const landing = document.getElementById('public-landing');
+    const nav = document.querySelector('.nav');
+    const appMain = document.querySelector('.app');
+    const mobileNav = document.querySelector('.mobile-nav');
+    const token = LS.get('googleToken', null); // 檢查是否有暫存的 Token
+
+    // 判斷是否有 Token 來決定顯示哪個介面
+    if (token) {
+      if (landing) landing.style.display = 'none';
+      if (nav) nav.style.display = 'flex';
+      if (appMain) appMain.style.display = 'flex';
+      if (mobileNav && window.innerWidth <= 768) mobileNav.style.display = 'flex';
+    } else {
+      if (landing) landing.style.display = 'flex';
+      if (nav) nav.style.display = 'none';
+      if (appMain) appMain.style.display = 'none';
+      if (mobileNav) mobileNav.style.display = 'none';
+    }
+
+    // 綁定「進入儀表板」按鈕，點擊後解除隱藏
+    const enterBtn = document.getElementById('enterDashboardBtn');
+    if (enterBtn) {
+      enterBtn.addEventListener('click', () => {
+        if (landing) landing.style.display = 'none';
+        if (nav) nav.style.display = 'flex';
+        if (appMain) appMain.style.display = 'flex';
+        if (mobileNav && window.innerWidth <= 768) mobileNav.style.display = 'flex';
+        
+        // 強制重新渲染首頁
+        if (typeof renderHome === 'function') renderHome();
+      });
+    }
+  })();
+
 })();

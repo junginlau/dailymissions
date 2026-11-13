@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>隱私權政策 - 我的空間</title>
     <style>
-        /* 沿用你的 Glassmorphism 風格基礎，此處為獨立樣式以確保頁面可讀性 */
+        /* 沿用 Glassmorphism 風格基礎 */
         :root {
             --bg: #f0f2f5;
             --text: #1a1a2e;
@@ -46,7 +46,6 @@
         }
         h1 { font-size: 2rem; margin-bottom: 0.5rem; font-weight: 700; }
         h2 { font-size: 1.4rem; margin-top: 2rem; margin-bottom: 1rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; }
-        h3 { font-size: 1.1rem; margin-top: 1.5rem; }
         p, li { margin-bottom: 0.8rem; }
         ul { padding-left: 1.2rem; }
         a { color: var(--link); text-decoration: none; }
@@ -59,7 +58,6 @@
             border-radius: 8px;
             margin: 1.5rem 0;
         }
-        /* 返回按鈕 */
         .back-btn {
             display: inline-block;
             margin-top: 2rem;
@@ -78,38 +76,38 @@
         <h1>隱私權政策</h1>
         <p class="last-updated">最後更新日期：2026 年 11 月 13 日</p>
 
-        <p>歡迎使用「我的空間」（以下簡稱「本應用程式」）。本應用程式是一個個人數位儀表板，致力於協助你管理日記、記帳、番茄鐘等個人數據。我們高度重視你的隱私，並嚴格遵守 <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Google API 服務使用者資料政策</a>，包括其中的「限制使用」（Limited Use）要求。</p>
+        <p>歡迎使用「我的空間」（以下簡稱「本應用程式」）。本應用程式是一個專注於隱私的個人數位儀表板，致力於協助你管理日記、記帳、番茄鐘等個人數據。我們高度重視你的隱私，並嚴格遵守 <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Google API 服務使用者資料政策</a>，包括其中的「限制使用」（Limited Use）要求。</p>
 
         <div class="highlight-box">
-            <strong>核心承諾：</strong>你的所有資料預設儲存在你的瀏覽器本地端（LocalStorage / IndexedDB），我們不會將其上傳至任何伺服器。僅在你明確授權並主動觸發「Google Drive 備份」功能時，才會透過 Google API 存取你的雲端硬碟。
+            <strong>核心承諾：</strong>你的所有資料預設儲存在你的瀏覽器本地端（LocalStorage / IndexedDB），我們沒有中央伺服器。僅在你明確授權並主動觸發「Google Drive 備份」功能時，才會透過 Google API 存取你專屬的雲端硬碟空間。
         </div>
 
         <h2>1. 我們收集的資料與用途</h2>
         <p>為了提供完整的應用程式功能，本應用程式可能會處理以下資料：</p>
         <ul>
-            <li><strong>本地端資料（儲存於你的瀏覽器）：</strong>包含你的日記內容、記帳紀錄、待辦事項、番茄鐘設定、圖片與音效檔案。這些資料僅用於在你的裝置上呈現與管理，不會自動傳輸至外部。</li>
-            <li><strong>Google 使用者資料（僅在你授權後）：</strong>當你主動點擊「連接 Google Drive」進行備份時，本應用程式會請求存取你的 Google Drive 中的特定應用程式資料夾（Drive AppData 或指定檔案）。我們僅讀取與寫入備份檔案（JSON 格式），<strong>不會</strong>存取你 Google Drive 中的其他個人檔案、照片或文件。</li>
-            <li><strong>驗證權杖：</strong>為了維持登入狀態（避免重新整理頁面後登出），我們會將 Google OAuth 存取權杖（Token）暫存於你的瀏覽器 LocalStorage 中。該權杖僅用於與 Google API 進行通訊。</li>
+            <li><strong>本地端資料：</strong>包含你的日記內容、記帳紀錄、待辦事項、番茄鐘設定、圖片與音效檔案。這些資料僅用於在你的裝置上呈現與管理，不會自動傳輸至外部。</li>
+            <li><strong>Google 使用者資料（僅限 Drive API）：</strong>當你主動點擊「Google Drive 備份」時，本應用程式會請求存取你的 Google Drive 中的特定應用程式資料夾。我們僅讀取與寫入備份檔案（JSON 格式），<strong>絕對不會</strong>存取你 Google Drive 中的其他個人檔案、照片或文件。</li>
+            <li><strong>驗證權杖：</strong>為了維持登入狀態，我們會將 Google OAuth 存取權杖（Token）暫存於你的瀏覽器 LocalStorage 中。該權杖僅用於與 Google API 進行通訊。</li>
         </ul>
 
         <h2>2. Google API 服務使用者資料政策合規聲明</h2>
         <p>本應用程式對 Google API 的使用嚴格遵守以下規範：</p>
         <ul>
-            <li><strong>限制使用（Limited Use）：</strong>我們對 Google 使用者資料（僅限 Google Drive 備份檔案）的使用，僅限於提供你明確要求的「資料備份與還原」功能。我們<strong>不會</strong>將你的 Google 使用者資料用於廣告、行銷、出售、或轉移給任何第三方[citation:1][citation:5]。</li>
-            <li><strong>不進行 AI 訓練：</strong>我們<strong>不會</strong>使用你的 Google 使用者資料來建立、訓練或改進任何機器學習或人工智慧模型[citation:6]。</li>
+            <li><strong>限制使用（Limited Use）：</strong>我們對 Google 使用者資料（僅限 Google Drive 備份檔案）的使用，僅限於提供你明確要求的「資料備份與還原」功能。我們<strong>不會</strong>將你的 Google 使用者資料用於廣告、行銷、出售、或轉移給任何第三方。</li>
+            <li><strong>不進行 AI 訓練：</strong>我們<strong>不會</strong>使用你的 Google 使用者資料來建立、訓練或改進任何機器學習或人工智慧模型。</li>
             <li><strong>禁止 AI NCII：</strong>本應用程式<strong>嚴禁</strong>用於生成、處理或散佈任何未經同意的親密影像（Non-Consensual Intimate Imagery, NCII）。本應用程式不包含任何生成式 AI 功能，亦不會將 Google API 用於此類用途。</li>
             <li><strong>透明與控制：</strong>我們僅在請求權限的當下（透過 Google 登入彈窗）向你說明所需的資料範圍。你隨時可以在 Google 帳戶設定中撤銷本應用程式的存取權限。</li>
         </ul>
 
         <h2>3. 資料的儲存與安全</h2>
         <ul>
-            <li><strong>本地儲存優先：</strong>絕大多數的個人數據（日記、記帳等）僅存在於你的裝置上。你必須自行負責裝置的安全（如螢幕鎖定）。</li>
-            <li><strong>雲端備份（選用）：</strong>當你啟用 Google Drive 備份時，備份檔案會儲存於你的 Google Drive 中。我們建議你妥善保管 Google 帳戶的登入憑證。本應用程式不會在伺服器端保留任何備份副本。</li>
+            <li><strong>本地儲存優先：</strong>絕大多數的個人數據（日記、記帳等）僅存在於你的裝置上。你必須自行負責裝置的安全。</li>
+            <li><strong>雲端備份（選用）：</strong>當你啟用 Google Drive 備份時，備份檔案會儲存於你自己的 Google Drive 中。本應用程式不會在伺服器端保留任何備份副本。</li>
             <li><strong>傳輸安全：</strong>所有與 Google API 的通訊均透過 HTTPS 加密傳輸。</li>
         </ul>
 
         <h2>4. 資料的分享與揭露</h2>
-        <p>我們<strong>不會</strong>將你的個人資料或 Google 使用者資料出售、出租或分享給任何第三方廣告商、資料仲介商或資訊經銷商。僅在以下極端情況下才會揭露資料：</p>
+        <p>我們<strong>不會</strong>將你的個人資料或 Google 使用者資料出售、出租或分享給任何第三方。僅在以下極端情況下才會揭露資料：</p>
         <ul>
             <li>為遵守法律法規或政府機關的合法要求。</li>
             <li>為保護本應用程式、使用者或公眾的權利、財產或安全。</li>
@@ -122,10 +120,10 @@
         </ul>
 
         <h2>6. 兒童隱私</h2>
-        <p>本應用程式並非針對 13 歲以下兒童設計。我們不會有意收集兒童的個人資料。若你是家長或監護人，發現兒童未經同意使用了本應用程式，請協助其清除瀏覽器資料。</p>
+        <p>本應用程式並非針對 13 歲以下兒童設計。我們不會有意收集兒童的個人資料。</p>
 
         <h2>7. 政策更新</h2>
-        <p>我們可能會不定期更新本隱私權政策，以反映法規或功能的變化。更新後的版本將發布於此頁面，並更新「最後更新日期」。建議你定期查閱。</p>
+        <p>我們可能會不定期更新本隱私權政策，以反映法規或功能的變化。更新後的版本將發布於此頁面，並更新「最後更新日期」。</p>
 
         <h2>8. 聯絡我們</h2>
         <p>若你對本隱私權政策有任何疑問，或需要協助刪除資料，請透過 GitHub 專案頁面與開發者聯繫。</p>
