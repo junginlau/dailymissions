@@ -1394,15 +1394,48 @@
     if (closeBtn) closeBtn.addEventListener('click', function () { banner.hidden = true; });
   })();
 
-   // [NEW] 處理未登入時的公開 Landing Page 顯示邏輯
+  // [NEW] 處理未登入時的公開 Landing Page 顯示邏輯 (強化防呆與事件綁定)
   (function initPublicLanding() {
     const landing = document.getElementById('public-landing');
     const nav = document.querySelector('.nav');
     const appMain = document.querySelector('.app');
     const mobileNav = document.querySelector('.mobile-nav');
     const pomoFab = document.getElementById('pomoFab');
-    
-    // 安全檢查：確保 LS 存在，避免報錯
+    const enterBtn = document.getElementById('enterDashboardBtn');
+
+    // 核心切換函式
+    const showDashboard = () => {
+      if (landing) landing.style.display = 'none';
+      if (nav) nav.style.display = 'flex';
+      if (appMain) appMain.style.display = 'flex';
+      if (mobileNav && window.innerWidth <= 768) mobileNav.style.display = 'flex';
+      if (pomoFab) pomoFab.style.display = 'flex';
+      if (typeof renderHome === 'function') renderHome();
+    };
+
+    const showLanding = () => {
+      if (landing) landing.style.display = 'flex';
+      if (nav) nav.style.display = 'none';
+      if (appMain) appMain.style.display = 'none';
+      if (mobileNav) mobileNav.style.display = 'none';
+      if (pomoFab) pomoFab.style.display = 'none';
+    };
+
+    // 1. 綁定「進入儀表板」按鈕
+    if (enterBtn) {
+      // 為了防止重複綁定，我們直接替換按鈕節點
+      const newEnterBtn = enterBtn.cloneNode(true);
+      enterBtn.parentNode.replaceChild(newEnterBtn, enterBtn);
+      
+      newEnterBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        showDashboard();
+        // 點擊後可寫入一個標記，讓下次重新整理時直接進儀表板
+        try { localStorage.setItem('guestEntered', 'true'); } catch(err) {}
+      });
+    }
+
+    // 2. 決定初始畫面
     let hasToken = false;
     try {
       if (typeof LS !== 'undefined' && typeof LS.get === 'function') {
@@ -1412,33 +1445,12 @@
       console.warn('無法讀取 Token 狀態', e);
     }
 
-    // 判斷是否有 Token 來決定顯示哪個介面
-    if (hasToken) {
-      if (landing) landing.style.display = 'none';
-      if (nav) nav.style.display = 'flex';
-      if (appMain) appMain.style.display = 'flex';
-      if (mobileNav && window.innerWidth <= 768) mobileNav.style.display = 'flex';
-      if (pomoFab) pomoFab.style.display = 'flex';
-    } else {
-      if (landing) landing.style.display = 'flex';
-      if (nav) nav.style.display = 'none';
-      if (appMain) appMain.style.display = 'none';
-      if (mobileNav) mobileNav.style.display = 'none';
-      if (pomoFab) pomoFab.style.display = 'none';
-    }
+    const isGuest = localStorage.getItem('guestEntered') === 'true';
 
-    // 綁定「進入儀表板」按鈕，點擊後解除隱藏
-    const enterBtn = document.getElementById('enterDashboardBtn');
-    if (enterBtn) {
-      enterBtn.addEventListener('click', () => {
-        if (landing) landing.style.display = 'none';
-        if (nav) nav.style.display = 'flex';
-        if (appMain) appMain.style.display = 'flex';
-        if (mobileNav && window.innerWidth <= 768) mobileNav.style.display = 'flex';
-        if (pomoFab) pomoFab.style.display = 'flex';
-        
-        // 強制重新渲染首頁
-        if (typeof renderHome === 'function') renderHome();
-      });
+    // 如果已經有 Token，或者訪客已經點過「進入儀表板」，就直接顯示主程式
+    if (hasToken || isGuest) {
+      showDashboard();
+    } else {
+      showLanding();
     }
   })();
