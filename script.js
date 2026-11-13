@@ -407,7 +407,9 @@
       const homeMain = document.querySelector('.home-main');
       if (homeMain && !document.getElementById('welcomeCard')) {
         const card = document.createElement('div'); card.id = 'welcomeCard'; card.className = 'card welcome-card';
-        const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+        // 防呆：如果 I18N 沒載入，給予預設值
+        const safeDict = window.I18N || { 'zh-TW': { welcomeTitle: '歡迎來到我的空間 👋', welcomeDesc: '所有資料都存在你的瀏覽器裡，不會上傳。<br>記得定期用右上角齒輪匯出備份！', welcomeBtn: '開始使用' } };
+        const dict = safeDict[currentLang] || safeDict['zh-TW'];
         card.innerHTML = `<div style="font-weight:600; margin-bottom:6px;">${dict.welcomeTitle}</div><div style="font-size:13px; line-height:1.6; color:var(--fg-dim); margin-bottom:10px;">${dict.welcomeDesc}</div><button class="btn primary" id="welcomeCloseBtn" style="font-size:12px; padding:6px 12px;">${dict.welcomeBtn}</button>`;
         homeMain.prepend(card);
         document.getElementById('welcomeCloseBtn').addEventListener('click', () => { LS.set('onboarded', true); card.remove(); });
