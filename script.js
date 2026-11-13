@@ -481,7 +481,7 @@
     const doneCount = goals.filter(function (g) { return g.done; }).length; badge.textContent = doneCount + ' / ' + goals.length;
     wrap.innerHTML = goals.map(function (g) {
       const prog = g.progress || 0;
-      return '<div class="goal-item' + (g.done ? ' done' : '') + '" data-id="' + g.id + '"><button class="goal-chk" data-act="toggle" aria-label="標記完成"></button><div class="goal-main"><div class="goal-title">' + escapeHtml(g.title) + '</div>' + (g.note ? '<div class="goal-note">' + escapeHtml(g.note) + '</div>' : '') + '<div class="goal-progress-bar"><div class="goal-progress-fill" style="width:' + prog + '%"></div></div></div><div class="goal-acts"><button class="mini" data-act="edit" aria-label="' + dict.edit + '">✎</button><button class="mini del" data-act="del" aria-label="刪除目標">×</button></div></div>';
+      return '<div class="goal-item' + (g.done ? ' done' : '') + '" data-id="' + g.id + '"><button class="goal-chk" data-act="toggle" aria-label="標記完成"></button><div class="goal-main"><div class="goal-title">' + escapeHtml(g.title) + '</div>' + (g.note ? '<div class="goal-note">' + escapeHtml(g.note) + '</div>' : '') + '<div class="goal-progress-bar"><div class="goal-progress-fill" style="width:' + prog + '%"></div></div></div><div class="goal-acts"><button class="mini" data-act="edit" aria-label="' + dict.goalEdit + '">✎</button><button class="mini del" data-act="del" aria-label="' + dict.goalDelete + '">×</button></div></div>';
     }).join('');
   }
 
@@ -497,7 +497,9 @@
   function openGoalModal(id) {
     const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     editingGoalId = id || null; const g = id ? goals.find(function (x) { return x.id === id; }) : null;
-    $('#goalModalTitle').textContent = g ? dict.goalEdit : dict.goalNew; $('#goalTitle').value = g ? g.title : ''; $('#goalNote').value = g ? (g.note || '') : ''; $('#goalProgress').value = g ? (g.progress || 0) : 0; $('#goalProgressVal').textContent = g ? (g.progress || 0) : 0; $('#goalDelete').style.display = g ? '' : 'none';
+        $('#goalModalTitle').textContent = g ? dict.goalEdit : dict.goalNew; 
+    document.querySelector('#goalModal .sub2').textContent = g ? dict.goalEditSub : dict.goalNewSub;
+    $('#goalTitle').value = g ? g.title : ''; $('#goalNote').value = g ? (g.note || '') : ''; $('#goalProgress').value = g ? (g.progress || 0) : 0; $('#goalProgressVal').textContent = g ? (g.progress || 0) : 0; $('#goalDelete').style.display = g ? '' : 'none';
     openModal('#goalModal'); setTimeout(function () { $('#goalTitle').focus(); }, 80);
   }
   $('#goalProgress').addEventListener('input', function () { $('#goalProgressVal').textContent = this.value; });
@@ -527,7 +529,7 @@
     const list = $('#bmList'); if (!bookmarks.length) { list.innerHTML = '<div class="empty small">' + dict.bmEmpty + '</div>'; return; }
     list.innerHTML = bookmarks.map(function (b) {
       let host = ''; try { host = new URL(b.url).hostname; } catch (e) { host = ''; } const name = b.name || host || b.url;
-      return '<div class="bm-item" data-id="' + b.id + '" title="' + escapeHtml(name) + '"><span class="bm-drag-handle">⠿</span><img class="bm-fav" src="' + faviconUrl(b.url) + '" alt="" onerror="this.style.display=\'none\'"><span class="bm-name">' + escapeHtml(name) + '</span><div class="bm-acts"><button class="bm-act" data-act="edit" title="' + dict.bmEdit + '" aria-label="' + dict.bmEdit + '">✎</button><button class="bm-act del" data-act="del" title="' + dict.bmDelete + '" aria-label="' + dict.bmDelete + '">×</button></div></div>';
+            return '<div class="bm-item" data-id="' + b.id + '" title="' + escapeHtml(name) + '"><span class="bm-drag-handle">⠿</span><img class="bm-fav" src="' + faviconUrl(b.url) + '" alt="" onerror="this.style.display=\'none\'"><span class="bm-name">' + escapeHtml(name) + '</span><div class="bm-acts"><button class="bm-act" data-act="edit" title="' + dict.bmEdit + '" aria-label="' + dict.bmEdit + '">✎</button><button class="bm-act del" data-act="del" title="' + dict.bmDelete + '" aria-label="' + dict.bmDelete + '">×</button></div></div>';
     }).join('');
   }
 
