@@ -135,6 +135,8 @@
     }
 
     // 4. 重新渲染動態內容（讓首頁卡片、清單立刻切換語言）
+    updateClock();
+    initWeather();
     if (typeof renderHome === 'function') renderHome();
     if (typeof renderTodos === 'function') renderTodos();
     if (typeof renderCalendar === 'function') renderCalendar();
@@ -248,7 +250,7 @@
   }
 
   function dayKeyOf(d) { return DAY_KEYS[d.getDay()]; }
-  function dayLabelOf(key) { const map = { mon: '星期一', tue: '星期二', wed: '星期三', thu: '星期四', fri: '星期五', sat: '星期六', sun: '星期日' }; return map[key] || key; }
+  function dayLabelOf(key) { const map = window.I18N[currentLang].weekdaysFull || {}; return map[key] || key; }
   function pruneDone() { const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 60); const minKey = dateKey(cutoff); let changed = false; Object.keys(todos.done || {}).forEach(function (k) { if (k < minKey) { delete todos.done[k]; changed = true; } }); if (changed) save('todos'); }
 
   // ==========================================
@@ -324,19 +326,37 @@
   // ==========================================
   // 7. 首頁 (時鐘、天氣、名言、統計、目標、書籤)
   // ==========================================
-  function updateClock() { const now = new Date(); let timeStr = pad(now.getHours()) + ':' + pad(now.getMinutes()); if (window.innerWidth > 768) timeStr += ':' + pad(now.getSeconds()); const days = ['日', '一', '二', '三', '四', '五', '六']; const dateStr = now.getFullYear() + ' 年 ' + (now.getMonth() + 1) + ' 月 ' + now.getDate() + ' 日 · 星期' + days[now.getDay()]; $('#clockTime').textContent = timeStr; $('#clockDate').textContent = dateStr; }
+  function updateClock() {
+    const now = new Date();
+    let timeStr = pad(now.getHours()) + ':' + pad(now.getMinutes());
+    if (window.innerWidth > 768) timeStr += ':' + pad(now.getSeconds());
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    const days = dict.weekdays || ['日','一','二','三','四','五','六'];
+    let dateStr;
+    if (currentLang === 'en') {
+      dateStr = now.getFullYear() + ' ' + dict.calendarWeekdays[now.getMonth()] + ' ' + now.getDate() + ', ' + dict.weekdays[now.getDay()];
+      // en: use month names? Keep simple
+      const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      dateStr = monthNames[now.getMonth()] + ' ' + now.getDate() + ', ' + now.getFullYear() + ' · ' + dict.weekdays[now.getDay()];
+    } else {
+      dateStr = now.getFullYear() + ' 年 ' + (now.getMonth() + 1) + ' 月 ' + now.getDate() + ' 日 · 星期' + days[now.getDay()];
+    }
+    $('#clockTime').textContent = timeStr;
+    $('#clockDate').textContent = dateStr;
+  }
   setInterval(updateClock, 1000); updateClock(); window.addEventListener('resize', updateClock);
 
   function initWeather() {
-    if (!navigator.geolocation) { $('#weatherInfo').innerHTML = '⛅ 無法獲取定位'; return; }
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    if (!navigator.geolocation) { $('#weatherInfo').innerHTML = '⛅ ' + dict.weatherNoGeo; return; }
     navigator.geolocation.getCurrentPosition(function (pos) {
       const lat = pos.coords.latitude; const lon = pos.coords.longitude;
       fetch('https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current_weather=true').then(r => r.json()).then(data => {
         const w = data.current_weather; const code = w.weathercode; let icon = '⛅';
         if (code === 0) icon = '☀️'; else if (code === 1 || code === 2) icon = '🌤️'; else if (code === 3) icon = '☁️'; else if (code >= 51 && code <= 67) icon = '🌧️'; else if (code >= 71 && code <= 77) icon = '❄️'; else if (code >= 80 && code <= 82) icon = '🌦️'; else if (code >= 95) icon = '⛈️';
-        $('#weatherInfo').innerHTML = '<span class="weather-icon">' + icon + '</span> ' + w.temperature + '°C · 風速 ' + w.windspeed + ' km/h';
-      }).catch(() => { $('#weatherInfo').innerHTML = '⛅ 天氣載入失敗'; });
-    }, function () { $('#weatherInfo').innerHTML = '⛅ 無法獲取定位'; }, { timeout: 5000 });
+        $('#weatherInfo').innerHTML = '<span class="weather-icon">' + icon + '</span> ' + w.temperature + '°C · ' + dict.weatherWind + ' ' + w.windspeed + ' km/h';
+      }).catch(() => { $('#weatherInfo').innerHTML = '⛅ ' + dict.weatherFail; });
+    }, function () { $('#weatherInfo').innerHTML = '⛅ ' + dict.weatherNoGeo; }, { timeout: 5000 });
   }
   initWeather();
 
@@ -360,13 +380,15 @@
   }
   function renderCountdowns() {
     const list = $('#countdownList'); if (cdInterval) { clearInterval(cdInterval); cdInterval = null; }
-    cdListData = collectUpcomingEvents(); if (!cdListData.length) { list.innerHTML = '<div class="empty small" style="padding:6px 0;">' + (window.I18N[currentLang].upcomingEmpty || '近期沒有要事。') + '</div>'; return; }
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    cdListData = collectUpcomingEvents(); if (!cdListData.length) { list.innerHTML = '<div class="empty small" style="padding:6px 0;">' + dict.upcomingEmpty + '</div>'; return; }
     const today = new Date(); today.setHours(0, 0, 0, 0);
     function buildItem(cd) {
       const target = new Date(cd.date); target.setHours(0, 0, 0, 0); const diff = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
-      let text = diff === 0 ? '就是今天！' : '還有 ' + diff + ' 天'; const urgentClass = (diff >= 0 && diff <= 3) ? ' urgent' : '';
+      let text = diff === 0 ? dict.countdownToday : dict.countdownDays.replace('{n}', diff);
+      const urgentClass = (diff >= 0 && diff <= 3) ? ' urgent' : '';
       const d = keyToDate(cd.date); const dateLabel = (d.getMonth() + 1) + '/' + d.getDate(); const timeStr = cd.time ? ' ' + cd.time : '';
-      const delBtn = cd.kind === 'countdown' ? '<button class="cd-del mini del" data-cd-id="' + cd.id + '" title="刪除倒數日" aria-label="刪除倒數日" style="width:20px;height:20px;font-size:11px;margin-left:6px;">×</button>' : '';
+      const delBtn = cd.kind === 'countdown' ? '<button class="cd-del mini del" data-cd-id="' + cd.id + '" title="' + dict.countdownDelete + '" aria-label="' + dict.countdownDelete + '" style="width:20px;height:20px;font-size:11px;margin-left:6px;">×</button>' : '';
       return '<div class="cd-item"><span class="cd-title">' + escapeHtml(cd.title) + ' <span class="cd-date">' + dateLabel + timeStr + '</span></span><span class="cd-days' + urgentClass + '">' + text + '</span>' + delBtn + '</div>';
     }
     if (cdListData.length === 1) { list.innerHTML = buildItem(cdListData[0]); return; }
@@ -434,7 +456,8 @@
 
   function renderGoals() {
     const wrap = $('#goalList'); const badge = $('#goalBadge');
-    if (!goals.length) { wrap.innerHTML = '<div class="empty small">' + (window.I18N[currentLang].goalEmpty || '還沒有目標。') + '</div>'; badge.textContent = '0 / 0'; return; }
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    if (!goals.length) { wrap.innerHTML = '<div class="empty small">' + dict.goalEmpty + '</div>'; badge.textContent = '0 / 0'; return; }
     const doneCount = goals.filter(function (g) { return g.done; }).length; badge.textContent = doneCount + ' / ' + goals.length;
     wrap.innerHTML = goals.map(function (g) {
       const prog = g.progress || 0;
@@ -676,9 +699,10 @@
     const now = new Date(); const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1); const todayDayKey = dayKeyOf(now); const tomorrowDayKey = dayKeyOf(tomorrow); const todayDateKey = dateKey(now); const todayDone = Array.isArray(todos.done[todayDateKey]) ? todos.done[todayDateKey] : [];
     const todayTags = tagsForDay(todayDayKey); const tomorrowTags = tagsForDay(tomorrowDayKey); const todayCol = $('#todayCol');
     const doneCount = todayTags.filter(function (t) { return todayDone.indexOf(t.id) >= 0; }).length;
-    todayCol.innerHTML = '<div class="card today-card"><div class="today-head"><h3>今天 · ' + dayLabelOf(todayDayKey) + '</h3><span class="badge">' + (todayTags.length ? doneCount + ' / ' + todayTags.length : '—') + '</span></div><div class="today-list scroll-box">' + (todayTags.length ? todayTags.map(function (t) { const done = todayDone.indexOf(t.id) >= 0; return '<button class="today-item' + (done ? ' done' : '') + '" data-tag="' + t.id + '"><span class="chk"></span><span class="label">' + escapeHtml(t.name) + '</span></button>'; }).join('') : '<div class="empty small">今天沒有安排，點右上角設定標籤。</div>') + '</div></div>';
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    todayCol.innerHTML = '<div class="card today-card"><div class="today-head"><h3>' + dict.todayLabel + ' · ' + dayLabelOf(todayDayKey) + '</h3><span class="badge">' + (todayTags.length ? doneCount + ' / ' + todayTags.length : '—') + '</span></div><div class="today-list scroll-box">' + (todayTags.length ? todayTags.map(function (t) { const done = todayDone.indexOf(t.id) >= 0; return '<button class="today-item' + (done ? ' done' : '') + '" data-tag="' + t.id + '"><span class="chk"></span><span class="label">' + escapeHtml(t.name) + '</span></button>'; }).join('') : '<div class="empty small">' + dict.todoEmptyDay + '</div>') + '</div></div>';
     const tomorrowCol = $('#tomorrowCol');
-    tomorrowCol.innerHTML = '<div class="card tomorrow-card"><h4>明天 · ' + dayLabelOf(tomorrowDayKey) + '</h4><div class="tomorrow-list">' + (tomorrowTags.length ? tomorrowTags.map(function (t) { return '<span class="tomorrow-tag">' + escapeHtml(t.name) + '</span>'; }).join('') : '<span class="empty small" style="padding:0;">—</span>') + '</div></div>';
+    tomorrowCol.innerHTML = '<div class="card tomorrow-card"><h4>' + dict.tomorrowLabel + ' · ' + dayLabelOf(tomorrowDayKey) + '</h4><div class="tomorrow-list">' + (tomorrowTags.length ? tomorrowTags.map(function (t) { return '<span class="tomorrow-tag">' + escapeHtml(t.name) + '</span>'; }).join('') : '<span class="empty small" style="padding:0;">—</span>') + '</div></div>';
   }
   $('#todayCol').addEventListener('click', function (e) {
     const btn = e.target.closest('.today-item'); if (!btn) return; const id = btn.dataset.tag; const tk = dateKey(new Date()); if (!Array.isArray(todos.done[tk])) todos.done[tk] = [];
@@ -1492,10 +1516,14 @@
     });
   }
 
-  function safeRender(name, fn) {
-    try { fn(); } catch (e) { console.warn('初始化渲染失敗：' + name, e); }
-  }
-  safeRender('home', renderHome);
+    function renderFooter() {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    const y = new Date().getFullYear();
+    const footerCopyEl = document.querySelector('.site-footer > div:first-child');
+    if (footerCopyEl) {
+      footerCopyEl.innerHTML = '© ' + y + ' <a href="https://github.com/junginlau" target="_blank">junginlau</a>. ' + dict.footerDesc.split('。')[0] + '。';
+    }
+  }  safeRender('home', renderHome);
   safeRender('todos', renderTodos);
   safeRender('calendar', renderCalendar);
   safeRender('diaries', renderDiaries);

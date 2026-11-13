@@ -150,7 +150,7 @@
           <div class="quote-widget" id="quoteText">慢慢來，比較快。</div>
         </div>
         <!-- [NEW] 給 Google 爬蟲看的用途說明，避免被退件 -->
-        <p style="font-size: 13px; color: var(--fg-dim); text-align: center; margin-top: -6px; margin-bottom: 8px;">
+        <p style="font-size: 13px; color: var(--fg-dim); text-align: center; margin-top: -6px; margin-bottom: 8px;" data-i18n="landingPrivacy">
           「我的空間」是一個極簡的個人數位儀表板，提供待辦事項、日記、記帳與 Google Drive 雲端備份功能。本服務不使用 Google API 生成未經同意的親密影像 (NCI)。
         </p>
         <div class="stats">
@@ -399,12 +399,12 @@
   </section>
 
   <footer class="site-footer">
-    <div>© <span id="copyrightYear">2026</span> <a href="https://github.com/junginlau" target="_blank">junginlau</a>. 資料儲存於本地端，建議定期備份。</div>
+    <div><span data-i18n="footerCopy" data-i18n-params='{"y":"<span id=\"copyrightYear\">2026</span>","author":"<a href=\"https://github.com/junginlau\" target=\"_blank\">junginlau</a>"}'></span></div>
     <div style="margin-top: 4px; font-size: 10px; line-height: 1.5; opacity: 0.8;">
-      提供待辦、日記、記帳與 Google Drive 備份。不使用 Google API 生成未經同意的親密影像 (NCI)。
+      <span data-i18n="footerDesc"></span>
       <br>
-      <a href="./privacy.html" style="text-decoration: underline; margin-right: 8px;">隱私權政策</a>
-      <a href="./terms.html" style="text-decoration: underline;">服務條款</a>
+      <a href="./privacy.html" style="text-decoration: underline; margin-right: 8px;" data-i18n="footerPrivacy">隱私權政策</a>
+      <a href="./terms.html" style="text-decoration: underline;" data-i18n="footerTerms">服務條款</a>
     </div>
   </footer>
 </main>
