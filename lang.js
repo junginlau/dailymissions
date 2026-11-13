@@ -16,8 +16,9 @@ const I18N = {
     navPhotos: '照片庫',
     navLedger: '記帳',
     navAbout: '關於本站',
+    navMore: '選單',
 
-    // View Titles
+    // View Titles & Subs
     viewTodoTitle: '每週必做',
     viewTodoSub: '今天該做的事，都在這裡。明天的事先放在旁邊。',
     viewCalendarTitle: '日曆',
@@ -32,7 +33,7 @@ const I18N = {
     viewLedgerSub: '隨手記下一筆，掌握每一分錢的流向。',
     viewAboutTitle: '關於本站',
     viewAboutSub: '一個極簡、高效且充滿個人風格的數位生活儀表板。',
-    
+
     // UI Elements
     searchPlaceholder: '搜尋或輸入網址…',
     gLoginBtn: '登入 Google 帳號',
@@ -63,6 +64,7 @@ const I18N = {
     shortcutCalK: '日曆', shortcutCalD: '看看這個月的節奏，安排一下空檔。',
     shortcutDiaryK: '日記', shortcutDiaryD: '寫下今天的一件小事，留給以後的自己。',
     shortcutNoteK: '筆記本', shortcutNoteD: '靈感來的時候，先把它接住。',
+    goTo: '前往',
 
     // 首頁動態文字
     clockLoading: '載入中…',
@@ -144,6 +146,8 @@ const I18N = {
     diaryDateTitle: '選擇日期',
     diaryDateSub: '查看該天的日記',
     diaryDateOk: '確定',
+    wSunny: '晴', wCloudy: '多雲', wOvercast: '陰', wRain: '雨', wThunder: '雷雨', wSnow: '雪', wWind: '風',
+    mHappy: '愉快', mCalm: '平靜', mFull: '充實', mTired: '疲憊', mDown: '低落', mAnxious: '焦慮', mExcited: '興奮', mIrritable: '煩躁',
 
     // 筆記
     noteAddBtn: '點擊這裡添加筆記',
@@ -280,7 +284,7 @@ const I18N = {
     updateNow: '立即更新',
     updateLater: '稍後',
 
-    // 快捷鍵與其他
+    // 其他
     imgProcessing: '正在處理圖片…',
     imgFail: '圖片處理失敗',
     photoProcessMulti: '正在處理 {n} 張圖片…',
@@ -304,8 +308,6 @@ const I18N = {
     welcomeLangSwitched: '已切換回中文',
     welcomeLangSwitchedEn: 'Switched to English',
     updateBannerText: '✨ 有新版本可用',
-    updateNow: '立即更新',
-    updateLater: '稍後',
     confirmTitle: '確定嗎？',
     clearAllTitle: '清除所有資料',
     clearAllOk: '確定清除',
@@ -344,8 +346,9 @@ const I18N = {
     navPhotos: 'Gallery',
     navLedger: 'Ledger',
     navAbout: 'About',
+    navMore: 'Menu',
 
-    // View Titles
+    // View Titles & Subs
     viewTodoTitle: 'Weekly To-Do',
     viewTodoSub: 'Things to do today. Leave tomorrow for tomorrow.',
     viewCalendarTitle: 'Calendar',
@@ -360,7 +363,7 @@ const I18N = {
     viewLedgerSub: 'Track every penny with ease.',
     viewAboutTitle: 'About',
     viewAboutSub: 'A minimal, efficient, and personal digital dashboard.',
-    
+
     // UI Elements
     searchPlaceholder: 'Search or enter URL...',
     gLoginBtn: 'Sign in with Google',
@@ -391,6 +394,7 @@ const I18N = {
     shortcutCalK: 'Calendar', shortcutCalD: 'Check the rhythm of this month and schedule some free time.',
     shortcutDiaryK: 'Diary', shortcutDiaryD: 'Write down one small thing today for your future self.',
     shortcutNoteK: 'Notes', shortcutNoteD: 'Catch inspiration when it comes.',
+    goTo: 'Go',
 
     // 首頁動態文字
     clockLoading: 'Loading...',
@@ -472,6 +476,8 @@ const I18N = {
     diaryDateTitle: 'Pick a Date',
     diaryDateSub: 'View diary for that day',
     diaryDateOk: 'OK',
+    wSunny: 'Sunny', wCloudy: 'Cloudy', wOvercast: 'Overcast', wRain: 'Rain', wThunder: 'Thunder', wSnow: 'Snow', wWind: 'Windy',
+    mHappy: 'Happy', mCalm: 'Calm', mFull: 'Fulfilled', mTired: 'Tired', mDown: 'Down', mAnxious: 'Anxious', mExcited: 'Excited', mIrritable: 'Irritable',
 
     // 筆記
     noteAddBtn: 'Click here to add a note',
@@ -608,7 +614,7 @@ const I18N = {
     updateNow: 'Update Now',
     updateLater: 'Later',
 
-    // 快捷鍵與其他
+    // 其他
     imgProcessing: 'Processing image...',
     imgFail: 'Image processing failed',
     photoProcessMulti: 'Processing {n} images...',
@@ -632,8 +638,6 @@ const I18N = {
     welcomeLangSwitched: '已切換回中文',
     welcomeLangSwitchedEn: 'Switched to English',
     updateBannerText: '✨ A new version is available',
-    updateNow: 'Update Now',
-    updateLater: 'Later',
     confirmTitle: 'Are you sure?',
     clearAllTitle: 'Clear All Data',
     clearAllOk: 'Clear',

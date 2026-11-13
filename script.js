@@ -239,9 +239,9 @@
   if (!Array.isArray(countdowns)) countdowns = [];
 
   function save(key) {
-    if (key === 'photoMeta') { const ok = LS.set('photoMeta', photoMeta); if (!ok) toast('照片清單儲存失敗'); return ok; }
+    if (key === 'photoMeta') { const ok = LS.set('photoMeta', photoMeta); if (!ok) toast(window.I18N[currentLang].photoMetaFail); return ok; }
     const map = { todos: todos, events: events, diaries: diaries, notes: notes, goals: goals, bookmarks: bookmarks, ledger: ledger, countdowns: countdowns, ledgerCategories: ledgerCategories };
-    const ok = LS.set(key, map[key]); if (!ok) toast('儲存失敗，請檢查瀏覽器空間'); return ok;
+    const ok = LS.set(key, map[key]); if (!ok) toast(window.I18N[currentLang].storageFail); return ok;
   }
 
   function migrateLegacyPhotos() {
@@ -330,12 +330,11 @@
     const now = new Date();
     let timeStr = pad(now.getHours()) + ':' + pad(now.getMinutes());
     if (window.innerWidth > 768) timeStr += ':' + pad(now.getSeconds());
+    
     const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     const days = dict.weekdays || ['日','一','二','三','四','五','六'];
     let dateStr;
     if (currentLang === 'en') {
-      dateStr = now.getFullYear() + ' ' + dict.calendarWeekdays[now.getMonth()] + ' ' + now.getDate() + ', ' + dict.weekdays[now.getDay()];
-      // en: use month names? Keep simple
       const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
       dateStr = monthNames[now.getMonth()] + ' ' + now.getDate() + ', ' + now.getFullYear() + ' · ' + dict.weekdays[now.getDay()];
     } else {
@@ -360,8 +359,15 @@
   }
   initWeather();
 
-  const QUOTES = ['慢慢來，比較快。', '今天所做的事，決定明天的你。', '不要因為走得太遠，而忘記為什麼出發。', '專注當下，一切都是最好的安排。', '你不需要很厲害才能開始，但你需要開始才會很厲害。', '把每一天當作新的開始。', '千里之行，始於足下。'];
-  $('#quoteText').textContent = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+  const QUOTES = {
+    'zh-TW': ['慢慢來，比較快。', '今天所做的事，決定明天的你。', '不要因為走得太遠，而忘記為什麼出發。', '專注當下，一切都是最好的安排。', '你不需要很厲害才能開始，但你需要開始才會很厲害。', '把每一天當作新的開始。', '千里之行，始於足下。'],
+    'en': ['Slow is smooth, smooth is fast.', 'What you do today determines who you are tomorrow.', 'Do not go so far that you forget why you started.', 'Focus on the present; everything is perfectly arranged.', 'You don\'t have to be great to start, but you have to start to be great.', 'Treat every day as a new beginning.', 'A journey of a thousand miles begins with a single step.']
+  };
+  function updateQuote() {
+    const list = QUOTES[currentLang] || QUOTES['zh-TW'];
+    $('#quoteText').textContent = list[Math.floor(Math.random() * list.length)];
+  }
+  updateQuote();
 
   let cdInterval = null; let cdIndex = 0; let cdListData = [];
   function collectUpcomingEvents() {
@@ -412,19 +418,21 @@
     if (saveBtn && !saveBtn.dataset.bound) {
       saveBtn.dataset.bound = '1';
       saveBtn.addEventListener('click', function () {
+        const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
         const title = $('#cdTitle').value.trim(); const date = $('#cdDate').value;
-        if (!title) { toast('請填寫事件名稱'); $('#cdTitle').focus(); return; }
-        if (!date) { toast('請選擇日期'); $('#cdDate').focus(); return; }
-        countdowns.push({ id: uid(), title: title, date: date }); save('countdowns'); closeModal('#cdModal'); renderCountdowns(); toast('已新增倒數日');
+        if (!title) { toast(dict.cdTitlePlaceholder); $('#cdTitle').focus(); return; }
+        if (!date) { toast(dict.cdDate); $('#cdDate').focus(); return; }
+        countdowns.push({ id: uid(), title: title, date: date }); save('countdowns'); closeModal('#cdModal'); renderCountdowns(); toast(dict.cdAdded);
       });
     }
     if (listEl && !listEl.dataset.bound) {
       listEl.dataset.bound = '1';
       listEl.addEventListener('click', function (e) {
         const btn = e.target.closest('.cd-del'); if (!btn) return; const id = btn.dataset.cdId; if (!id) return;
-        customConfirm('確定要刪除這個倒數日嗎？', '刪除後無法復原。', '刪除', '取消', true).then(function (ok) {
+        const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+        customConfirm(dict.cdConfirmDelTitle, dict.cdConfirmDelMsg, dict.delete, dict.cancel, true).then(function (ok) {
           if (!ok) return;
-          countdowns = countdowns.filter(function (c) { return c.id !== id; }); save('countdowns'); renderCountdowns(); toast('已刪除倒數日');
+          countdowns = countdowns.filter(function (c) { return c.id !== id; }); save('countdowns'); renderCountdowns(); toast(dict.cdDeleted);
         });
       });
     }
@@ -440,11 +448,11 @@
   }
 
   function renderHome() {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     if (!LS.get('onboarded', false)) {
       const homeMain = document.querySelector('.home-main');
       if (homeMain && !document.getElementById('welcomeCard')) {
         const card = document.createElement('div'); card.id = 'welcomeCard'; card.className = 'card welcome-card';
-        const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
         card.innerHTML = `<div style="font-weight:600; margin-bottom:6px;">${dict.welcomeTitle}</div><div style="font-size:13px; line-height:1.6; color:var(--fg-dim); margin-bottom:10px;">${dict.welcomeDesc}</div><button class="btn primary" id="welcomeCloseBtn" style="font-size:12px; padding:6px 12px;">${dict.welcomeBtn}</button>`;
         homeMain.prepend(card);
         document.getElementById('welcomeCloseBtn').addEventListener('click', () => { LS.set('onboarded', true); card.remove(); });
@@ -455,52 +463,59 @@
   }
 
   function renderGoals() {
-    const wrap = $('#goalList'); const badge = $('#goalBadge');
     const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    const wrap = $('#goalList'); const badge = $('#goalBadge');
     if (!goals.length) { wrap.innerHTML = '<div class="empty small">' + dict.goalEmpty + '</div>'; badge.textContent = '0 / 0'; return; }
     const doneCount = goals.filter(function (g) { return g.done; }).length; badge.textContent = doneCount + ' / ' + goals.length;
     wrap.innerHTML = goals.map(function (g) {
       const prog = g.progress || 0;
-      return '<div class="goal-item' + (g.done ? ' done' : '') + '" data-id="' + g.id + '"><button class="goal-chk" data-act="toggle" aria-label="標記完成"></button><div class="goal-main"><div class="goal-title">' + escapeHtml(g.title) + '</div>' + (g.note ? '<div class="goal-note">' + escapeHtml(g.note) + '</div>' : '') + '<div class="goal-progress-bar"><div class="goal-progress-fill" style="width:' + prog + '%"></div></div></div><div class="goal-acts"><button class="mini" data-act="edit" aria-label="編輯目標">編</button><button class="mini del" data-act="del" aria-label="刪除目標">×</button></div></div>';
+      return '<div class="goal-item' + (g.done ? ' done' : '') + '" data-id="' + g.id + '"><button class="goal-chk" data-act="toggle" aria-label="標記完成"></button><div class="goal-main"><div class="goal-title">' + escapeHtml(g.title) + '</div>' + (g.note ? '<div class="goal-note">' + escapeHtml(g.note) + '</div>' : '') + '<div class="goal-progress-bar"><div class="goal-progress-fill" style="width:' + prog + '%"></div></div></div><div class="goal-acts"><button class="mini" data-act="edit" aria-label="編輯目標">' + dict.edit + '</button><button class="mini del" data-act="del" aria-label="刪除目標">×</button></div></div>';
     }).join('');
   }
 
   let editingGoalId = null; let confirmGoalId = null;
-  const GOAL_CONFIRM_TEXTS = [{ title: '你真的完成這個目標了嗎？', sub: '你確定沒有偷懶嗎？問問自己的心。', icon: '🤔' }, { title: '確定完成了嗎？', sub: '別騙自己喔，誠實面對比較好。', icon: '👀' }, { title: '要標記為完成了？', sub: '回想一下，真的盡力了嗎？', icon: '🧐' }, { title: '這個目標真的達成了嗎？', sub: '再檢查一次，確認沒有僥倖。', icon: '🔍' }];
-  function openGoalConfirm(id) { confirmGoalId = id; const t = GOAL_CONFIRM_TEXTS[Math.floor(Math.random() * GOAL_CONFIRM_TEXTS.length)]; document.querySelector('.goal-confirm-icon').textContent = t.icon; $('#goalConfirmTitle').textContent = t.title; $('#goalConfirmSub').textContent = t.sub; openModal('#goalConfirmModal'); }
-  $('#goalConfirmYes').addEventListener('click', function () { if (!confirmGoalId) { closeModal('#goalConfirmModal'); return; } const g = goals.find(function (x) { return x.id === confirmGoalId; }); if (g) { g.done = true; g.progress = 100; save('goals'); renderGoals(); } confirmGoalId = null; closeModal('#goalConfirmModal'); toast('恭喜完成目標！為自己鼓掌 👏'); });
-  $('#goalConfirmNo').addEventListener('click', function () { confirmGoalId = null; closeModal('#goalConfirmModal'); toast('繼續努力，你可以的 💪'); });
+  const GOAL_CONFIRM_TEXTS = {
+    'zh-TW': [{ title: '你真的完成這個目標了嗎？', sub: '你確定沒有偷懶嗎？問問自己的心。', icon: '🤔' }, { title: '確定完成了嗎？', sub: '別騙自己喔，誠實面對比較好。', icon: '👀' }, { title: '要標記為完成了？', sub: '回想一下，真的盡力了嗎？', icon: '🧐' }, { title: '這個目標真的達成了嗎？', sub: '再檢查一次，確認沒有僥倖。', icon: '🔍' }],
+    'en': [{ title: 'Are you sure you completed this goal?', sub: 'Did you really give it your all?', icon: '🤔' }, { title: 'Is it done?', sub: 'Don\'t lie to yourself, face it honestly.', icon: '👀' }, { title: 'Mark as complete?', sub: 'Think about it, did you really try your best?', icon: '🧐' }, { title: 'Really achieved?', sub: 'Double-check to make sure.', icon: '🔍' }]
+  };
+  function openGoalConfirm(id) { confirmGoalId = id; const list = GOAL_CONFIRM_TEXTS[currentLang] || GOAL_CONFIRM_TEXTS['zh-TW']; const t = list[Math.floor(Math.random() * list.length)]; document.querySelector('.goal-confirm-icon').textContent = t.icon; $('#goalConfirmTitle').textContent = t.title; $('#goalConfirmSub').textContent = t.sub; openModal('#goalConfirmModal'); }
+  $('#goalConfirmYes').addEventListener('click', function () { if (!confirmGoalId) { closeModal('#goalConfirmModal'); return; } const dict = window.I18N[currentLang] || window.I18N['zh-TW']; const g = goals.find(function (x) { return x.id === confirmGoalId; }); if (g) { g.done = true; g.progress = 100; save('goals'); renderGoals(); } confirmGoalId = null; closeModal('#goalConfirmModal'); toast(dict.goalConfirmDone); });
+  $('#goalConfirmNo').addEventListener('click', function () { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; confirmGoalId = null; closeModal('#goalConfirmModal'); toast(dict.goalConfirmKeep); });
 
   function openGoalModal(id) {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     editingGoalId = id || null; const g = id ? goals.find(function (x) { return x.id === id; }) : null;
-    $('#goalModalTitle').textContent = g ? '編輯目標' : '新增目標'; $('#goalTitle').value = g ? g.title : ''; $('#goalNote').value = g ? (g.note || '') : ''; $('#goalProgress').value = g ? (g.progress || 0) : 0; $('#goalProgressVal').textContent = g ? (g.progress || 0) : 0; $('#goalDelete').style.display = g ? '' : 'none';
+    $('#goalModalTitle').textContent = g ? dict.goalEdit : dict.goalNew; $('#goalTitle').value = g ? g.title : ''; $('#goalNote').value = g ? (g.note || '') : ''; $('#goalProgress').value = g ? (g.progress || 0) : 0; $('#goalProgressVal').textContent = g ? (g.progress || 0) : 0; $('#goalDelete').style.display = g ? '' : 'none';
     openModal('#goalModal'); setTimeout(function () { $('#goalTitle').focus(); }, 80);
   }
   $('#goalProgress').addEventListener('input', function () { $('#goalProgressVal').textContent = this.value; });
   $('#goalAddBtn').addEventListener('click', function () { openGoalModal(null); });
   $('#goalList').addEventListener('click', function (e) {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     const btn = e.target.closest('[data-act]'); if (!btn) return; const item = e.target.closest('.goal-item'); if (!item) return;
     const id = item.dataset.id; const g = goals.find(function (x) { return x.id === id; }); if (!g) return; const act = btn.dataset.act;
     if (act === 'toggle') { if (!g.done) openGoalConfirm(id); else { g.done = false; g.progress = 0; save('goals'); renderGoals(); } }
     else if (act === 'edit') openGoalModal(id);
-    else if (act === 'del') { goals = goals.filter(function (x) { return x.id !== id; }); save('goals'); renderGoals(); toast('已刪除目標'); }
+    else if (act === 'del') { goals = goals.filter(function (x) { return x.id !== id; }); save('goals'); renderGoals(); toast(dict.deleted); }
   });
   $('#goalSave').addEventListener('click', function () {
-    const title = $('#goalTitle').value.trim(); if (!title) { toast('請填寫目標標題'); $('#goalTitle').focus(); return; }
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    const title = $('#goalTitle').value.trim(); if (!title) { toast(dict.goalSaveFail); $('#goalTitle').focus(); return; }
     const note = $('#goalNote').value.trim(); const prog = parseInt($('#goalProgress').value, 10);
     if (editingGoalId) { const g = goals.find(function (x) { return x.id === editingGoalId; }); if (g) { g.title = title; g.note = note; g.progress = prog; if (prog === 100) g.done = true; } }
     else { goals.unshift({ id: uid(), title: title, note: note, progress: prog, done: prog === 100 }); }
-    save('goals'); renderGoals(); closeModal('#goalModal'); toast('已保存目標');
+    save('goals'); renderGoals(); closeModal('#goalModal'); toast(dict.saved);
   });
-  $('#goalDelete').addEventListener('click', function () { if (!editingGoalId) return; goals = goals.filter(function (x) { return x.id !== editingGoalId; }); save('goals'); renderGoals(); closeModal('#goalModal'); toast('已刪除目標'); });
+  $('#goalDelete').addEventListener('click', function () { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; if (!editingGoalId) return; goals = goals.filter(function (x) { return x.id !== editingGoalId; }); save('goals'); renderGoals(); closeModal('#goalModal'); toast(dict.deleted); });
 
   let editingBmId = null;
   function faviconUrl(url) { return 'https://www.google.com/s2/favicons?sz=64&domain_url=' + encodeURIComponent(url); }
   function renderBookmarks() {
-    const list = $('#bmList'); if (!bookmarks.length) { list.innerHTML = '<div class="empty small">' + (window.I18N[currentLang].bmEmpty || '還沒有書籤') + '</div>'; return; }
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    const list = $('#bmList'); if (!bookmarks.length) { list.innerHTML = '<div class="empty small">' + dict.bmEmpty + '</div>'; return; }
     list.innerHTML = bookmarks.map(function (b) {
       let host = ''; try { host = new URL(b.url).hostname; } catch (e) { host = ''; } const name = b.name || host || b.url;
-      return '<div class="bm-item" data-id="' + b.id + '" title="' + escapeHtml(name) + '"><span class="bm-drag-handle">⠿</span><img class="bm-fav" src="' + faviconUrl(b.url) + '" alt="" onerror="this.style.display=\'none\'"><span class="bm-name">' + escapeHtml(name) + '</span><div class="bm-acts"><button class="bm-act" data-act="edit" title="編輯" aria-label="編輯書籤">編</button><button class="bm-act del" data-act="del" title="刪除" aria-label="刪除書籤">×</button></div></div>';
+      return '<div class="bm-item" data-id="' + b.id + '" title="' + escapeHtml(name) + '"><span class="bm-drag-handle">⠿</span><img class="bm-fav" src="' + faviconUrl(b.url) + '" alt="" onerror="this.style.display=\'none\'"><span class="bm-name">' + escapeHtml(name) + '</span><div class="bm-acts"><button class="bm-act" data-act="edit" title="編輯" aria-label="編輯書籤">' + dict.edit + '</button><button class="bm-act del" data-act="del" title="刪除" aria-label="刪除書籤">×</button></div></div>';
     }).join('');
   }
 
@@ -524,36 +539,39 @@
       placeholder = null; dragging = null; pointerId = null;
       const newOrderIds = $$('.bm-item', listEl).map(function (el) { return el.dataset.id; }); const newBookmarks = [];
       newOrderIds.forEach(function (id) { const b = bookmarks.find(function (x) { return x.id === id; }); if (b) newBookmarks.push(b); });
-      if (newBookmarks.length === bookmarks.length) { bookmarks = newBookmarks; save('bookmarks'); toast('排序已保存'); }
+      if (newBookmarks.length === bookmarks.length) { bookmarks = newBookmarks; save('bookmarks'); toast((window.I18N[currentLang] || window.I18N['zh-TW']).bmDragSave); }
     }
     listEl.addEventListener('pointerup', finishDrag); listEl.addEventListener('pointercancel', finishDrag);
   })();
 
   function normalizeUrl(raw) { let u = String(raw || '').trim(); if (!u) return ''; if (!/^https?:\/\//i.test(u)) u = 'https://' + u; return u; }
-  function openBmModal(id) { editingBmId = id || null; const b = id ? bookmarks.find(function (x) { return x.id === id; }) : null; $('#bmModalTitle').textContent = b ? '編輯書籤' : '新增書籤'; $('#bmName').value = b ? b.name : ''; $('#bmUrl').value = b ? b.url : ''; $('#bmDelete').style.display = b ? '' : 'none'; openModal('#bmModal'); setTimeout(function () { $('#bmName').focus(); }, 80); }
+  function openBmModal(id) { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; editingBmId = id || null; const b = id ? bookmarks.find(function (x) { return x.id === id; }) : null; $('#bmModalTitle').textContent = b ? dict.bmEdit : dict.bmNew; $('#bmName').value = b ? b.name : ''; $('#bmUrl').value = b ? b.url : ''; $('#bmDelete').style.display = b ? '' : 'none'; openModal('#bmModal'); setTimeout(function () { $('#bmName').focus(); }, 80); }
   $('#bmAddBtn').addEventListener('click', function () { openBmModal(null); });
   $('#bmList').addEventListener('click', function (e) {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     const item = e.target.closest('.bm-item'); if (!item) return; const id = item.dataset.id; const b = bookmarks.find(function (x) { return x.id === id; }); if (!b) return;
     const actBtn = e.target.closest('[data-act]');
-    if (actBtn) { if (actBtn.dataset.act === 'del') { bookmarks = bookmarks.filter(function (x) { return x.id !== id; }); save('bookmarks'); renderBookmarks(); toast('已刪除書籤'); } else if (actBtn.dataset.act === 'edit') { openBmModal(id); } return; }
+    if (actBtn) { if (actBtn.dataset.act === 'del') { bookmarks = bookmarks.filter(function (x) { return x.id !== id; }); save('bookmarks'); renderBookmarks(); toast(dict.bookmarkDeleted); } else if (actBtn.dataset.act === 'edit') { openBmModal(id); } return; }
     window.open(b.url, '_blank', 'noopener');
   });
   $('#bmSave').addEventListener('click', function () {
-    let url = normalizeUrl($('#bmUrl').value); let name = $('#bmName').value.trim(); if (!url) { toast('請填寫網址'); $('#bmUrl').focus(); return; }
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    let url = normalizeUrl($('#bmUrl').value); let name = $('#bmName').value.trim(); if (!url) { toast(dict.bookmarkUrlRequired); $('#bmUrl').focus(); return; }
     if (!name) { try { name = new URL(url).hostname; } catch (e) { name = url; } }
     if (editingBmId) { const b = bookmarks.find(function (x) { return x.id === editingBmId; }); if (b) { b.name = name; b.url = url; } }
     else { bookmarks.push({ id: uid(), name: name, url: url }); }
-    save('bookmarks'); renderBookmarks(); closeModal('#bmModal'); toast('已保存書籤');
+    save('bookmarks'); renderBookmarks(); closeModal('#bmModal'); toast(dict.bookmarkSaved);
   });
-  $('#bmDelete').addEventListener('click', function () { if (!editingBmId) return; bookmarks = bookmarks.filter(function (x) { return x.id !== editingBmId; }); save('bookmarks'); renderBookmarks(); closeModal('#bmModal'); toast('已刪除書籤'); });
+  $('#bmDelete').addEventListener('click', function () { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; if (!editingBmId) return; bookmarks = bookmarks.filter(function (x) { return x.id !== editingBmId; }); save('bookmarks'); renderBookmarks(); closeModal('#bmModal'); toast(dict.bookmarkDeleted); });
 
   // ==========================================
   // 8. 記帳與匯率
   // ==========================================
   function renderRateFreshness() {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     const el = $('#rateFreshness'); if (!el) return;
-    if (!exchangeRatesUpdatedAt) { el.textContent = window.I18N[currentLang].ledgerRateNote || '匯率：使用預設值（尚未取得即時匯率）'; return; }
-    el.textContent = window.I18N[currentLang].ledgerRateNote + '：' + fmtDateTime(new Date(exchangeRatesUpdatedAt));
+    if (!exchangeRatesUpdatedAt) { el.textContent = dict.ledgerRateNote; return; }
+    el.textContent = dict.ledgerRateNote + '：' + fmtDateTime(new Date(exchangeRatesUpdatedAt));
   }
 
   function fetchExchangeRates() {
@@ -598,16 +616,17 @@
     });
 
     wrap.addEventListener('click', function(e) {
+      const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
       const delBtn = e.target.closest('.tag-del-btn');
       if (delBtn) {
         e.stopPropagation();
         const catToDelete = delBtn.dataset.delCat;
-        customConfirm('刪除性質標籤', '確定要刪除「' + escapeHtml(catToDelete) + '」這個標籤嗎？', '刪除', '取消', true).then(function(ok) {
+        customConfirm(dict.ledgerDelTagTitle, dict.ledgerDelTagMsg.replace('{c}', escapeHtml(catToDelete)), dict.delete, dict.cancel, true).then(function(ok) {
           if (!ok) return;
           ledgerCategories = ledgerCategories.filter(function(c) { return c !== catToDelete; });
           save('ledgerCategories');
           renderLedgerTags();
-          toast('已刪除標籤');
+          toast(dict.ledgerTagDeleted);
         });
         return;
       }
@@ -626,6 +645,7 @@
   })();
 
   function renderLedger() {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     if (!$('#ledgerDate').value) $('#ledgerDate').value = todayKey();
     $('#ledgerDate').max = todayKey();
 
@@ -636,7 +656,7 @@
     const showExpense = Math.round(totalExpenseTWD / currentRate); const showIncome = Math.round(totalIncomeTWD / currentRate); const showBalance = showIncome - showExpense;
     const symbol = currencySymbols[mainCurrency] || '$';
     $('#monthExpenseTotal').textContent = symbol + ' ' + showExpense; $('#monthIncomeTotal').textContent = symbol + ' ' + showIncome; $('#monthBalanceTotal').textContent = symbol + ' ' + showBalance; $('#monthBalanceTotal').style.color = showBalance >= 0 ? 'var(--income-color)' : 'var(--expense-color)';
-    const listWrap = $('#ledgerList'); if (!monthItems.length) { listWrap.innerHTML = '<div class="empty">' + (window.I18N[currentLang].ledgerEmpty || '本月還沒有任何記帳紀錄。') + '</div>'; renderRateFreshness(); return; }
+    const listWrap = $('#ledgerList'); if (!monthItems.length) { listWrap.innerHTML = '<div class="empty">' + dict.ledgerEmpty + '</div>'; renderRateFreshness(); return; }
     const sorted = monthItems.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
     listWrap.innerHTML = sorted.map(function (item) {
       const isIncome = item.type === 'income'; const sign = isIncome ? '+' : '-'; const colorClass = isIncome ? 'income' : 'expense';
@@ -659,14 +679,15 @@
     if (addBtn && !addBtn.dataset.bound) {
       addBtn.dataset.bound = '1';
       addBtn.addEventListener('click', function () {
+        const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
         const type = $('#ledgerType').value; const currency = $('#ledgerCurrency').value;
         const amountRaw = parseFloat($('#ledgerAmount').value);
         const category = $('#ledgerCategory').value.trim() || '其他';
         const date = $('#ledgerDate').value || todayKey(); const note = $('#ledgerNote').value.trim();
         
-        if (!amountRaw || amountRaw <= 0) { toast('請輸入有效金額'); $('#ledgerAmount').focus(); return; }
-        if (!date) { toast('請選擇日期'); return; }
-        if (date > todayKey()) { toast('不能選擇未來日期'); $('#ledgerDate').value = todayKey(); return; }
+        if (!amountRaw || amountRaw <= 0) { toast(dict.ledgerAmountInvalid); $('#ledgerAmount').focus(); return; }
+        if (!date) { toast(dict.ledgerDateFuture); return; }
+        if (date > todayKey()) { toast(dict.ledgerDateFuture); $('#ledgerDate').value = todayKey(); return; }
         
         if (!ledgerCategories.includes(category)) {
           ledgerCategories.push(category);
@@ -675,16 +696,17 @@
 
         const rateToBase = exchangeRates[currency] || 1; const amountInBase = amountRaw * rateToBase;
         ledger.push({ id: uid(), type: type, currency: currency, originalAmount: amountRaw, amount: amountInBase, category: category, date: date, note: note, createdAt: Date.now() });
-        save('ledger'); $('#ledgerAmount').value = ''; $('#ledgerNote').value = ''; $('#ledgerCategory').value = ''; renderLedger(); renderHome(); toast('已儲存這筆紀錄');
+        save('ledger'); $('#ledgerAmount').value = ''; $('#ledgerNote').value = ''; $('#ledgerCategory').value = ''; renderLedger(); renderHome(); toast(dict.ledgerSaved);
       });
     }
     if (listEl && !listEl.dataset.bound) {
       listEl.dataset.bound = '1';
       listEl.addEventListener('click', function (e) {
+        const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
         const btn = e.target.closest('.ledger-del'); if (!btn) return; const id = btn.dataset.id; if (!id) return;
-        customConfirm('確定要刪除這筆紀錄嗎？', '刪除後無法復原。', '刪除', '取消', true).then(function (ok) {
+        customConfirm(dict.ledgerConfirmDelTitle, dict.ledgerConfirmDelMsg, dict.ledgerDelOk, dict.cancel, true).then(function (ok) {
           if (!ok) return;
-          ledger = ledger.filter(function (x) { return x.id !== id; }); save('ledger'); renderLedger(); renderHome(); toast('已刪除紀錄');
+          ledger = ledger.filter(function (x) { return x.id !== id; }); save('ledger'); renderLedger(); renderHome(); toast(dict.ledgerDeleted);
         });
       });
     }
@@ -696,10 +718,10 @@
   function tagById(id) { return todos.tags.find(function (t) { return t.id === id; }) || null; }
   function tagsForDay(dayKey) { return (todos.schedule[dayKey] || []).map(tagById).filter(Boolean); }
   function renderTodos() {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     const now = new Date(); const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1); const todayDayKey = dayKeyOf(now); const tomorrowDayKey = dayKeyOf(tomorrow); const todayDateKey = dateKey(now); const todayDone = Array.isArray(todos.done[todayDateKey]) ? todos.done[todayDateKey] : [];
     const todayTags = tagsForDay(todayDayKey); const tomorrowTags = tagsForDay(tomorrowDayKey); const todayCol = $('#todayCol');
     const doneCount = todayTags.filter(function (t) { return todayDone.indexOf(t.id) >= 0; }).length;
-    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     todayCol.innerHTML = '<div class="card today-card"><div class="today-head"><h3>' + dict.todayLabel + ' · ' + dayLabelOf(todayDayKey) + '</h3><span class="badge">' + (todayTags.length ? doneCount + ' / ' + todayTags.length : '—') + '</span></div><div class="today-list scroll-box">' + (todayTags.length ? todayTags.map(function (t) { const done = todayDone.indexOf(t.id) >= 0; return '<button class="today-item' + (done ? ' done' : '') + '" data-tag="' + t.id + '"><span class="chk"></span><span class="label">' + escapeHtml(t.name) + '</span></button>'; }).join('') : '<div class="empty small">' + dict.todoEmptyDay + '</div>') + '</div></div>';
     const tomorrowCol = $('#tomorrowCol');
     tomorrowCol.innerHTML = '<div class="card tomorrow-card"><h4>' + dict.tomorrowLabel + ' · ' + dayLabelOf(tomorrowDayKey) + '</h4><div class="tomorrow-list">' + (tomorrowTags.length ? tomorrowTags.map(function (t) { return '<span class="tomorrow-tag">' + escapeHtml(t.name) + '</span>'; }).join('') : '<span class="empty small" style="padding:0;">—</span>') + '</div></div>';
@@ -711,10 +733,10 @@
 
   let todoDraft = null; let todoChanged = false;
   function checkTodoChanged() {
-    if (!todoDraft) return; const s1 = JSON.stringify(todoDraft); const s2 = JSON.stringify(todos); todoChanged = (s1 !== s2);
+    if (!todoDraft) return; const dict = window.I18N[currentLang] || window.I18N['zh-TW']; const s1 = JSON.stringify(todoDraft); const s2 = JSON.stringify(todos); todoChanged = (s1 !== s2);
     const btnSave = $('#todoSaveBtn'); const btnCancel = $('#todoCancelBtn');
-    if (todoChanged) { btnSave.disabled = false; btnSave.textContent = '儲存變更'; btnSave.style.background = '#2e9e5e'; btnSave.style.color = '#fff'; btnSave.style.borderColor = 'transparent'; btnCancel.style.display = 'inline-flex'; }
-    else { btnSave.disabled = true; btnSave.textContent = '儲存變更'; btnSave.style.background = 'var(--hover)'; btnSave.style.color = 'var(--fg-dim)'; btnSave.style.borderColor = 'transparent'; btnCancel.style.display = 'none'; }
+    if (todoChanged) { btnSave.disabled = false; btnSave.textContent = dict.todoSave; btnSave.style.background = '#2e9e5e'; btnSave.style.color = '#fff'; btnSave.style.borderColor = 'transparent'; btnCancel.style.display = 'inline-flex'; }
+    else { btnSave.disabled = true; btnSave.textContent = dict.todoSave; btnSave.style.background = 'var(--hover)'; btnSave.style.color = 'var(--fg-dim)'; btnSave.style.borderColor = 'transparent'; btnCancel.style.display = 'none'; }
   }
   function openTodoSettings() {
     todoDraft = JSON.parse(JSON.stringify(todos)); if (!todoDraft.tags) todoDraft.tags = []; if (!todoDraft.schedule) todoDraft.schedule = emptyTodoData().schedule;
@@ -722,23 +744,27 @@
     renderTagPool(); renderSchedule(); checkTodoChanged(); openModal('#todoModal');
   }
   function renderTagPool() {
-    const pool = $('#tagPool'); if (!todoDraft.tags.length) { pool.innerHTML = '<div class="empty small" style="padding:6px 0;">還沒有標籤，先新增一個吧。</div>'; return; }
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    const pool = $('#tagPool'); if (!todoDraft.tags.length) { pool.innerHTML = '<div class="empty small" style="padding:6px 0;">' + dict.tagEmpty + '</div>'; return; }
     pool.innerHTML = todoDraft.tags.map(function (t) { return '<span class="tag-chip">' + escapeHtml(t.name) + '<button class="chip-x" data-del-tag="' + t.id + '" aria-label="刪除標籤">×</button></span>'; }).join('');
   }
   function renderSchedule() {
-    const grid = $('#scheduleGrid'); if (!todoDraft.tags.length) { grid.innerHTML = '<div class="empty small" style="grid-column:1/-1;">先新增標籤，再分配到星期。</div>'; return; }
-    grid.innerHTML = WEEKDAYS.map(function (w) { const assigned = todoDraft.schedule[w.key] || []; return '<div class="sched-card"><h4>' + w.label + '</h4><div class="sched-tags">' + todoDraft.tags.map(function (t) { const on = assigned.indexOf(t.id) >= 0; return '<button class="sched-tag' + (on ? ' on' : '') + '" data-toggle-day="' + w.key + '" data-tag="' + t.id + '">' + escapeHtml(t.name) + '</button>'; }).join('') + '</div></div>'; }).join('');
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    const grid = $('#scheduleGrid'); if (!todoDraft.tags.length) { grid.innerHTML = '<div class="empty small" style="grid-column:1/-1;">' + dict.scheduleEmpty + '</div>'; return; }
+    grid.innerHTML = WEEKDAYS.map(function (w) { const assigned = todoDraft.schedule[w.key] || []; const label = (dict.weekdaysFull && dict.weekdaysFull[w.key]) || w.label; return '<div class="sched-card"><h4>' + label + '</h4><div class="sched-tags">' + todoDraft.tags.map(function (t) { const on = assigned.indexOf(t.id) >= 0; return '<button class="sched-tag' + (on ? ' on' : '') + '" data-toggle-day="' + w.key + '" data-tag="' + t.id + '">' + escapeHtml(t.name) + '</button>'; }).join('') + '</div></div>'; }).join('');
   }
   function checkUnfinishedTasks() {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     const today = todayKey(); if (LS.get('lastTodoCheck', '') === today) return;
     const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1); const yKey = dayKeyOf(yesterday); const yDateKey = dateKey(yesterday);
     const yTags = tagsForDay(yKey); const yDone = Array.isArray(todos.done[yDateKey]) ? todos.done[yDateKey] : []; const unfinishedCount = yTags.filter(t => yDone.indexOf(t.id) < 0).length;
-    if (unfinishedCount > 0) { LS.set('lastTodoCheck', today); const msgs = [`還想蒙混過關？昨天有 ${unfinishedCount} 件事在等你。`, `昨天的 ${unfinishedCount} 件事，假裝沒看到嗎？`, `逃避雖可恥但有用……不過這裡有 ${unfinishedCount} 件事沒做完。`]; toast(msgs[Math.floor(Math.random() * msgs.length)]); }
+    if (unfinishedCount > 0) { LS.set('lastTodoCheck', today); toast(dict.yesterdayUnfinished.replace('{n}', unfinishedCount)); }
     else { LS.set('lastTodoCheck', today); }
   }
   $('#tagAddBtn').addEventListener('click', function () {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     const input = $('#tagInput'); const v = input.value.trim(); if (!v) { input.focus(); return; }
-    if (todoDraft.tags.some(function (t) { return t.name === v; })) { toast('已經有同名標籤'); return; }
+    if (todoDraft.tags.some(function (t) { return t.name === v; })) { toast(dict.tagDup); return; }
     todoDraft.tags.push({ id: uid(), name: v }); input.value = ''; renderTagPool(); renderSchedule(); checkTodoChanged(); input.focus();
   });
   $('#tagInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); $('#tagAddBtn').click(); } });
@@ -753,8 +779,8 @@
     const arr = todoDraft.schedule[day]; const i = arr.indexOf(tagId); if (i >= 0) arr.splice(i, 1); else arr.push(tagId);
     renderSchedule(); checkTodoChanged();
   });
-  $('#todoSaveBtn').addEventListener('click', function () { if (!todoChanged) return; todos = todoDraft; save('todos'); renderTodos(); renderHome(); closeModal('#todoModal'); toast('已保存每週設定'); });
-  $('#todoCancelBtn').addEventListener('click', function () { todoDraft = JSON.parse(JSON.stringify(todos)); renderTagPool(); renderSchedule(); checkTodoChanged(); toast('已撤銷變更'); });
+  $('#todoSaveBtn').addEventListener('click', function () { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; if (!todoChanged) return; todos = todoDraft; save('todos'); renderTodos(); renderHome(); closeModal('#todoModal'); toast(dict.todoSaved); });
+  $('#todoCancelBtn').addEventListener('click', function () { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; todoDraft = JSON.parse(JSON.stringify(todos)); renderTagPool(); renderSchedule(); checkTodoChanged(); toast(dict.todoReverted); });
   $('#todoSettingsBtn').addEventListener('click', openTodoSettings);
 
   // ==========================================
@@ -764,13 +790,14 @@
   let calCursor = new Date(); calCursor.setDate(1);
   function monthIndex(y, m) { return y * 12 + m; }
   function renderCalendar() {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     const y = calCursor.getFullYear(); const m = calCursor.getMonth(); const now = new Date();
     const minIdx = monthIndex(now.getFullYear(), now.getMonth()) - 6; const maxIdx = monthIndex(now.getFullYear(), now.getMonth()) + 12; const curIdx = monthIndex(y, m);
-    $('#calTitle').textContent = y + ' 年 ' + (m + 1) + ' 月'; $('#calPrev').disabled = curIdx <= minIdx; $('#calNext').disabled = curIdx >= maxIdx;
-    $('#calTz').textContent = '時區：' + TIMEZONE + ' · 可記錄範圍：前 6 個月 ～ 後 12 個月';
+    $('#calTitle').textContent = dict.evMonthYear.replace('{y}', y).replace('{m}', (m + 1)); $('#calPrev').disabled = curIdx <= minIdx; $('#calNext').disabled = curIdx >= maxIdx;
+    $('#calTz').textContent = dict.calTz.replace('{tz}', TIMEZONE);
     if (!$('#calJumpDate').value) $('#calJumpDate').value = y + '-' + pad(m + 1) + '-01';
     const firstDow = new Date(y, m, 1).getDay(); const daysInMonth = new Date(y, m + 1, 0).getDate(); const daysInPrev = new Date(y, m, 0).getDate(); const totalCells = Math.ceil((firstDow + daysInMonth) / 7) * 7; const tk = todayKey();
-    let html = ['日', '一', '二', '三', '四', '五', '六'].map(function (d) { return '<div class="cal-dow">' + d + '</div>'; }).join('');
+    let html = dict.calendarWeekdays.map(function (d) { return '<div class="cal-dow">' + d + '</div>'; }).join('');
     for (let i = 0; i < totalCells; i++) {
       const dn = i - firstDow + 1;
       if (dn < 1) html += '<div class="cal-cell muted">' + (daysInPrev + dn) + '</div>';
@@ -785,33 +812,38 @@
   $('#calNext').addEventListener('click', function () { shiftMonth(1); });
   $('#calToday').addEventListener('click', function () { calCursor = new Date(); calCursor.setDate(1); $('#calJumpDate').value = todayKey(); renderCalendar(); });
   $('#calJumpDate').addEventListener('change', function () {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     const val = this.value; if (!val) return; const p = val.split('-').map(Number); const target = new Date(p[0], p[1] - 1, 1);
-    if (!inCalendarRange(target)) { toast('僅支援前 6 個月～後 12 個月內的日期'); this.value = todayKey(); return; }
+    if (!inCalendarRange(target)) { toast(dict.calRangeLimit); this.value = todayKey(); return; }
     calCursor = target; renderCalendar(); openEventModal(val);
   });
   $('#calGrid').addEventListener('click', function (e) { const cell = e.target.closest('.cal-cell[data-date]'); if (cell) openEventModal(cell.dataset.date); });
   let eventDateKey = null; let editingEventId = null;
   function openEventModal(key) {
-    eventDateKey = key; editingEventId = null; const d = keyToDate(key); const week = '日一二三四五六'[d.getDay()];
-    $('#eventDateTitle').textContent = d.getFullYear() + ' 年 ' + (d.getMonth() + 1) + ' 月 ' + d.getDate() + ' 日 · 星期' + week;
-    $('#eventForm').reset(); $('#eventSubmit').textContent = '保存要事'; $('#eventCancelEdit').hidden = true; renderEventList(); openModal('#eventModal'); setTimeout(function () { $('#evTitle').focus(); }, 80);
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    eventDateKey = key; editingEventId = null; const d = keyToDate(key); const week = dict.weekdays[d.getDay()];
+    $('#eventDateTitle').textContent = dict.evMonthYear.replace('{y}', d.getFullYear()).replace('{m}', (d.getMonth() + 1)) + ' ' + d.getDate() + ' · ' + dict.evWeek.replace('{w}', week);
+    $('#eventForm').reset(); $('#eventSubmit').textContent = dict.evSave; $('#eventCancelEdit').hidden = true; renderEventList(); openModal('#eventModal'); setTimeout(function () { $('#evTitle').focus(); }, 80);
   }
   function renderEventList() {
-    const wrap = $('#eventList'); const list = events[eventDateKey] || []; if (!list.length) { wrap.innerHTML = '<div class="empty small">這天還沒有要事。</div>'; return; }
-    wrap.innerHTML = list.map(function (ev) { return '<div class="event-item" data-id="' + ev.id + '">' + (ev.time ? '<div class="ev-time">' + escapeHtml(ev.time) + '</div>' : '') + '<div class="ev-main"><div class="ev-title">' + escapeHtml(ev.title) + '</div>' + (ev.content ? '<div class="ev-content">' + escapeHtml(ev.content) + '</div>' : '') + '</div><div class="ev-acts"><button class="mini" data-act="edit">編</button><button class="mini del" data-act="del">×</button></div></div>'; }).join('');
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    const wrap = $('#eventList'); const list = events[eventDateKey] || []; if (!list.length) { wrap.innerHTML = '<div class="empty small">' + dict.calEventEmpty + '</div>'; return; }
+    wrap.innerHTML = list.map(function (ev) { return '<div class="event-item" data-id="' + ev.id + '">' + (ev.time ? '<div class="ev-time">' + escapeHtml(ev.time) + '</div>' : '') + '<div class="ev-main"><div class="ev-title">' + escapeHtml(ev.title) + '</div>' + (ev.content ? '<div class="ev-content">' + escapeHtml(ev.content) + '</div>' : '') + '</div><div class="ev-acts"><button class="mini" data-act="edit">' + dict.edit + '</button><button class="mini del" data-act="del">×</button></div></div>'; }).join('');
   }
   $('#eventForm').addEventListener('submit', function (e) {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     e.preventDefault(); const title = $('#evTitle').value.trim(); if (!title) { $('#evTitle').focus(); return; } const time = $('#evTime').value; const content = $('#evContent').value.trim();
     if (!events[eventDateKey]) events[eventDateKey] = [];
     if (editingEventId) { const ev = events[eventDateKey].find(function (x) { return x.id === editingEventId; }); if (ev) { ev.title = title; ev.time = time; ev.content = content; } }
     else { events[eventDateKey].push({ id: uid(), title: title, time: time, content: content }); }
-    save('events'); $('#eventForm').reset(); editingEventId = null; $('#eventSubmit').textContent = '保存要事'; $('#eventCancelEdit').hidden = true; renderEventList(); renderCalendar(); renderHome(); toast('已保存');
+    save('events'); $('#eventForm').reset(); editingEventId = null; $('#eventSubmit').textContent = dict.evSave; $('#eventCancelEdit').hidden = true; renderEventList(); renderCalendar(); renderHome(); toast(dict.eventSaved);
   });
-  $('#eventCancelEdit').addEventListener('click', function () { editingEventId = null; $('#eventForm').reset(); $('#eventSubmit').textContent = '保存要事'; $('#eventCancelEdit').hidden = true; $('#evTitle').focus(); });
+  $('#eventCancelEdit').addEventListener('click', function () { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; editingEventId = null; $('#eventForm').reset(); $('#eventSubmit').textContent = dict.evSave; $('#eventCancelEdit').hidden = true; $('#evTitle').focus(); });
   $('#eventList').addEventListener('click', function (e) {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     const btn = e.target.closest('[data-act]'); if (!btn) return; const item = e.target.closest('.event-item'); if (!item) return; const id = item.dataset.id; const list = events[eventDateKey] || []; const ev = list.find(function (x) { return x.id === id; }); if (!ev) return;
-    if (btn.dataset.act === 'del') { events[eventDateKey] = list.filter(function (x) { return x.id !== id; }); if (!events[eventDateKey].length) delete events[eventDateKey]; save('events'); if (editingEventId === id) { editingEventId = null; $('#eventForm').reset(); $('#eventSubmit').textContent = '保存要事'; $('#eventCancelEdit').hidden = true; } renderEventList(); renderCalendar(); renderHome(); toast('已刪除'); }
-    else if (btn.dataset.act === 'edit') { editingEventId = id; $('#evTitle').value = ev.title; $('#evTime').value = ev.time || ''; $('#evContent').value = ev.content || ''; $('#eventSubmit').textContent = '更新要事'; $('#eventCancelEdit').hidden = false; $('#evTitle').focus(); }
+    if (btn.dataset.act === 'del') { events[eventDateKey] = list.filter(function (x) { return x.id !== id; }); if (!events[eventDateKey].length) delete events[eventDateKey]; save('events'); if (editingEventId === id) { editingEventId = null; $('#eventForm').reset(); $('#eventSubmit').textContent = dict.evSave; $('#eventCancelEdit').hidden = true; } renderEventList(); renderCalendar(); renderHome(); toast(dict.eventDeleted); }
+    else if (btn.dataset.act === 'edit') { editingEventId = id; $('#evTitle').value = ev.title; $('#evTime').value = ev.time || ''; $('#evContent').value = ev.content || ''; $('#eventSubmit').textContent = dict.evUpdate; $('#eventCancelEdit').hidden = false; $('#evTitle').focus(); }
   });
   function pruneEvents() {
     const now = new Date(); const minKey = dateKey(new Date(now.getFullYear(), now.getMonth() - 6, 1)); const maxKey = dateKey(new Date(now.getFullYear(), now.getMonth() + 13, 0)); let changed = false;
@@ -831,18 +863,20 @@
   }
 
   function resetDiaryForm() {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     editingDiaryId = null; diaryImageData = null;
     $('#diaryTitle').value = ''; $('#diaryContent').value = ''; $('#diaryWeather').value = ''; $('#diaryMood').value = '';
     updateDiaryImagePreview();
     $('#diaryCancelEdit').hidden = true;
-    $('#diarySave').textContent = '保存日記';
-    $('#diaryLockNote').textContent = '🔒 保存後即可編輯。';
+    $('#diarySave').textContent = dict.diarySave;
+    $('#diaryLockNote').textContent = dict.diaryLockNote;
   }
 
   function renderDiaries() {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     let list = diaries.slice().sort(function (a, b) { return b.createdAt - a.createdAt; });
     if (diaryFilterDate) list = list.filter(function (d) { return dateKey(new Date(d.createdAt)) === diaryFilterDate; });
-    const wrap = $('#diaryList'); if (!list.length) { wrap.innerHTML = '<div class="empty">' + (diaryFilterDate ? '這天還沒有日記。' : '還沒有日記，從上面開始寫第一篇吧。') + '</div>'; return; }
+    const wrap = $('#diaryList'); if (!list.length) { wrap.innerHTML = '<div class="empty">' + (diaryFilterDate ? dict.diaryEmptyDay : dict.diaryEmpty) + '</div>'; return; }
     wrap.innerHTML = list.map(function (d) { const dt = new Date(d.createdAt); return '<div class="diary-card" data-id="' + d.id + '"><div class="diary-meta"><span>' + fmtDateTime(dt) + '</span>' + (d.weather ? '<span class="tag">' + escapeHtml(d.weather) + '</span>' : '') + (d.mood ? '<span class="tag">' + escapeHtml(d.mood) + '</span>' : '') + '</div><div class="diary-title">' + escapeHtml(d.title) + '</div><div class="diary-preview">' + escapeHtml(d.content) + '</div></div>'; }).join('');
   }
 
@@ -865,29 +899,32 @@
   }
 
   function editDiary(id) {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     const d = diaries.find(function (x) { return x.id === id; }); if (!d) return;
     editingDiaryId = id; diaryImageData = d.image || null;
     $('#diaryTitle').value = d.title; $('#diaryContent').value = d.content; $('#diaryWeather').value = d.weather || ''; $('#diaryMood').value = d.mood || '';
     updateDiaryImagePreview();
     $('#diaryCancelEdit').hidden = false;
-    $('#diarySave').textContent = '更新日記';
-    $('#diaryLockNote').textContent = '📝 正在編輯日記';
+    $('#diarySave').textContent = dict.diaryUpdate;
+    $('#diaryLockNote').textContent = dict.diaryEditingNote;
     showView('diary');
     $('#diaryCompose').scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   $('#diaryImgPick').addEventListener('click', function() { $('#diaryImgInput').click(); });
   $('#diaryImgInput').addEventListener('change', function(e) {
-    const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return; toast('正在處理圖片…');
-    compressImage(file, 1200, 0.75).then(function(data) { diaryImageData = data; updateDiaryImagePreview(); }).catch(function() { toast('圖片處理失敗'); });
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return; toast(dict.imgProcessing);
+    compressImage(file, 1200, 0.75).then(function(data) { diaryImageData = data; updateDiaryImagePreview(); }).catch(function() { toast(dict.imgFail); });
   });
   $('#diaryImgClear').addEventListener('click', function() { diaryImageData = null; updateDiaryImagePreview(); });
-  $('#diaryCancelEdit').addEventListener('click', function() { resetDiaryForm(); toast('已取消編輯'); });
+  $('#diaryCancelEdit').addEventListener('click', function() { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; resetDiaryForm(); toast(dict.diaryEditCancelled); });
 
   $('#diarySave').addEventListener('click', function () {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     const title = $('#diaryTitle').value.trim(); const content = $('#diaryContent').value.trim(); 
-    if (!title) { toast('請填寫標題'); $('#diaryTitle').focus(); return; } 
-    if (!content) { toast('請填寫內文'); $('#diaryContent').focus(); return; }
+    if (!title) { toast(dict.diaryTitleRequired); $('#diaryTitle').focus(); return; } 
+    if (!content) { toast(dict.diaryContentRequired); $('#diaryContent').focus(); return; }
     
     if (editingDiaryId) {
       const d = diaries.find(function (x) { return x.id === editingDiaryId; });
@@ -907,7 +944,7 @@
           d.image = diaryImageData;
         }
       }
-      save('diaries'); resetDiaryForm(); renderDiaries(); renderPhotos(); renderHome(); toast('已更新日記');
+      save('diaries'); resetDiaryForm(); renderDiaries(); renderPhotos(); renderHome(); toast(dict.diaryUpdated);
     } else {
       const newDiaryId = uid();
       let finalImg = null;
@@ -922,47 +959,52 @@
       }
       diaries.push({ id: newDiaryId, title: title, weather: $('#diaryWeather').value, mood: $('#diaryMood').value, content: content, image: finalImg, createdAt: Date.now() }); 
       save('diaries');
-      resetDiaryForm(); renderDiaries(); renderPhotos(); renderHome(); toast('已保存日記');
+      resetDiaryForm(); renderDiaries(); renderPhotos(); renderHome(); toast(dict.diarySaved);
     }
   });
 
   $('#diaryDatePickerBtn').addEventListener('click', function () { $('#diaryDateInput').value = diaryFilterDate || todayKey(); openModal('#diaryDateModal'); });
   $('#diaryDateConfirm').addEventListener('click', function () {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     const val = $('#diaryDateInput').value;
-    if (val) { diaryFilterDate = val; $('#diaryDatePickerBtn').textContent = '日記日期：' + val; $('#diaryClearFilter').hidden = false; renderDiaries(); } closeModal('#diaryDateModal');
+    if (val) { diaryFilterDate = val; $('#diaryDatePickerBtn').textContent = dict.diaryFilterDate.replace('{d}', val); $('#diaryClearFilter').hidden = false; renderDiaries(); } closeModal('#diaryDateModal');
   });
-  $('#diaryClearFilter').addEventListener('click', function () { diaryFilterDate = ''; $('#diaryDatePickerBtn').textContent = '全部日記（點擊選擇日期）'; $('#diaryClearFilter').hidden = true; renderDiaries(); });
+  $('#diaryClearFilter').addEventListener('click', function () { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; diaryFilterDate = ''; $('#diaryDatePickerBtn').textContent = dict.diaryFilterAll; $('#diaryClearFilter').hidden = true; renderDiaries(); });
 
   // ==========================================
   // 12. 筆記本
   // ==========================================
   function renderNotes() {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     const grid = $('#notesGrid'); if (!notes.length) { grid.innerHTML = ''; return; }
-    grid.innerHTML = notes.map(function (n) { const excerpt = (n.content || '').replace(/\s+/g, ' ').slice(0, 70); return '<button class="card note" data-id="' + n.id + '">' + (n.image ? '<div class="note-thumb" style="background-image:url(\'' + n.image + '\')"></div>' : '') + '<div class="note-h">' + escapeHtml(n.title || '無標題') + '</div><div class="note-b">' + escapeHtml(excerpt) + '</div><div class="note-d">' + escapeHtml(n.date || '') + '</div></button>'; }).join('');
+    grid.innerHTML = notes.map(function (n) { const excerpt = (n.content || '').replace(/\s+/g, ' ').slice(0, 70); return '<button class="card note" data-id="' + n.id + '">' + (n.image ? '<div class="note-thumb" style="background-image:url(\'' + n.image + '\')"></div>' : '') + '<div class="note-h">' + escapeHtml(n.title || dict.noteUntitled) + '</div><div class="note-b">' + escapeHtml(excerpt) + '</div><div class="note-d">' + escapeHtml(n.date || '') + '</div></button>'; }).join('');
   }
   let editingNoteId = null; let noteImageData = null;
   function updateNoteImagePreview() { const wrap = $('#noteImgWrap'); if (noteImageData) { $('#noteImgPreview').src = noteImageData; wrap.hidden = false; } else { $('#noteImgPreview').removeAttribute('src'); wrap.hidden = true; } }
   function openNoteModal(id) {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     editingNoteId = id || null; const n = id ? notes.find(function (x) { return x.id === id; }) : null;
-    $('#noteModalTitle').textContent = n ? '編輯筆記' : '新增筆記'; $('#noteTitle').value = n ? (n.title || '') : ''; $('#noteDate').value = n ? (n.date || todayKey()) : todayKey(); $('#noteContent').value = n ? (n.content || '') : ''; noteImageData = n ? (n.image || null) : null;
+    $('#noteModalTitle').textContent = n ? dict.noteEdit : dict.noteNew; $('#noteTitle').value = n ? (n.title || '') : ''; $('#noteDate').value = n ? (n.date || todayKey()) : todayKey(); $('#noteContent').value = n ? (n.content || '') : ''; noteImageData = n ? (n.image || null) : null;
     updateNoteImagePreview(); $('#noteDelete').style.display = n ? '' : 'none'; openModal('#noteModal'); setTimeout(function () { $('#noteTitle').focus(); }, 80);
   }
   $('#noteAdd').addEventListener('click', function () { openNoteModal(null); });
   $('#notesGrid').addEventListener('click', function (e) { const card = e.target.closest('.note[data-id]'); if (card) openNoteModal(card.dataset.id); });
   $('#noteImgPick').addEventListener('click', function () { $('#noteImgInput').click(); });
   $('#noteImgInput').addEventListener('change', function (e) {
-    const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return; toast('正在處理圖片…');
-    compressImage(file, 1200, 0.75).then(function (data) { noteImageData = data; updateNoteImagePreview(); }).catch(function () { toast('圖片處理失敗'); });
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return; toast(dict.imgProcessing);
+    compressImage(file, 1200, 0.75).then(function (data) { noteImageData = data; updateNoteImagePreview(); }).catch(function () { toast(dict.imgFail); });
   });
   $('#noteImgClear').addEventListener('click', function () { noteImageData = null; updateNoteImagePreview(); });
   $('#noteSave').addEventListener('click', function () {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     const title = $('#noteTitle').value.trim(); const content = $('#noteContent').value.trim(); const date = $('#noteDate').value;
-    if (!title && !content && !noteImageData) { toast('筆記還是空的'); return; }
+    if (!title && !content && !noteImageData) { toast(dict.noteEmpty); return; }
     if (editingNoteId) { const n = notes.find(function (x) { return x.id === editingNoteId; }); if (n) { n.title = title; n.content = content; n.date = date; n.image = noteImageData; } }
     else { notes.unshift({ id: uid(), title: title, content: content, date: date, image: noteImageData }); }
-    save('notes'); renderNotes(); closeModal('#noteModal'); toast('已保存');
+    save('notes'); renderNotes(); closeModal('#noteModal'); toast(dict.noteSaved);
   });
-  $('#noteDelete').addEventListener('click', function () { if (!editingNoteId) return; notes = notes.filter(function (x) { return x.id !== editingNoteId; }); save('notes'); renderNotes(); closeModal('#noteModal'); toast('已刪除筆記'); });
+  $('#noteDelete').addEventListener('click', function () { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; if (!editingNoteId) return; notes = notes.filter(function (x) { return x.id !== editingNoteId; }); save('notes'); renderNotes(); closeModal('#noteModal'); toast(dict.noteDeleted); });
 
   // ==========================================
   // 13. 照片庫
@@ -974,29 +1016,31 @@
     return IDB.get('photos', id).then(function (rec) { if (rec && rec.src) { photoCache[id] = rec.src; return rec.src; } return fallbackLegacy(); }).catch(function () { return fallbackLegacy(); });
   }
   function renderPhotos() {
-    const grid = $('#photoGrid'); if (!photoMeta.length) { grid.innerHTML = '<div class="empty" style="grid-column:1/-1;">還沒有照片，點「添加照片」上傳。</div>'; return; }
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    const grid = $('#photoGrid'); if (!photoMeta.length) { grid.innerHTML = '<div class="empty" style="grid-column:1/-1;">' + dict.photoEmpty + '</div>'; return; }
     grid.innerHTML = photoMeta.map(function (p) { return '<button class="photo" data-id="' + p.id + '"><img alt="" data-photo="' + p.id + '"></button>'; }).join('');
     photoMeta.forEach(function (p) { loadPhotoSrc(p.id).then(function (src) { const img = grid.querySelector('img[data-photo="' + p.id + '"]'); if (img && src) img.src = src; }); });
   }
   $('#photoAdd').addEventListener('click', function () { $('#photoInput').click(); });
   $('#photoInput').addEventListener('change', function (e) {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     const files = Array.prototype.slice.call(e.target.files || []); e.target.value = ''; if (!files.length) return;
-    if (!IDB.available()) { toast('此瀏覽器不支援 IndexedDB，無法儲存照片'); return; }
-    toast('正在處理 ' + files.length + ' 張圖片…'); let done = 0;
+    if (!IDB.available()) { toast(dict.photoStorageFail); return; }
+    toast(dict.photoProcessMulti.replace('{n}', files.length)); let done = 0;
     const tasks = files.map(function (f) { return compressImage(f, 1600, 0.72).then(function (src) { const id = uid(); return IDB.put('photos', { id: id, src: src }).then(function () { photoCache[id] = src; photoMeta.push({ id: id, title: '' }); done++; }); }).catch(function () {}); });
-    Promise.all(tasks).then(function () { save('photoMeta'); renderPhotos(); toast(done > 0 ? '已添加 ' + done + ' 張照片' : '圖片處理失敗'); });
+    Promise.all(tasks).then(function () { save('photoMeta'); renderPhotos(); toast(done > 0 ? dict.photoAdded.replace('{n}', done) : dict.imgFail); });
   });
   $('#photoGrid').addEventListener('click', function (e) { const btn = e.target.closest('.photo[data-id]'); if (btn) openLightbox(btn.dataset.id); });
   let lightboxId = null;
   function openLightbox(id) {
     const meta = photoMeta.find(function (x) { return x.id === id; }); if (!meta) return; lightboxId = id;
-    loadPhotoSrc(id).then(function (src) { if (!src) { toast('照片載入失敗'); return; } $('#lightboxImg').src = src; $('#lightboxCaption').value = meta.title || ''; $('#lightbox').classList.add('open'); document.body.classList.add('lock'); });
+    loadPhotoSrc(id).then(function (src) { if (!src) { toast((window.I18N[currentLang] || window.I18N['zh-TW']).imgFail); return; } $('#lightboxImg').src = src; $('#lightboxCaption').value = meta.title || ''; $('#lightbox').classList.add('open'); document.body.classList.add('lock'); });
   }
   function closeLightbox() { $('#lightbox').classList.remove('open'); lightboxId = null; if (!document.querySelector('.modal.open, .lightbox.open')) document.body.classList.remove('lock'); }
   $('#lightboxClose').addEventListener('click', closeLightbox);
   $('#lightbox').addEventListener('click', function (e) { if (e.target.id === 'lightbox') closeLightbox(); });
   $('#lightboxCaption').addEventListener('input', function () { if (!lightboxId) return; const meta = photoMeta.find(function (x) { return x.id === lightboxId; }); if (meta) { meta.title = $('#lightboxCaption').value; save('photoMeta'); } });
-  $('#lightboxDel').addEventListener('click', function () { if (!lightboxId) return; const id = lightboxId; photoMeta = photoMeta.filter(function (x) { return x.id !== id; }); delete photoCache[id]; save('photoMeta'); if (IDB.available()) IDB.del('photos', id).catch(function () {}); renderPhotos(); closeLightbox(); toast('已刪除照片'); });
+  $('#lightboxDel').addEventListener('click', function () { if (!lightboxId) return; const dict = window.I18N[currentLang] || window.I18N['zh-TW']; const id = lightboxId; photoMeta = photoMeta.filter(function (x) { return x.id !== id; }); delete photoCache[id]; save('photoMeta'); if (IDB.available()) IDB.del('photos', id).catch(function () {}); renderPhotos(); closeLightbox(); toast(dict.photoDeleted); });
 
   // ==========================================
   // 14. 番茄鐘
@@ -1037,30 +1081,31 @@
   }
 
   function updatePomoUI() {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     pomoTimeDisplay.textContent = formatPomoTime(pomoRemaining);
     pomoTimeDisplay.style.display = 'flex';
     pomoEditor.classList.remove('active');
     
     if (pomoState === 'idle') {
-      pomoBtnLeft.textContent = '開始';
+      pomoBtnLeft.textContent = dict.pomoStart;
       pomoBtnLeft.className = 'pomo-btn start';
       pomoBtnLeft.disabled = pomoRemaining === 0;
       
-      pomoBtnRight.textContent = '重置';
+      pomoBtnRight.textContent = dict.pomoReset;
       pomoBtnRight.className = 'pomo-btn stop';
     } else if (pomoState === 'running') {
-      pomoBtnLeft.textContent = '暫停';
+      pomoBtnLeft.textContent = dict.pomoPause;
       pomoBtnLeft.className = 'pomo-btn pause';
       pomoBtnLeft.disabled = false;
       
-      pomoBtnRight.textContent = '停止';
+      pomoBtnRight.textContent = dict.pomoStop;
       pomoBtnRight.className = 'pomo-btn stop';
     } else if (pomoState === 'paused') {
-      pomoBtnLeft.textContent = '繼續';
+      pomoBtnLeft.textContent = dict.pomoResume;
       pomoBtnLeft.className = 'pomo-btn resume';
       pomoBtnLeft.disabled = false;
       
-      pomoBtnRight.textContent = '停止';
+      pomoBtnRight.textContent = dict.pomoStop;
       pomoBtnRight.className = 'pomo-btn stop';
     }
   }
@@ -1131,6 +1176,7 @@
   });
 
   function startPomoTimer() {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     pomoState = 'running';
     updatePomoUI();
     pomoInterval = setInterval(function() {
@@ -1143,7 +1189,7 @@
         updatePomoUI();
         playBell();
         if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-        toast('時間到！休息一下吧 🍅');
+        toast(dict.pomoTimeUp);
       }
     }, 1000);
   }
@@ -1195,15 +1241,16 @@
   }
   updatePomoUI();
 
-  function updateSoundUI() { $$('input[name="soundType"]').forEach(function (r) { r.checked = (r.value === soundType); }); $('#soundFileName').textContent = customAudioData ? '已載入自訂音效' : '尚未選擇檔案'; }
+  function updateSoundUI() { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; $$('input[name="soundType"]').forEach(function (r) { r.checked = (r.value === soundType); }); $('#soundFileName').textContent = customAudioData ? dict.pomoCustomLoaded : dict.pomoSoundNoFile; }
   $('#pomoSoundBtn').addEventListener('click', function () { updateSoundUI(); openModal('#soundModal'); });
   $('#soundFilePick').addEventListener('click', function () { $('#soundFileInput').click(); });
-  $('#soundFileInput').addEventListener('change', function (e) { const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return; if (file.size > 1024 * 1024) { toast('音訊檔案過大，請選擇 1MB 以下的檔案'); return; } const reader = new FileReader(); reader.onload = function (ev) { customAudioData = ev.target.result; $('#soundFileName').textContent = file.name; $$('input[name="soundType"]').forEach(function (r) { if (r.value === 'custom') r.checked = true; }); toast('音訊已載入，請點擊儲存'); }; reader.readAsDataURL(file); });
+  $('#soundFileInput').addEventListener('change', function (e) { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return; if (file.size > 1024 * 1024) { toast(dict.pomoAudioTooBig); return; } const reader = new FileReader(); reader.onload = function (ev) { customAudioData = ev.target.result; $('#soundFileName').textContent = file.name; $$('input[name="soundType"]').forEach(function (r) { if (r.value === 'custom') r.checked = true; }); toast(dict.pomoAudioLoaded); }; reader.readAsDataURL(file); });
   $('#soundSaveBtn').addEventListener('click', function () {
-    const selected = $('input[name="soundType"]:checked').value; if (selected === 'custom' && !customAudioData) { toast('請先上傳音訊檔案'); return; }
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    const selected = $('input[name="soundType"]:checked').value; if (selected === 'custom' && !customAudioData) { toast(dict.pomoSoundNoFile); return; }
     soundType = selected; LS.set('pomoSoundType', soundType);
     if (IDB.available()) { if (customAudioData) { IDB.put('audio', { id: 'pomo', data: customAudioData }).catch(function () {}); } else { IDB.del('audio', 'pomo').catch(function () {}); } }
-    closeModal('#soundModal'); toast('鈴聲設定已儲存'); initAudio(); playBell();
+    closeModal('#soundModal'); toast(dict.pomoSoundSaved); initAudio(); playBell();
   });
   function updateVolumeUI() { $('#pomoVolume').value = pomoVolume; $('#pomoVolumeVal').textContent = pomoVolume; }
   $('#pomoVolume').addEventListener('input', function () { pomoVolume = parseInt(this.value, 10); $('#pomoVolumeVal').textContent = pomoVolume; LS.set('pomoVolume', pomoVolume); });
@@ -1227,58 +1274,62 @@
   document.addEventListener('click', function (e) { if (settings.classList.contains('open') && !settings.contains(e.target) && !gearBtn.contains(e.target)) closeSettings(); });
   $('#lumRange').addEventListener('input', function () { state.lum = parseFloat(this.value); applyTheme(); savePrefs(); });
   $('#pickBg').addEventListener('click', function () { $('#bgFileInput').click(); });
-  $('#clearBg').addEventListener('click', function () { state.bg = null; applyTheme(); savePrefs(); toast('已移除背景圖片'); });
-  $('#bgFileInput').addEventListener('change', function (e) { const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return; toast('正在處理背景圖片…'); compressImage(file, 1600, 0.8).then(function (data) { state.bg = data; applyTheme(); savePrefs(); toast('背景已套用'); }).catch(function () { toast('圖片處理失敗'); }); });
-  $('#themeToggle').addEventListener('click', function () { state.lum = state.lum > 50 ? 15 : 85; applyTheme(); savePrefs(); toast(state.lum > 50 ? '已切換為淺色模式' : '已切換為深色模式'); });
+  $('#clearBg').addEventListener('click', function () { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; state.bg = null; applyTheme(); savePrefs(); toast(dict.bgRemoved); });
+  $('#bgFileInput').addEventListener('change', function (e) { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return; toast(dict.imgProcessing); compressImage(file, 1600, 0.8).then(function (data) { state.bg = data; applyTheme(); savePrefs(); toast(dict.bgApplied); }).catch(function () { toast(dict.imgFail); }); });
+  $('#themeToggle').addEventListener('click', function () { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; state.lum = state.lum > 50 ? 15 : 85; applyTheme(); savePrefs(); toast(state.lum > 50 ? dict.themeLight : dict.themeDark); });
   
   $('#mainCurrencySelect').value = mainCurrency;
   $('#mainCurrencySelect').addEventListener('change', function () {
-    mainCurrency = this.value; LS.set('mainCurrency', mainCurrency); renderLedger(); renderHome(); toast('主要貨幣已切換為 ' + mainCurrency);
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    mainCurrency = this.value; LS.set('mainCurrency', mainCurrency); renderLedger(); renderHome(); toast(dict.currencyChanged.replace('{c}', mainCurrency));
   });
 
   const BACKUP_VERSION = 2;
   function exportData() {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     const exportPhotos = photoMeta.map(function (m) { return loadPhotoSrc(m.id).then(function (src) { return { id: m.id, title: m.title || '', src: src || '' }; }); });
     Promise.all(exportPhotos).then(function (photosData) {
       const data = { version: BACKUP_VERSION, exportedAt: new Date().toISOString(), todos: todos, events: events, diaries: diaries, notes: notes, photos: photosData, goals: goals, bookmarks: bookmarks, ledger: ledger, countdowns: countdowns, ledgerCategories: ledgerCategories, prefs: { lum: state.lum, bg: state.bg }, pomoSoundType: soundType };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a');
-      a.href = url; a.download = 'my_space_backup_' + todayKey() + '.json'; a.click(); URL.revokeObjectURL(url); toast('備份檔案已下載（含照片本體）');
+      a.href = url; a.download = 'my_space_backup_' + todayKey() + '.json'; a.click(); URL.revokeObjectURL(url); toast(dict.exporting);
     });
   }
   $('#exportBtn').addEventListener('click', exportData); $('#aboutExportBtn').addEventListener('click', exportData);
 
   $('#clearAllBtn').addEventListener('click', function () {
-    customConfirm('⚠️ 警告：清除所有資料？', '這將永久刪除您所有的筆記、日記、照片與設定。', '確定清除', '取消', true).then(function (ok1) {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    customConfirm(dict.confirmClearTitle, dict.confirmClearMsg, dict.confirmClearOk, dict.cancel, true).then(function (ok1) {
       if (!ok1) return;
-      customConfirm('最後確認', '您是否已經匯出備份？如果沒有，請先取消並匯出。', '已備份，確定清除', '取消', true).then(function (ok2) {
+      customConfirm(dict.confirmClear2Title, dict.confirmClear2Msg, dict.confirmClear2Ok, dict.cancel, true).then(function (ok2) {
         if (!ok2) return;
         try { localStorage.clear(); } catch (e) {}
         accessToken = null;
         if (typeof updateGoogleUI === 'function') updateGoogleUI();
         document.cookie.split(';').forEach(function (c) { document.cookie = c.replace(/^ +/, '').replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/'); });
         if (IDB.available()) { ['photos', 'audio'].forEach(function (store) { IDB.getAll(store).then(function (rows) { rows.forEach(function (r) { IDB.del(store, r.id).catch(function () {}); }); }).catch(function () {}); }); }
-        toast('資料已清除，正在重新整理…'); setTimeout(function () { location.reload(); }, 1500);
+        toast(dict.clearedReload); setTimeout(function () { location.reload(); }, 1500);
       });
     });
   });
 
   function validateBackup(data) {
-    if (!data || typeof data !== 'object') return '檔案格式錯誤';
-    if (data.version != null && typeof data.version !== 'number') return '版本號格式錯誤';
+    if (!data || typeof data !== 'object') return 'Invalid format';
+    if (data.version != null && typeof data.version !== 'number') return 'Invalid version';
     const checks = [['todos', function (v) { return v && typeof v === 'object' && !Array.isArray(v); }], ['events', function (v) { return v && typeof v === 'object' && !Array.isArray(v); }], ['diaries', isArray], ['notes', isArray], ['photos', isArray], ['goals', isArray], ['bookmarks', isArray], ['ledger', isArray], ['countdowns', isArray]];
-    for (let i = 0; i < checks.length; i++) { const key = checks[i][0]; const fn = checks[i][1]; if (data[key] !== undefined && !fn(data[key])) return '欄位 ' + key + ' 格式錯誤'; }
-    if (data.photos) { for (let i = 0; i < data.photos.length; i++) { const p = data.photos[i]; if (!p || !isNonEmptyString(p.id) || typeof p.src !== 'string') return '照片資料格式錯誤'; } }
+    for (let i = 0; i < checks.length; i++) { const key = checks[i][0]; const fn = checks[i][1]; if (data[key] !== undefined && !fn(data[key])) return 'Invalid ' + key; }
+    if (data.photos) { for (let i = 0; i < data.photos.length; i++) { const p = data.photos[i]; if (!p || !isNonEmptyString(p.id) || typeof p.src !== 'string') return 'Invalid photo data'; } }
     return null;
   }
   $('#importBtn').addEventListener('click', function () { $('#importFileInput').click(); });
   $('#importFileInput').addEventListener('change', function (e) {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return;
-    if (file.size > 60 * 1024 * 1024) { toast('備份檔案過大（超過 60MB）'); return; }
+    if (file.size > 60 * 1024 * 1024) { toast(dict.importTooLarge); return; }
     const reader = new FileReader();
     reader.onload = function (ev) {
-      let data; try { data = JSON.parse(ev.target.result); } catch (err) { toast('備份檔案解析失敗'); return; }
-      const err = validateBackup(data); if (err) { toast('備份驗證失敗：' + err); return; }
-      customConfirm('確定要匯入備份嗎？', '這將覆蓋目前所有資料，請確認。', '匯入', '取消', true).then(function (ok) {
+      let data; try { data = JSON.parse(ev.target.result); } catch (err) { toast(dict.importParseFail); return; }
+      const err = validateBackup(data); if (err) { toast(dict.importInvalid.replace('{e}', err)); return; }
+      customConfirm(dict.confirmImportTitle, dict.confirmImportMsg, dict.confirmImportOk, dict.cancel, true).then(function (ok) {
         if (!ok) return;
         if (data.todos) todos = migrateTodos(data.todos); if (data.events) events = data.events; if (data.diaries) diaries = data.diaries; if (data.notes) notes = data.notes; if (data.goals) goals = data.goals; if (data.bookmarks) bookmarks = data.bookmarks; if (data.countdowns) countdowns = data.countdowns;
         if (data.ledgerCategories) ledgerCategories = data.ledgerCategories;
@@ -1290,7 +1341,7 @@
         Promise.all(photoWrites).then(function () {
           ['todos', 'events', 'diaries', 'notes', 'goals', 'bookmarks', 'ledger', 'countdowns', 'ledgerCategories'].forEach(save); save('photoMeta'); pruneEvents(); pruneDone();
           renderTodos(); renderCalendar(); renderDiaries(); renderNotes(); renderPhotos(); renderGoals(); renderBookmarks(); renderLedger(); renderHome();
-          toast('備份匯入成功！'); closeSettings();
+          toast(dict.importing); closeSettings();
         });
       });
     };
@@ -1330,28 +1381,31 @@
   const gActionWrap = $('#gActionWrap');
 
   function updateGoogleUI() {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     if (accessToken) {
       gLoginBtn.style.display = 'none';
       gActionWrap.style.display = 'flex';
-      gStatus.textContent = window.I18N[currentLang].gStatusConnected || '已連接 Google 雲端';
+      gStatus.textContent = dict.gStatusConnected;
       gStatus.style.color = 'var(--income-color)';
     } else {
       gLoginBtn.style.display = 'block';
       gActionWrap.style.display = 'none';
-      gStatus.textContent = window.I18N[currentLang].gStatusNone || '尚未登入';
+      gStatus.textContent = dict.gStatusNone;
       gStatus.style.color = 'var(--fg-dim)';
     }
   }
 
   function initGoogleAuth() {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     if (typeof google === 'undefined') {
-      gStatus.textContent = 'Google API 載入失敗，請檢查網路。';
+      gStatus.textContent = dict.gLoadingFail;
       return;
     }
     tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPES,
-            callback: (tokenResponse) => {
+      callback: (tokenResponse) => {
+        const d = window.I18N[currentLang] || window.I18N['zh-TW'];
         if (tokenResponse && tokenResponse.access_token) {
           accessToken = tokenResponse.access_token;
           // [NEW] 持久化 Token 與到期時間（預設 3600 秒，扣 60 秒緩衝）
@@ -1361,9 +1415,9 @@
             LS.set('googleTokenExp', Date.now() + expiresIn);
           } catch (e) {}
           updateGoogleUI();
-          toast('已成功連接 Google 雲端');
+          toast(d.gLoginOk);
         } else {
-          toast('登入失敗或已取消');
+          toast(d.gLoginFail);
         }
       },
     });
@@ -1378,7 +1432,8 @@
 
   gBackupBtn.addEventListener('click', async () => {
     if (!accessToken) return;
-    toast('正在上傳至雲端…');
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    toast(dict.gBackupUploading);
     try {
       const exportPhotos = photoMeta.map(function (m) { return loadPhotoSrc(m.id).then(function (src) { return { id: m.id, title: m.title || '', src: src || '' }; }); });
       const photosData = await Promise.all(exportPhotos);
@@ -1388,7 +1443,7 @@
       const searchRes = await fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder', {
         headers: { 'Authorization': 'Bearer ' + accessToken }
       });
-      if (searchRes.status === 401) { clearGoogleToken(); toast('登入已過期，請重新登入 Google'); return; }
+      if (searchRes.status === 401) { clearGoogleToken(); toast(dict.gTokenExpired); return; }
       const searchData = await searchRes.json();
       let fileId = null;
       if (searchData.files && searchData.files.length > 0) {
@@ -1422,38 +1477,39 @@
       });
 
       if (res.ok) {
-        toast('已成功備份至 Google 雲端');
+        toast(dict.gBackupOk);
       } else if (res.status === 401) {
         clearGoogleToken();
-        toast('登入已過期，請重新登入 Google');
+        toast(dict.gTokenExpired);
       } else {
-        toast('備份失敗，請重新登入');
+        toast(dict.gBackupFail);
       }
     } catch (err) {
       console.error(err);
-      toast('備份失敗，請檢查網路或重新登入');
+      toast(dict.gBackupFailNetwork);
     }
   });
 
   gRestoreBtn.addEventListener('click', async () => {
     if (!accessToken) return;
-    const ok = await customConfirm('從雲端還原', '這將覆蓋目前所有資料，確定嗎？', '還原', '取消', true);
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    const ok = await customConfirm(dict.gConfirmRestoreTitle, dict.gConfirmRestoreMsg, dict.gConfirmRestoreOk, dict.cancel, true);
     if (!ok) return;
 
-    toast('正在從雲端下載…');
+    toast(dict.gRestoreDownloading);
     try {
       const searchRes = await fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder', {
         headers: { 'Authorization': 'Bearer ' + accessToken }
       });
-      if (searchRes.status === 401) { clearGoogleToken(); toast('登入已過期，請重新登入 Google'); return; }
+      if (searchRes.status === 401) { clearGoogleToken(); toast(dict.gTokenExpired); return; }
       const searchData = await searchRes.json();
-      if (!searchData.files || searchData.files.length === 0) { toast('雲端上沒有找到備份檔案'); return; }
+      if (!searchData.files || searchData.files.length === 0) { toast(dict.gRestoreEmpty); return; }
       
       const fileId = searchData.files[0].id;
       const fileRes = await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media', {
         headers: { 'Authorization': 'Bearer ' + accessToken }
       });
-      if (fileRes.status === 401) { clearGoogleToken(); toast('登入已過期，請重新登入 Google'); return; }
+      if (fileRes.status === 401) { clearGoogleToken(); toast(dict.gTokenExpired); return; }
       const data = await fileRes.json();
 
       if (data.todos) todos = migrateTodos(data.todos); 
@@ -1479,15 +1535,10 @@
       await Promise.all(photoWrites);
       ['todos', 'events', 'diaries', 'notes', 'goals', 'bookmarks', 'ledger', 'countdowns', 'ledgerCategories'].forEach(save); save('photoMeta'); pruneEvents(); pruneDone();
       renderTodos(); renderCalendar(); renderDiaries(); renderNotes(); renderPhotos(); renderGoals(); renderBookmarks(); renderLedger(); renderHome();
-      toast('雲端還原成功！');
+      toast(dict.gRestoreOk);
     } catch (err) {
       console.error(err);
-      if (err && err.status === 401) {
-        clearGoogleToken();
-        toast('登入已過期，請重新登入 Google');
-      } else {
-        toast('下載失敗，請重新登入');
-      }
+      toast(dict.gRestoreFail);
     }
   });
 
@@ -1499,7 +1550,7 @@
   $$('[data-close]').forEach(function (btn) { btn.addEventListener('click', function () { closeModal(btn.dataset.close); }); });
   $$('.modal').forEach(function (m) { m.addEventListener('click', function (e) { if (e.target === m) closeModal('#' + m.id); }); });
 
-  if (!STORAGE_OK) { setTimeout(function () { toast('⚠️ 瀏覽器儲存空間不可用，資料將不會保留'); }, 900); }
+  if (!STORAGE_OK) { setTimeout(function () { toast((window.I18N[currentLang] || window.I18N['zh-TW']).storageNo); }, 900); }
   loadPrefs(); applyTheme(); pruneEvents(); pruneDone();
 
   // [NEW] 初始化語言與切換按鈕
@@ -1510,20 +1561,17 @@
   if (langSwitchBtn && !langSwitchBtn.dataset.bound) {
     langSwitchBtn.dataset.bound = '1';
     langSwitchBtn.addEventListener('click', function() {
+      const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
       currentLang = currentLang === 'zh-TW' ? 'en' : 'zh-TW';
       applyLanguage(currentLang);
-      toast(currentLang === 'en' ? 'Switched to English' : '已切換回中文');
+      toast(currentLang === 'en' ? dict.welcomeLangSwitchedEn : dict.welcomeLangSwitched);
     });
   }
 
-    function renderFooter() {
-    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-    const y = new Date().getFullYear();
-    const footerCopyEl = document.querySelector('.site-footer > div:first-child');
-    if (footerCopyEl) {
-      footerCopyEl.innerHTML = '© ' + y + ' <a href="https://github.com/junginlau" target="_blank">junginlau</a>. ' + dict.footerDesc.split('。')[0] + '。';
-    }
-  }  safeRender('home', renderHome);
+  function safeRender(name, fn) {
+    try { fn(); } catch (e) { console.warn('初始化渲染失敗：' + name, e); }
+  }
+  safeRender('home', renderHome);
   safeRender('todos', renderTodos);
   safeRender('calendar', renderCalendar);
   safeRender('diaries', renderDiaries);
