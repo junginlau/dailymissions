@@ -133,10 +133,15 @@
     if (switchBtn) {
       switchBtn.textContent = lang === 'zh-TW' ? 'EN' : '中文';
     }
+    const landingLangBtn = $('#landingLangBtn');
+    if (landingLangBtn) {
+      landingLangBtn.textContent = lang === 'zh-TW' ? 'EN' : '中文';
+    }
 
     // 4. 重新渲染動態內容（讓首頁卡片、清單立刻切換語言）
     updateClock();
     initWeather();
+    updateQuote(); // [NEW] 補上名言重繪
     if (typeof renderHome === 'function') renderHome();
     if (typeof renderTodos === 'function') renderTodos();
     if (typeof renderCalendar === 'function') renderCalendar();
@@ -451,11 +456,18 @@
     const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     if (!LS.get('onboarded', false)) {
       const homeMain = document.querySelector('.home-main');
-      if (homeMain && !document.getElementById('welcomeCard')) {
+      let existingCard = document.getElementById('welcomeCard');
+      
+      if (homeMain && !existingCard) {
+        // 首次生成
         const card = document.createElement('div'); card.id = 'welcomeCard'; card.className = 'card welcome-card';
         card.innerHTML = `<div style="font-weight:600; margin-bottom:6px;">${dict.welcomeTitle}</div><div style="font-size:13px; line-height:1.6; color:var(--fg-dim); margin-bottom:10px;">${dict.welcomeDesc}</div><button class="btn primary" id="welcomeCloseBtn" style="font-size:12px; padding:6px 12px;">${dict.welcomeBtn}</button>`;
         homeMain.prepend(card);
         document.getElementById('welcomeCloseBtn').addEventListener('click', () => { LS.set('onboarded', true); card.remove(); });
+      } else if (existingCard) {
+        // [NEW] 如果卡片已存在，切換語言時直接更新內容
+        existingCard.innerHTML = `<div style="font-weight:600; margin-bottom:6px;">${dict.welcomeTitle}</div><div style="font-size:13px; line-height:1.6; color:var(--fg-dim); margin-bottom:10px;">${dict.welcomeDesc}</div><button class="btn primary" id="welcomeCloseBtn" style="font-size:12px; padding:6px 12px;">${dict.welcomeBtn}</button>`;
+        document.getElementById('welcomeCloseBtn').addEventListener('click', () => { LS.set('onboarded', true); existingCard.remove(); });
       }
     }
     $('#statTodo').textContent = countTodayTags(); $('#statEvent').textContent = countUpcoming(7); $('#statDiary').textContent = diaries.length; $('#statExpense').textContent = currencySymbols[mainCurrency] + ' ' + getTodayExpense();
@@ -1557,6 +1569,7 @@
   currentLang = LS.get('userLang', 'zh-TW'); 
   applyLanguage(currentLang);
 
+  // [NEW] 主程式語系切換
   const langSwitchBtn = $('#langSwitchBtn');
   if (langSwitchBtn && !langSwitchBtn.dataset.bound) {
     langSwitchBtn.dataset.bound = '1';
@@ -1565,6 +1578,19 @@
       currentLang = currentLang === 'zh-TW' ? 'en' : 'zh-TW';
       applyLanguage(currentLang);
       toast(currentLang === 'en' ? dict.welcomeLangSwitchedEn : dict.welcomeLangSwitched);
+    });
+  }
+
+  // [NEW] Landing Page 語系切換
+  const landingLangBtn = $('#landingLangBtn');
+  if (landingLangBtn && !landingLangBtn.dataset.bound) {
+    landingLangBtn.dataset.bound = '1';
+    landingLangBtn.addEventListener('click', function() {
+      const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+      currentLang = currentLang === 'zh-TW' ? 'en' : 'zh-TW';
+      applyLanguage(currentLang);
+      // 因為 Landing Page 的按鈕文字是在 applyLanguage 處理，這邊只要更新按鈕本身的文字就好
+      landingLangBtn.textContent = currentLang === 'zh-TW' ? 'EN' : '中文';
     });
   }
 
