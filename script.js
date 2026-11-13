@@ -1394,12 +1394,13 @@
     if (closeBtn) closeBtn.addEventListener('click', function () { banner.hidden = true; });
   })();
 
-  // [NEW] 處理未登入時的公開 Landing Page 顯示邏輯
+   // [NEW] 處理未登入時的公開 Landing Page 顯示邏輯
   (function initPublicLanding() {
     const landing = document.getElementById('public-landing');
     const nav = document.querySelector('.nav');
     const appMain = document.querySelector('.app');
     const mobileNav = document.querySelector('.mobile-nav');
+    const pomoFab = document.getElementById('pomoFab');
     
     // 安全檢查：確保 LS 存在，避免報錯
     let hasToken = false;
@@ -1417,11 +1418,13 @@
       if (nav) nav.style.display = 'flex';
       if (appMain) appMain.style.display = 'flex';
       if (mobileNav && window.innerWidth <= 768) mobileNav.style.display = 'flex';
+      if (pomoFab) pomoFab.style.display = 'flex';
     } else {
       if (landing) landing.style.display = 'flex';
       if (nav) nav.style.display = 'none';
       if (appMain) appMain.style.display = 'none';
       if (mobileNav) mobileNav.style.display = 'none';
+      if (pomoFab) pomoFab.style.display = 'none';
     }
 
     // 綁定「進入儀表板」按鈕，點擊後解除隱藏
@@ -1432,11 +1435,10 @@
         if (nav) nav.style.display = 'flex';
         if (appMain) appMain.style.display = 'flex';
         if (mobileNav && window.innerWidth <= 768) mobileNav.style.display = 'flex';
+        if (pomoFab) pomoFab.style.display = 'flex';
         
         // 強制重新渲染首頁
         if (typeof renderHome === 'function') renderHome();
       });
     }
   })();
-
-})();
