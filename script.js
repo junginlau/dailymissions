@@ -1229,6 +1229,8 @@
       customConfirm('最後確認', '您是否已經匯出備份？如果沒有，請先取消並匯出。', '已備份，確定清除', '取消', true).then(function (ok2) {
         if (!ok2) return;
         try { localStorage.clear(); } catch (e) {}
+        accessToken = null;
+        if (typeof updateGoogleUI === 'function') updateGoogleUI();
         document.cookie.split(';').forEach(function (c) { document.cookie = c.replace(/^ +/, '').replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/'); });
         if (IDB.available()) { ['photos', 'audio'].forEach(function (store) { IDB.getAll(store).then(function (rows) { rows.forEach(function (r) { IDB.del(store, r.id).catch(function () {}); }); }).catch(function () {}); }); }
         toast('資料已清除，正在重新整理…'); setTimeout(function () { location.reload(); }, 1500);
@@ -1278,6 +1280,24 @@
   const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
   let tokenClient = null;
   let accessToken = null;
+  // [NEW] 啟動時還原 Token（含過期檢查）
+  try {
+    const savedTok = LS.get('googleToken', null);
+    const savedExp = LS.get('googleTokenExp', 0);
+    if (savedTok && savedExp && Date.now() < savedExp - 60000) {
+      accessToken = savedTok;
+    } else if (savedTok) {
+      LS.remove('googleToken'); LS.remove('googleTokenExp');
+      accessToken = null;
+    }
+  } catch (e) { accessToken = null; }
+
+  // [NEW] 統一清除 Token 並更新 UI
+  function clearGoogleToken() {
+    accessToken = null;
+    try { LS.remove('googleToken'); LS.remove('googleTokenExp'); } catch (e) {}
+    if (typeof updateGoogleUI === 'function') updateGoogleUI();
+  }
 
   const gLoginBtn = $('#gLoginBtn');
   const gBackupBtn = $('#gBackupBtn');
@@ -1307,9 +1327,15 @@
     tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPES,
-      callback: (tokenResponse) => {
+            callback: (tokenResponse) => {
         if (tokenResponse && tokenResponse.access_token) {
           accessToken = tokenResponse.access_token;
+          // [NEW] 持久化 Token 與到期時間（預設 3600 秒，扣 60 秒緩衝）
+          const expiresIn = (tokenResponse.expires_in || 3600) * 1000;
+          try {
+            LS.set('googleToken', accessToken);
+            LS.set('googleTokenExp', Date.now() + expiresIn);
+          } catch (e) {}
           updateGoogleUI();
           toast('已成功連接 Google 雲端');
         } else {
@@ -1338,6 +1364,7 @@
       const searchRes = await fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder', {
         headers: { 'Authorization': 'Bearer ' + accessToken }
       });
+      if (searchRes.status === 401) { clearGoogleToken(); toast('登入已過期，請重新登入 Google'); return; }
       const searchData = await searchRes.json();
       let fileId = null;
       if (searchData.files && searchData.files.length > 0) {
@@ -1370,8 +1397,14 @@
         body: multipartRequestBody
       });
 
-      if (res.ok) toast('已成功備份至 Google 雲端');
-      else toast('備份失敗，請重新登入');
+      if (res.ok) {
+        toast('已成功備份至 Google 雲端');
+      } else if (res.status === 401) {
+        clearGoogleToken();
+        toast('登入已過期，請重新登入 Google');
+      } else {
+        toast('備份失敗，請重新登入');
+      }
     } catch (err) {
       console.error(err);
       toast('備份失敗，請檢查網路或重新登入');
@@ -1388,6 +1421,7 @@
       const searchRes = await fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder', {
         headers: { 'Authorization': 'Bearer ' + accessToken }
       });
+      if (searchRes.status === 401) { clearGoogleToken(); toast('登入已過期，請重新登入 Google'); return; }
       const searchData = await searchRes.json();
       if (!searchData.files || searchData.files.length === 0) { toast('雲端上沒有找到備份檔案'); return; }
       
@@ -1395,6 +1429,7 @@
       const fileRes = await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media', {
         headers: { 'Authorization': 'Bearer ' + accessToken }
       });
+      if (fileRes.status === 401) { clearGoogleToken(); toast('登入已過期，請重新登入 Google'); return; }
       const data = await fileRes.json();
 
       if (data.todos) todos = migrateTodos(data.todos); 
@@ -1423,7 +1458,12 @@
       toast('雲端還原成功！');
     } catch (err) {
       console.error(err);
-      toast('下載失敗，請重新登入');
+      if (err && err.status === 401) {
+        clearGoogleToken();
+        toast('登入已過期，請重新登入 Google');
+      } else {
+        toast('下載失敗，請重新登入');
+      }
     }
   });
 
@@ -1523,16 +1563,8 @@
       if (pomoFab) pomoFab.style.display = 'none';
     };
 
-    // 決定初始畫面
-    let hasToken = false;
-    try {
-      if (typeof LS !== 'undefined' && typeof LS.get === 'function') {
-        hasToken = !!LS.get('googleToken', null);
-      }
-    } catch (e) {
-      console.warn('無法讀取 Token 狀態', e);
-    }
-
+    // 決定初始畫面（以 accessToken 為單一真相來源，過期已在啟動時清除）
+    const hasToken = !!accessToken;
     const isGuest = localStorage.getItem('guestEntered') === 'true';
 
     // 如果已經有 Token，或者訪客已經點過「進入儀表板」，就直接顯示主程式

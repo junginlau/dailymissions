@@ -55,6 +55,8 @@ const I18N = {
     upcomingEmpty: '近期沒有要事。',
     bmTitle: '書籤（可拖拽排序）',
     bmEmpty: '還沒有書籤<br>點右上角 ＋ 新增',
+    ledgerEmpty: '本月還沒有任何記帳紀錄。',
+    gStatusConnected: '已連接 Google 雲端',
     
     // 首頁捷徑
     shortcutTodoK: '每週必做', shortcutTodoD: '把這週最重要的事挑出來，先做那幾件。',
@@ -160,6 +162,8 @@ const I18N = {
     upcomingEmpty: 'No upcoming events.',
     bmTitle: 'Bookmarks (Draggable)',
     bmEmpty: 'No bookmarks yet.<br>Click + to add.',
+    ledgerEmpty: 'No records this month yet.',
+    gStatusConnected: 'Connected to Google Drive',
     
     // 首頁捷徑
     shortcutTodoK: 'Weekly To-Do', shortcutTodoD: 'Pick the most important things this week and do them first.',
