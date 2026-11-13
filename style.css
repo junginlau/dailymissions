@@ -564,7 +564,7 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
   .bookmarks { height: auto; max-height: none; flex: 0 0 auto; }
   .bm-list { max-height: 300px; overflow-y: auto; overflow-x: hidden; }
 
-  .site-footer { padding: 16px 16px 90px 16px !important; text-align: left !important; font-size: 11px; line-height: 1.5; white-space: normal; margin-bottom: 0; }
+  .site-footer { padding: 10px 16px 85px 16px !important; text-align: left !important; font-size: 11px; line-height: 1.4; white-space: normal; margin-bottom: 0; margin-top: -10px !important; }
   .site-footer div { max-width: calc(100% - 60px); }
   .about-layout { grid-template-columns: 1fr; }
 
