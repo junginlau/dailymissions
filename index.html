@@ -390,50 +390,50 @@
     </div>
   </section>
 
-  <!-- 關於本站 -->
+    <!-- 關於本站 -->
   <section class="view" id="view-about">
     <h1 data-i18n="viewAboutTitle">關於本站</h1>
     <p class="sub" data-i18n="viewAboutSub">一個極簡、高效且充滿個人風格的數位生活儀表板。</p>
     <div class="about-layout mt-24">
       <div class="card about-card">
-        <h3>📝 專案簡介</h3>
-        <p>這個網站最初是為了打造一個「個人數位首頁」而誕生。它結合了搜尋引擎、書籤、待辦事項、日曆、日記、筆記、照片庫與記帳功能。所有資料皆儲存於瀏覽器本地端，無需註冊，隨開即用。</p>
+        <h3 data-i18n="aboutIntroTitle">📝 專案簡介</h3>
+        <p data-i18n="aboutIntroDesc">這個網站最初是為了打造一個「個人數位首頁」而誕生。它結合了搜尋引擎、書籤、待辦事項、日曆、日記、筆記、照片庫與記帳功能。所有資料皆儲存於瀏覽器本地端，無需註冊，隨開即用。</p>
       </div>
       <div class="card about-card">
-        <h3>👨‍💻 開發者與技術棧</h3>
-        <p>本專案由 <a href="https://github.com/junginlau" target="_blank" class="link">junginlau</a> 開發與維護。</p>
-        <p>使用原生 HTML、CSS 與 JavaScript 打造，無任何外部框架依賴（Zero Dependencies）。</p>
+        <h3 data-i18n="aboutTechTitle">👨‍💻 開發者與技術棧</h3>
+        <p><span data-i18n="aboutTechBy">本專案由</span> <a href="https://github.com/junginlau" target="_blank" class="link">junginlau</a> <span data-i18n="aboutTechDev">開發與維護。</span></p>
+        <p data-i18n="aboutTechDesc">使用原生 HTML、CSS 與 JavaScript 打造，無任何外部框架依賴（Zero Dependencies）。</p>
         <ul>
-          <li>前端樣式：Vanilla CSS (Glassmorphism, Grid/Flexbox)</li>
-          <li>資料儲存：LocalStorage、IndexedDB（照片與音效）與 Cookie</li>
-          <li>外部服務：Open-Meteo API、Google Favicon API、ExchangeRate API</li>
+          <li data-i18n="aboutTechFrontend">前端樣式：Vanilla CSS (Glassmorphism, Grid/Flexbox)</li>
+          <li data-i18n="aboutTechStorage">資料儲存：LocalStorage、IndexedDB（照片與音效）與 Cookie</li>
+          <li data-i18n="aboutTechService">外部服務：Open-Meteo API、Google Favicon API、ExchangeRate API</li>
         </ul>
       </div>
       <div class="card about-card" style="border-color: #e5484d;">
-        <h3 style="color: #e5484d;">⚠️ 資料隱私與備份聲明</h3>
-        <p>本站不會將您的任何資料上傳至伺服器。所有資料僅保存在您當前的瀏覽器中。</p>
-        <p><strong>請注意：</strong>如果您清理了瀏覽器快取，或更換了裝置，資料將會遺失。強烈建議您定期點擊右上角的「設定」-&gt;「匯出備份」。</p>
-        <button class="btn primary" id="aboutExportBtn" style="margin-top: 10px; background: #e5484d; border-color: transparent;">立即匯出備份</button>
+        <h3 style="color: #e5484d;" data-i18n="aboutPrivacyTitle">⚠️ 資料隱私與備份聲明</h3>
+        <p data-i18n="aboutPrivacyDesc1">本站不會將您的任何資料上傳至伺服器。所有資料僅保存在您當前的瀏覽器中。</p>
+        <p data-i18n="aboutPrivacyDesc2">請注意：如果您清理了瀏覽器快取，或更換了裝置，資料將會遺失。強烈建議您定期點擊右上角的「設定」->「匯出備份」。</p>
+        <button class="btn primary" id="aboutExportBtn" style="margin-top: 10px; background: #e5484d; border-color: transparent;" data-i18n="aboutPrivacyBtn">立即匯出備份</button>
       </div>
       <div class="card about-card">
-        <h3>⌨️ 實用快捷鍵</h3>
+        <h3 data-i18n="aboutKeysTitle">⌨️ 實用快捷鍵</h3>
         <ul>
-          <li><kbd>/</kbd> 快速聚焦搜尋欄</li>
-          <li><kbd>n</kbd> 在首頁或筆記本頁快速新增筆記</li>
-          <li><kbd>Esc</kbd> 關閉所有彈窗與面板</li>
+          <li><kbd>/</kbd> <span data-i18n="aboutKey1">快速聚焦搜尋欄</span></li>
+          <li><kbd>n</kbd> <span data-i18n="aboutKey2">在首頁或筆記本頁快速新增筆記</span></li>
+          <li><kbd>Esc</kbd> <span data-i18n="aboutKey3">關閉所有彈窗與面板</span></li>
         </ul>
       </div>
       <div class="card about-card">
-        <h3>💡 功能清單</h3>
+        <h3 data-i18n="aboutFeaturesTitle">💡 功能清單</h3>
         <ul>
-          <li>自訂背景與深淺色切換</li>
-          <li>每週必做（支援拖拽與標籤）</li>
-          <li>日曆（支援星星標記與快速跳轉）</li>
-          <li>日記（支援編輯與上傳照片）</li>
-          <li>筆記本與照片庫（自動壓縮）</li>
-          <li><strong>記帳</strong>（支援多幣別、標籤與收支統計）</li>
-          <li>番茄鐘（時分秒自訂、精細按鈕動畫）</li>
-          <li>資料備份匯出／匯入</li>
+          <li data-i18n="aboutFeat1">自訂背景與深淺色切換</li>
+          <li data-i18n="aboutFeat2">每週必做（支援拖拽與標籤）</li>
+          <li data-i18n="aboutFeat3">日曆（支援星星標記與快速跳轉）</li>
+          <li data-i18n="aboutFeat4">日記（支援編輯與上傳照片）</li>
+          <li data-i18n="aboutFeat5">筆記本與照片庫（自動壓縮）</li>
+          <li data-i18n="aboutFeat6">記帳（支援多幣別、標籤與收支統計）</li>
+          <li data-i18n="aboutFeat7">番茄鐘（時分秒自訂、精細按鈕動畫）</li>
+          <li data-i18n="aboutFeat8">資料備份匯出／匯入</li>
         </ul>
       </div>
     </div>
