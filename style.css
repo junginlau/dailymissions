@@ -570,13 +570,14 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
   .nav { display: none !important; }
   .shortcuts-grid { display: none !important; }
   .app {
-    padding: 16px !important;
-    padding-top: calc(60px + env(safe-area-inset-top) + 16px) !important; /* [NEW] 為固定導覽列留出空間 */
     height: auto !important;
     min-height: 100dvh !important;
+    padding: 80px 3vw 120px !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
     overflow: visible !important;
-    display: flex;
-    flex-direction: column;
   }
   .view,
   .view.active {
@@ -749,12 +750,22 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
     max-height: none !important;
     flex: 0 0 auto !important;
   }
-  .home-layout,
-  .home-main,
-  .home-side {
+  .home-layout,.home-main,.home-side {
     height: auto !important;
     overflow: visible !important;
     flex: 0 0 auto !important; /* [NEW] 避免被拉伸 */
+  }
+  .home-layout {
+    gap: 2% !important;
+  }
+  .home-main {
+    flex: 1 1 68% !important;
+    max-width: 68% !important;
+  }
+  .home-side {
+    flex: 0 0 30% !important;
+    max-width: 30% !important;
+    min-width: 0 !important;
   }
   .stats {
     grid-template-columns: repeat(4, 1fr) !important;
@@ -772,7 +783,9 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
     height: auto !important;
   }
   .tomorrow-col {
-    flex: 0 0 180px !important;
+    flex: 0 0 20% !important;
+    max-width: 220px !important;
+    min-width: 0 !important;
   }
   .today-col {
     flex: 1 1 auto !important;
@@ -806,8 +819,10 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
     gap: 16px !important;
   }
   .cal-sidebar {
-    flex: 0 0 220px !important;
-    width: 220px !important;
+    flex: 0 0 26% !important;
+    width: auto !important;
+    max-width: 280px !important;
+    min-width: 0 !important;
   }
   .cal-main {
     flex: 1 1 auto !important;
@@ -825,18 +840,19 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
     flex: 0 0 auto !important; /* [NEW] 不撐滿剩餘空間 */
   }
   .ledger-form-card {
-    flex: 3 1 0 !important;
-    width: auto !important;
-    max-width: none !important;
-    align-self: flex-start !important; /* [NEW] 表單卡片不貼底 */
-    height: auto !important; /* [NEW] 高度隨內容 */
+    flex: 1 1 34% !important;
+    max-width: 34% !important;
+    min-width: 0 !important;
+    align-self: flex-start !important;
+    height: auto !important;
   }
   .ledger-list-card {
-    flex: 6 1 0 !important;
-    width: auto !important;
-    max-width: none !important;
-    min-height: 0 !important; /* [NEW] 不再強制 400px，避免撐高整行 */
+    flex: 1 1 64% !important;
+    max-width: 64% !important;
+    min-width: 0 !important;
     align-self: flex-start !important;
+    height: auto !important;
+    min-height: 0 !important;
   }
   .ledger-layout > .ledger-list-card {
     height: auto !important;
