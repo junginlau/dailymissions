@@ -253,22 +253,28 @@
   <section class="view" id="view-calendar">
     <h1 data-i18n="viewCalendarTitle">日曆</h1>
     <p class="sub" data-i18n="viewCalendarSub">點選任何一天，記下那天的重要事項。</p>
-    <div class="cal-container">
-      <div class="card cal-card">
-        <div class="cal-head">
-          <div class="cal-nav">
-            <button class="mini" id="calPrev" aria-label="上個月" style="width:24px;height:24px;font-size:13px;">‹</button>
-            <div class="t" id="calTitle">—</div>
-            <button class="mini" id="calNext" aria-label="下個月" style="width:24px;height:24px;font-size:13px;">›</button>
+    <div class="cal-layout">
+      <aside class="cal-sidebar card">
+        <h3 class="cal-sidebar-title" data-i18n="calSidebarTitle">接下來的要事</h3>
+        <div class="cal-sidebar-list scroll-box" id="calSidebarList"></div>
+      </aside>
+      <div class="cal-main">
+        <div class="card cal-card">
+          <div class="cal-head">
+            <div class="cal-nav">
+              <button class="mini" id="calPrev" aria-label="上個月" style="width:24px;height:24px;font-size:13px;">‹</button>
+              <div class="t" id="calTitle">—</div>
+              <button class="mini" id="calNext" aria-label="下個月" style="width:24px;height:24px;font-size:13px;">›</button>
+            </div>
+            <div class="cal-jump-wrap">
+              <span data-i18n="calJump">跳轉日期：</span>
+              <input type="date" id="calJumpDate" title="點擊選擇年/月/日">
+              <button class="btn ghost" id="calToday" style="padding:4px 10px;font-size:12px;" data-i18n="calToday">今天</button>
+            </div>
           </div>
-          <div class="cal-jump-wrap">
-            <span data-i18n="calJump">跳轉日期：</span>
-            <input type="date" id="calJumpDate" title="點擊選擇年/月/日">
-            <button class="btn ghost" id="calToday" style="padding:4px 10px;font-size:12px;" data-i18n="calToday">今天</button>
-          </div>
+          <div class="cal-tz" id="calTz"></div>
+          <div class="cal-grid" id="calGrid"></div>
         </div>
-        <div class="cal-tz" id="calTz"></div>
-        <div class="cal-grid" id="calGrid"></div>
       </div>
     </div>
   </section>

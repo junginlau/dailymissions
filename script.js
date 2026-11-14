@@ -854,6 +854,50 @@
       else { const key = y + '-' + pad(m + 1) + '-' + pad(dn); const list = events[key] || []; const isToday = key === tk; const star = list.length > 0 ? ' ⭐' : ''; html += '<button class="cal-cell' + (isToday ? ' today' : '') + '" data-date="' + key + '">' + dn + star + '</button>'; }
     }
     $('#calGrid').innerHTML = html;
+    renderCalSidebar();
+  }
+
+  function renderCalSidebar() {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    const listEl = $('#calSidebarList');
+    if (!listEl) return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const allEvents = [];
+
+    // 收集所有事件
+    Object.keys(events).forEach(function (k) {
+      const targetDate = keyToDate(k);
+      if (targetDate < today) return; // 只顯示今天與未來
+      (events[k] || []).forEach(function (ev) {
+        allEvents.push({ date: k, time: ev.time || '', title: ev.title, content: ev.content || '' });
+      });
+    });
+
+    // 根據日期與時間排序
+    allEvents.sort(function (a, b) {
+      if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+      if (!a.time && !b.time) return 0;
+      if (!a.time) return -1;
+      if (!b.time) return 1;
+      return a.time < b.time ? -1 : (a.time > b.time ? 1 : 0);
+    });
+
+    if (!allEvents.length) {
+      listEl.innerHTML = '<div class="empty small" style="padding:6px 0;">' + (dict.upcomingEmpty || '近期沒有要事。') + '</div>';
+      return;
+    }
+
+    listEl.innerHTML = allEvents.map(function (ev) {
+      const d = keyToDate(ev.date);
+      const dateLabel = d.getFullYear() + '/' + pad(d.getMonth() + 1) + '/' + pad(d.getDate());
+      const timeLabel = ev.time ? '<span class="cal-sidebar-time">' + escapeHtml(ev.time) + '</span>' : '';
+      return '<div class="cal-sidebar-item">' +
+               '<div class="cal-sidebar-date">' + dateLabel + ' ' + timeLabel + '</div>' +
+               '<div class="cal-sidebar-ev-title">' + escapeHtml(ev.title) + '</div>' +
+             '</div>';
+    }).join('');
   }
   function inCalendarRange(date) { const now = new Date(); const minIdx = monthIndex(now.getFullYear(), now.getMonth()) - 6; const maxIdx = monthIndex(now.getFullYear(), now.getMonth()) + 12; const idx = monthIndex(date.getFullYear(), date.getMonth()); return idx >= minIdx && idx <= maxIdx; }
   function shiftMonth(delta) { const now = new Date(); const minIdx = monthIndex(now.getFullYear(), now.getMonth()) - 6; const maxIdx = monthIndex(now.getFullYear(), now.getMonth()) + 12; const cur = monthIndex(calCursor.getFullYear(), calCursor.getMonth()); const next = cur + delta; if (next < minIdx || next > maxIdx) return; calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() + delta, 1); renderCalendar(); }

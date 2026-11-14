@@ -102,7 +102,7 @@ input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius
 .set-note { margin-top: 14px; font-size: 11px; line-height: 1.6; color: var(--fg-dim); opacity: .85; }
 
 /* ══════════ 基礎佈局 ══════════ */
-.app { position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; padding: 80px 24px 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+.app { position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; padding: 80px 24px 24px; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 .view { display: none; }
 .view.active { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; animation: fadeUp .4s var(--ease) both; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
@@ -116,7 +116,7 @@ h1 { font-size: clamp(24px, 4vw, 34px); font-weight: 700; letter-spacing: -.02em
 .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .empty { padding: 26px 10px; text-align: center; font-size: 13px; color: var(--fg-dim); line-height: 1.7; }
 .empty.small { padding: 12px 6px; font-size: 12px; }
-.scroll-box { flex: 1 1 auto; min-height: 0; overflow-y: auto; border: none; background: transparent; padding-right: 6px; scroll-behavior: smooth; }
+.scroll-box { flex: 1 1 auto; min-height: 0; overflow-y: auto; border: none; background: transparent; padding-right: 6px; padding-bottom: 16px; scroll-behavior: smooth; }
 .scroll-box::-webkit-scrollbar { width: 6px; }
 .scroll-box::-webkit-scrollbar-track { background: transparent; }
 .scroll-box::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 999px; }
@@ -255,6 +255,17 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
 .cal-cell.muted { color: var(--fg-dim); opacity: .3; cursor: default; }
 .cal-cell.muted:hover { background: transparent; }
 .cal-cell.today { background: var(--fg); color: var(--ink-inv); font-weight: 700; }
+/* 日曆外層佈局 */
+.cal-layout {display: flex;gap: 20px;flex: 1 1 auto;min-height: 0;margin-top: 16px;width: 100%;}
+.cal-sidebar {flex: 0 0 260px;display: flex;flex-direction: column;padding: 16px;height: 100%;min-height: 0;}
+.cal-sidebar-title {font-size: 15px;font-weight: 600;margin-bottom: 12px;color: var(--fg);}
+.cal-sidebar-list {display: flex;flex-direction: column;gap: 8px;}
+.cal-sidebar-item {padding: 10px 12px;border-radius: 10px;background: var(--hover);display: flex;flex-direction: column;gap: 4px;transition: background .2s var(--ease);}
+.cal-sidebar-item:hover {background: var(--panel-border);}
+.cal-sidebar-date {font-size: 12px;color: var(--fg-dim);font-variant-numeric: tabular-nums;display: flex;gap: 6px;align-items: center;}
+.cal-sidebar-time {font-weight: 600;color: var(--fg);}
+.cal-sidebar-ev-title {font-size: 14px;font-weight: 500;color: var(--fg);line-height: 1.4;word-break: break-word;}
+.cal-main {flex: 1 1 auto;min-width: 0;display: flex;flex-direction: column;}
 
 /* 日記 */
 #view-diary.active { display: flex; flex-direction: column; height: 100%; min-height: 0; }
@@ -533,7 +544,8 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
   line-height: 1.4; 
   width: 100%;
   background: var(--bg);
-  border-top: 1px solid var(--panel-border); /* 加個上邊框區隔 */
+  border-top: 1px solid var(--panel-border);
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
 }
 .site-footer a { color: var(--fg); text-decoration: none; font-weight: 500; transition: color 0.2s; }
 .site-footer a:hover { color: #6AA9FF; }
@@ -580,7 +592,7 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
   .bookmarks { height: auto; max-height: none; flex: 0 0 auto; }
   .bm-list { max-height: 300px; overflow-y: auto; overflow-x: hidden; }
 
-  .site-footer { padding: 10px 16px 85px 16px !important; text-align: left !important; font-size: 11px; line-height: 1.4; white-space: normal; margin-bottom: 0; margin-top: 0 !important; background: transparent; border-top: none; }
+  .site-footer { padding: 10px 16px 85px 16px !important; padding-bottom: calc(85px + env(safe-area-inset-bottom)) !important; text-align: left !important; font-size: 11px; line-height: 1.4; white-space: normal; margin-bottom: 0; margin-top: 0 !important; background: transparent; border-top: none; }
   .site-footer div { max-width: calc(100% - 60px); }
   .about-layout { grid-template-columns: 1fr; }
 
@@ -599,6 +611,9 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
   .cal-card { height: auto; }
   .cal-grid { grid-template-rows: auto; }
   .cal-cell { aspect-ratio: 1 / 1; }
+  .cal-layout {flex-direction: column !important;height: auto !important;}
+  .cal-sidebar {flex: 0 0 auto !important;width: 100% !important;max-height: 300px !important;height: auto !important;}
+  .cal-main {flex: 0 0 auto !important;width: 100% !important;}
   .cal-head { flex-direction: column; align-items: flex-start; }
   .cal-jump-wrap { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
   .cal-jump-wrap input[type="date"] { flex: 1 1 120px; width: auto; margin-bottom: 0; }
@@ -643,42 +658,126 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
 
 /* ═══════════════ iPad 平板專屬修正 (769px ~ 1100px) ═══════════════ */
 @media (min-width: 769px) and (max-width: 1100px) {
-  html, body { overflow-y: auto !important; overflow-x: hidden; }
+  html, body { 
+    overflow-y: auto !important; 
+    overflow-x: hidden; 
+  }
   .app { 
     height: auto !important; 
-    min-height: 100vh !important; 
+    min-height: 100dvh !important;
     padding: 80px 24px 40px !important; 
-    max-width: 900px !important; 
+    max-width: 960px !important; 
     margin: 0 auto !important; 
-    align-items: stretch !important;
+    display: flex !important;
+    flex-direction: column !important;
     overflow: visible !important;
   }
   .view.active {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
     height: auto !important;
     min-height: 0 !important;
-    flex: 0 0 auto !important;
     overflow: visible !important;
   }
   .scroll-box {
     overflow-y: visible !important;
     flex: 0 0 auto !important;
   }
+  
+  /* 首頁：恢復左右比例，僅縮小整體寬度 */
   .home-layout { 
-    flex-direction: column !important; 
-    justify-content: center !important;
-    align-items: center !important;
+    flex-direction: row !important; 
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    gap: 16px !important;
     height: auto !important;
+    width: 100% !important;
   }
-  .home-main { width: 100% !important; max-width: 800px !important; flex: 0 0 auto !important; overflow-y: visible !important; }
-  .home-side { width: 100% !important; max-width: 800px !important; flex: 0 0 auto !important; overflow-y: visible !important; }
-  .today-layout { flex-direction: row !important; align-items: flex-start !important; justify-content: center !important; height: auto !important; }
-  .today-card { flex: 1 1 auto !important; height: auto !important; min-height: 250px !important; max-width: 650px !important; margin: 0 auto !important; }
-  .ledger-layout { flex-direction: column !important; align-items: center !important; height: auto !important; }
-  .ledger-form-card { width: 100% !important; max-width: 500px !important; }
-  .ledger-list-card { width: 100% !important; max-width: 800px !important; min-height: 400px !important; }
-  .cal-container { max-width: 100% !important; height: auto !important; }
+  .home-main { 
+    flex: 1 1 auto !important; 
+    min-width: 0 !important; 
+    max-width: none !important; 
+    overflow-y: visible !important; 
+  }
+  .home-side { 
+    flex: 0 0 240px !important; 
+    width: 240px !important; 
+    max-width: 240px !important; 
+    overflow-y: visible !important; 
+  }
+  .stats { grid-template-columns: repeat(4, 1fr) !important; }
+  .shortcuts-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* 每週必做：左右並排 */
+  .today-layout { 
+    flex-direction: row !important; 
+    align-items: flex-start !important; 
+    justify-content: space-between !important;
+    gap: 16px !important;
+    height: auto !important; 
+  }
+  .tomorrow-col { flex: 0 0 180px !important; }
+  .today-col { flex: 1 1 auto !important; }
+  .today-card { 
+    height: auto !important; 
+    min-height: 300px !important; 
+    max-width: none !important; 
+    margin: 0 !important; 
+  }
+
+  /* 日曆：滿版並置中 */
+  .cal-container { 
+    max-width: 720px !important; 
+    width: 100% !important;
+    height: auto !important; 
+    margin: 16px auto 0 !important;
+    align-self: center !important;
+  }
+  .cal-card { height: auto !important; }
+  .cal-grid { grid-template-rows: auto !important; }
+  .cal-cell { aspect-ratio: 1 / 1; }
+  .cal-layout {
+    flex-direction: row !important;
+    gap: 16px !important;
+  }
+  .cal-sidebar {
+    flex: 0 0 220px !important;
+    width: 220px !important;
+  }
+  .cal-main {
+    flex: 1 1 auto !important;
+    width: auto !important;
+  }
+
+  /* 記帳：左右並排 3 : 6 */
+  .ledger-layout { 
+    flex-direction: row !important; 
+    align-items: flex-start !important; 
+    gap: 16px !important;
+    height: auto !important; 
+  }
+  .ledger-form-card { 
+    flex: 3 1 0 !important; 
+    width: auto !important; 
+    max-width: none !important; 
+  }
+  .ledger-list-card { 
+    flex: 6 1 0 !important; 
+    width: auto !important; 
+    max-width: none !important; 
+    min-height: 400px !important; 
+  }
+
+  /* 關於本站 */
   .about-layout { justify-content: center !important; }
-  .site-footer { margin-top: auto !important; padding-bottom: 30px !important; text-align: center !important; }
+
+  /* Footer 貼底 */
+  .site-footer { 
+    margin-top: auto !important; 
+    padding-bottom: calc(20px + env(safe-area-inset-bottom)) !important; 
+    text-align: center !important; 
+  }
   .nav { height: 64px !important; padding-top: 0 !important; }
 }
 

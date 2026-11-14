@@ -355,6 +355,7 @@ const I18N = {
     aboutFeat6: '記帳（支援多幣別、標籤與收支統計）',
     aboutFeat7: '番茄鐘（時分秒自訂、精細按鈕動畫）',
     aboutFeat8: '資料備份匯出／匯入',
+    calSidebarTitle: '接下來的要事',
   },
   'en': {
     // Landing Page
@@ -712,6 +713,7 @@ const I18N = {
     aboutFeat6: 'Ledger (Multi-currency, tags, stats)',
     aboutFeat7: 'Pomodoro Timer (Custom time, animations)',
     aboutFeat8: 'Data backup export / import',
+    calSidebarTitle: 'Upcoming Events',
   },
   'ja': {
     // Landing Page
@@ -1069,6 +1071,7 @@ const I18N = {
     aboutFeat6: '家計簿（多通貨、タグ、統計）',
     aboutFeat7: 'ポモドーロタイマー（カスタム時間、アニメーション）',
     aboutFeat8: 'データバックアップのエクスポート / インポート',
+    calSidebarTitle: '今後の予定',
   }
 };
 
