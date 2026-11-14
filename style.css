@@ -103,7 +103,21 @@ input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius
 .set-note { margin-top: 14px; font-size: 11px; line-height: 1.6; color: var(--fg-dim); opacity: .85; }
 
 /* ══════════ 基礎佈局 ══════════ */
-.app { position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; padding: 80px 24px 24px; height: 100vh; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; }.view { display: none; }
+.app {
+  position: relative;
+  z-index: 1;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 80px 24px 80px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.view {
+  display: none;
+}
 .view.active { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; animation: fadeUp .4s var(--ease) both; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 h1 { font-size: clamp(24px, 4vw, 34px); font-weight: 700; letter-spacing: -.02em; line-height: 1.2; flex: 0 0 auto; }
@@ -531,23 +545,30 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
 .toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%) translateY(12px); background: var(--fg); color: var(--ink-inv); padding: 10px 20px; border-radius: 999px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .28s var(--ease), transform .28s var(--ease); z-index: 2000; max-width: 86vw; text-align: center; }
 .toast.show { opacity: 1; transform: translateX(-50%); }
 
-/* Footer */
-.site-footer { 
-  text-align: center; 
-  padding: 10px 20px; 
-  font-size: 12px; 
-  color: var(--fg-dim); 
-  opacity: 0.8; 
-  z-index: 10; 
-  position: relative; 
-  flex-shrink: 0; 
-  line-height: 1.4; 
-  width: 100%;
-  background: transparent;
-  border-top: 1px solid var(--panel-border);
+/* Footer（固定在视口底部，主内容区内部滚动） */
+.site-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 90;
+  text-align: center;
+  padding: 10px 20px;
   padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  font-size: 12px;
+  color: var(--fg-dim);
+  opacity: 0.85;
+  line-height: 1.4;
+  width: 100%;
+  background: var(--nav-bg);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border-top: 1px solid var(--panel-border);
+  pointer-events: none;
 }
-.site-footer a { color: var(--fg); text-decoration: none; font-weight: 500; transition: color 0.2s; }
+.site-footer a {
+  pointer-events: auto;
+}
 .site-footer a:hover { color: #6AA9FF; }
 
 /* 首次歡迎卡片 */
@@ -570,14 +591,15 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
   .nav { display: none !important; }
   .shortcuts-grid { display: none !important; }
   .app {
-    height: auto !important;
-    min-height: 100dvh !important;
-    padding: 80px 3vw 120px !important;
-    max-width: 100% !important;
-    margin: 0 auto !important;
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: visible !important;
+    padding: 16px !important;
+    padding-top: calc(60px + env(safe-area-inset-top) + 16px) !important;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+    height: 100dvh !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    display: flex;
+    flex-direction: column;
   }
   .view,
   .view.active {
@@ -629,18 +651,13 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
 
   .site-footer {
     padding: 10px 16px !important;
-    padding-bottom: calc(140px + env(safe-area-inset-bottom)) !important; /* [NEW] 容納底部導覽 + 更多選單展開 */
-    text-align: left !important;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+    text-align: center !important;
     font-size: 11px;
     line-height: 1.4;
-    white-space: normal;
-    margin-bottom: 0;
-    margin-top: 0 !important;
-    background: transparent;
-    border-top: none;
   }
   .site-footer div {
-    max-width: calc(100% - 60px);
+    max-width: 100%;
   }
   .about-layout { grid-template-columns: 1fr; }
 
@@ -686,7 +703,12 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
   .mobile-nav-btn { flex: 1; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; margin: 0 !important; padding: 0 !important; text-align: center !important; background: transparent; border: none; color: var(--fg-dim); font-size: 10px; cursor: pointer; transition: color .2s; }
   .mobile-nav-btn svg { width: 22px; height: 22px; }
   .mobile-nav-btn.active { color: var(--fg); }
-
+  .site-footer {
+    bottom: calc(64px + env(safe-area-inset-bottom)) !important;
+    padding-bottom: 10px !important;
+    z-index: 1400;
+  }
+  
   .mobile-more-menu { position: fixed; bottom: 74px; left: 16px; right: 16px; background: var(--panel-bg-solid); border: 1px solid var(--panel-border); border-radius: 16px; padding: 8px; display: flex; flex-direction: column; gap: 4px; z-index: 1400; box-shadow: 0 10px 30px rgba(0,0,0,.2); opacity: 0; transform: translateY(10px); pointer-events: none; transition: opacity .2s, transform .2s; -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); }
   .mobile-more-menu.open { opacity: 1; transform: none; pointer-events: auto; }
   .mobile-more-menu button { padding: 12px; text-align: center; font-size: 15px; font-weight: 500; color: var(--fg); background: transparent; border: none; border-radius: 10px; cursor: pointer; }
@@ -704,33 +726,26 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
   .modal-card { padding: 16px; }
 }
 
-/* ═══════════════ iPad 平板專屬修正 (769px ~ 1100px) ═══════════════ */
+/* ═══════════════ 平板區間（流式佈局 + 主內容內部滾動） ═══════════════ */
 @media (min-width: 769px) and (max-width: 1366px) {
-  html,
-  body {
-    overflow-y: auto !important;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-  }
   .app {
-    height: auto !important;
-    min-height: 100dvh !important;
-    padding: 80px 24px 120px !important; /* [NEW] 底部留足空間，避免貼 footer */
-    max-width: 960px !important;
+    height: 100vh !important;
+    min-height: 0 !important;
+    padding: 80px 3vw 90px !important;
+    max-width: 100% !important;
     margin: 0 auto !important;
     display: flex !important;
     flex-direction: column !important;
-    overflow: visible !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
   }
   .view.active {
     display: flex !important;
     flex-direction: column !important;
-    flex: 0 0 auto !important;
+    flex: 1 1 auto !important;
     height: auto !important;
     min-height: 0 !important;
     overflow: visible !important;
-    justify-content: flex-start !important;
-    align-items: stretch !important;
   }
   #view-todo.active,
   #view-calendar.active,
@@ -741,19 +756,22 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
   #view-about.active {
     height: auto !important;
     min-height: 0 !important;
-    flex: 0 0 auto !important;
+    flex: 1 1 auto !important;
     overflow: visible !important;
   }
   .scroll-box {
-    overflow: visible !important;
+    overflow-y: auto !important;
     height: auto !important;
     max-height: none !important;
-    flex: 0 0 auto !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
   }
-  .home-layout,.home-main,.home-side {
+  .home-layout,
+  .home-main,
+  .home-side {
     height: auto !important;
     overflow: visible !important;
-    flex: 0 0 auto !important; /* [NEW] 避免被拉伸 */
+    flex: 0 0 auto !important;
   }
   .home-layout {
     gap: 2% !important;
@@ -761,6 +779,7 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
   .home-main {
     flex: 1 1 68% !important;
     max-width: 68% !important;
+    min-width: 0 !important;
   }
   .home-side {
     flex: 0 0 30% !important;
@@ -774,13 +793,15 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
     grid-template-columns: repeat(2, 1fr) !important;
   }
 
-  /* 每週必做：左右並排 */
+  /* 每週必做：左右並排，相對寬度 */
   .today-layout {
     flex-direction: row !important;
     align-items: flex-start !important;
     justify-content: space-between !important;
     gap: 16px !important;
     height: auto !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
   }
   .tomorrow-col {
     flex: 0 0 20% !important;
@@ -789,55 +810,69 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
   }
   .today-col {
     flex: 1 1 auto !important;
+    min-width: 0 !important;
   }
   .today-card {
-    height: auto !important;
+    height: 100% !important;
     min-height: 300px !important;
     max-width: none !important;
     margin: 0 !important;
   }
 
-  /* 日曆：滿版並置中 */
-  .cal-container {
-    max-width: 720px !important;
-    width: 100% !important;
-    height: auto !important;
-    margin: 16px auto 0 !important;
-    align-self: center !important;
-  }
-  .cal-card {
-    height: auto !important;
-  }
-  .cal-grid {
-    grid-template-rows: auto !important;
-  }
-  .cal-cell {
-    aspect-ratio: 1 / 1;
-  }
+  /* 日曆：填滿可用寬高，格子自適應 */
   .cal-layout {
     flex-direction: row !important;
-    gap: 16px !important;
+    gap: 2% !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
   }
   .cal-sidebar {
     flex: 0 0 26% !important;
     width: auto !important;
     max-width: 280px !important;
     min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
   }
   .cal-main {
     flex: 1 1 auto !important;
     width: auto !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  .cal-card {
+    flex: 1 1 auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+  .cal-container {
+    max-width: 100% !important;
+    width: 100% !important;
+    height: 100% !important;
+    margin: 16px 0 0 !important;
+    align-self: stretch !important;
+  }
+  .cal-grid {
+    grid-template-rows: repeat(7, minmax(0, 1fr)) !important;
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+  }
+  .cal-cell {
+    aspect-ratio: auto !important;
+    min-height: 0 !important;
   }
 
-   /* 記帳：左右並排 3 : 6，且不拉伸高度 */
+  /* 記帳：相對寬度，高度各自隨內容 */
   .ledger-layout {
     flex-direction: row !important;
     align-items: flex-start !important;
-    justify-content: flex-start !important; /* [NEW] 從頂部對齊 */
-    gap: 16px !important;
+    justify-content: space-between !important;
+    gap: 2% !important;
     height: auto !important;
-    min-height: 0 !important; /* [NEW] 允許收縮 */
-    flex: 0 0 auto !important; /* [NEW] 不撐滿剩餘空間 */
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
   }
   .ledger-form-card {
     flex: 1 1 34% !important;
@@ -854,21 +889,16 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
     height: auto !important;
     min-height: 0 !important;
   }
-  .ledger-layout > .ledger-list-card {
-    height: auto !important;
-    max-height: none !important;
-  }
 
   /* 關於本站 */
   .about-layout {
     justify-content: center !important;
   }
 
-  /* Footer（平板：自然跟隨內容，不強制貼底） */
+  /* Footer 固定（继承基础规则，这里只微调平板的内边距） */
   .site-footer {
-    margin-top: 40px !important;
-    padding-bottom: calc(40px + env(safe-area-inset-bottom)) !important;
-    text-align: center !important;
+    padding: 10px 24px !important;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom)) !important;
   }
   .nav {
     height: 64px !important;
@@ -876,15 +906,14 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
   }
 }
 
-/* ═══════════════ PWA 與手機底部安全區域終極修正 ═══════════════ */
-@media (max-width: 768px) {
-  .site-footer {
-    padding-bottom: calc(140px + env(safe-area-inset-bottom)) !important;
-    margin-bottom: 0 !important;
-  }
-}
+/* ═══════════════ PWA 底部安全區域 ═══════════════ */
 @media all and (display-mode: standalone) {
-  .site-footer { padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important; }
+  .mobile-nav {
+    padding-bottom: env(safe-area-inset-bottom) !important;
+  }
+  .site-footer {
+    bottom: calc(64px + env(safe-area-inset-bottom)) !important;
+  }
 }
 #diaryContent { resize: none !important; }
 .diary-compose { flex: 0 0 auto; }
