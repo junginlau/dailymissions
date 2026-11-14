@@ -130,7 +130,16 @@ h1 { font-size: clamp(24px, 4vw, 34px); font-weight: 700; letter-spacing: -.02em
 .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .empty { padding: 26px 10px; text-align: center; font-size: 13px; color: var(--fg-dim); line-height: 1.7; }
 .empty.small { padding: 12px 6px; font-size: 12px; }
-.scroll-box { flex: 1 1 auto; min-height: 0; overflow-y: auto; border: none; background: transparent; padding-right: 6px; padding-bottom: 16px; scroll-behavior: smooth; }
+.scroll-box { 
+  flex: 1 1 auto; 
+  min-height: 0; 
+  overflow-y: auto; 
+  border: none; 
+  background: transparent; 
+  padding-right: 6px; 
+  padding-bottom: 100px; /* [NEW] 預留 Footer 空間 */
+  scroll-behavior: smooth; 
+}
 .scroll-box::-webkit-scrollbar { width: 6px; }
 .scroll-box::-webkit-scrollbar-track { background: transparent; }
 .scroll-box::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 999px; }
@@ -609,7 +618,12 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
     overflow: visible !important;
   }
   .home-layout, .home-main, .home-side { height: auto !important; overflow: visible !important; }
-  .scroll-box { overflow: visible !important; height: auto !important; max-height: none !important; padding-bottom: 16px; }
+  .scroll-box { 
+    overflow: visible !important; 
+    height: auto !important; 
+    max-height: none !important; 
+    padding-bottom: 0 !important; 
+  }
   
   /* [NEW] 修復手機版日期輸入框超出界線的問題 */
   input[type="date"], input[type="time"] {
@@ -728,6 +742,19 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
 
 /* ═══════════════ 平板區間（流式佈局 + 主內容內部滾動） ═══════════════ */
 @media (min-width: 769px) and (max-width: 1366px) {
+  /* [NEW] 確保平板下選單正常顯示與作用 */
+  .nav {
+    display: flex !important;
+    justify-content: space-between !important;
+  }
+  .nav-links {
+    display: none !important;
+  }
+  .nav-more-wrap {
+    display: block !important;
+    position: relative;
+  }
+
   .app {
     height: 100vh !important;
     min-height: 0 !important;
@@ -765,6 +792,7 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
     max-height: none !important;
     flex: 1 1 auto !important;
     min-height: 0 !important;
+    padding-bottom: 100px !important; /* [NEW] 預留 Footer 空間，避免被遮擋 */
   }
   .home-layout,
   .home-main,
@@ -825,6 +853,7 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
     gap: 2% !important;
     flex: 1 1 auto !important;
     min-height: 0 !important;
+    padding-bottom: 20px !important; 
   }
   .cal-sidebar {
     flex: 0 0 26% !important;
