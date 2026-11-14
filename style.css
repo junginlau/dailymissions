@@ -543,7 +543,7 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
   flex-shrink: 0; 
   line-height: 1.4; 
   width: 100%;
-  background: var(--bg);
+  background: transparent;
   border-top: 1px solid var(--panel-border);
   padding-bottom: calc(10px + env(safe-area-inset-bottom));
 }
@@ -577,7 +577,14 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
     overflow: visible !important;
     display: flex;
     flex-direction: column;
-  }  .view, .view.active { height: auto !important; min-height: 0 !important; flex: 0 0 auto !important; overflow: visible !important; }
+  }
+  .view,
+  .view.active {
+    height: auto !important;
+    min-height: 0 !important;
+    flex: 0 0 auto !important;
+    overflow: visible !important;
+  }
   .home-layout, .home-main, .home-side { height: auto !important; overflow: visible !important; }
   .scroll-box { overflow: visible !important; height: auto !important; max-height: none !important; padding-bottom: 16px; }
   
@@ -630,7 +637,10 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
     margin-top: 0 !important;
     background: transparent;
     border-top: none;
-  }  .site-footer div { max-width: calc(100% - 60px); }
+  }
+  .site-footer div {
+    max-width: calc(100% - 60px);
+  }
   .about-layout { grid-template-columns: 1fr; }
 
   .nav { display: grid !important; grid-template-columns: auto 1fr auto; padding: 0 12px !important; padding-top: env(safe-area-inset-top) !important; height: calc(60px + env(safe-area-inset-top)) !important; gap: 8px !important; }
@@ -694,8 +704,7 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
 }
 
 /* ═══════════════ iPad 平板專屬修正 (769px ~ 1100px) ═══════════════ */
-/* ═══════════════ iPad 平板專屬修正 (769px ~ 1100px) ═══════════════ */
-@media (min-width: 769px) and (max-width: 1100px) {
+@media (min-width: 769px) and (max-width: 1366px) {
   html,
   body {
     overflow-y: auto !important;
@@ -719,7 +728,20 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
     height: auto !important;
     min-height: 0 !important;
     overflow: visible !important;
-    justify-content: flex-start !important; /* [NEW] 內容從頂部開始，不被拉伸 */
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+  }
+  #view-todo.active,
+  #view-calendar.active,
+  #view-diary.active,
+  #view-notes.active,
+  #view-photos.active,
+  #view-ledger.active,
+  #view-about.active {
+    height: auto !important;
+    min-height: 0 !important;
+    flex: 0 0 auto !important;
+    overflow: visible !important;
   }
   .scroll-box {
     overflow: visible !important;
@@ -813,8 +835,12 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
     flex: 6 1 0 !important;
     width: auto !important;
     max-width: none !important;
-    min-height: 400px !important;
-    align-self: flex-start !important; /* [NEW] 列表卡片不貼底 */
+    min-height: 0 !important; /* [NEW] 不再強制 400px，避免撐高整行 */
+    align-self: flex-start !important;
+  }
+  .ledger-layout > .ledger-list-card {
+    height: auto !important;
+    max-height: none !important;
   }
 
   /* 關於本站 */
@@ -822,9 +848,9 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
     justify-content: center !important;
   }
 
-  /* Footer 貼底（平板：留足底部空間，避免貼邊） */
+  /* Footer（平板：自然跟隨內容，不強制貼底） */
   .site-footer {
-    margin-top: auto !important;
+    margin-top: 40px !important;
     padding-bottom: calc(40px + env(safe-area-inset-bottom)) !important;
     text-align: center !important;
   }
