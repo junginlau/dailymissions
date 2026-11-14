@@ -566,10 +566,13 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
    響應式設計（手機版 < 768px）
    ═══════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-  html, body { overflow-y: auto; overflow-x: hidden; }
-  .nav { display: none !important; } /* [NEW] 手機版隱藏頂部導覽列 */
-  .shortcuts-grid { display: none !important; } /* [NEW] 手機版隱藏首頁四個捷徑方塊 */
-  .app { padding: 16px !important; padding-top: 16px !important; height: auto; min-height: 100vh; overflow: visible; display: flex; flex-direction: column; }
+  html, body { overflow-y: auto !important; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+  .nav { display: none !important; }
+  .shortcuts-grid { display: none !important; }
+  .app { padding: 16px !important; padding-top: 16px !important; height: auto !important; min-height: 100dvh !important; overflow: visible !important; display: flex; flex-direction: column; }
+  .view, .view.active { height: auto !important; min-height: 0 !important; flex: 0 0 auto !important; overflow: visible !important; }
+  .home-layout, .home-main, .home-side { height: auto !important; overflow: visible !important; }
+  .scroll-box { overflow: visible !important; height: auto !important; max-height: none !important; padding-bottom: 16px; }
   
   /* [NEW] 修復手機版日期輸入框超出界線的問題 */
   input[type="date"], input[type="time"] {
@@ -661,6 +664,7 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
   html, body { 
     overflow-y: auto !important; 
     overflow-x: hidden; 
+    -webkit-overflow-scrolling: touch;
   }
   .app { 
     height: auto !important; 
@@ -675,36 +679,20 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
   .view.active {
     display: flex !important;
     flex-direction: column !important;
-    flex: 1 1 auto !important;
+    flex: 0 0 auto !important;
     height: auto !important;
     min-height: 0 !important;
     overflow: visible !important;
   }
   .scroll-box {
-    overflow-y: visible !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
     flex: 0 0 auto !important;
   }
-  
-  /* 首頁：恢復左右比例，僅縮小整體寬度 */
-  .home-layout { 
-    flex-direction: row !important; 
-    justify-content: space-between !important;
-    align-items: flex-start !important;
-    gap: 16px !important;
+  .home-layout, .home-main, .home-side {
     height: auto !important;
-    width: 100% !important;
-  }
-  .home-main { 
-    flex: 1 1 auto !important; 
-    min-width: 0 !important; 
-    max-width: none !important; 
-    overflow-y: visible !important; 
-  }
-  .home-side { 
-    flex: 0 0 240px !important; 
-    width: 240px !important; 
-    max-width: 240px !important; 
-    overflow-y: visible !important; 
+    overflow: visible !important;
   }
   .stats { grid-template-columns: repeat(4, 1fr) !important; }
   .shortcuts-grid { grid-template-columns: repeat(2, 1fr) !important; }
