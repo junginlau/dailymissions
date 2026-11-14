@@ -719,6 +719,7 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
     height: auto !important;
     min-height: 0 !important;
     overflow: visible !important;
+    justify-content: flex-start !important; /* [NEW] 內容從頂部開始，不被拉伸 */
   }
   .scroll-box {
     overflow: visible !important;
@@ -791,12 +792,15 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
     width: auto !important;
   }
 
-  /* 記帳：左右並排 3 : 6，且不拉伸高度 */
+   /* 記帳：左右並排 3 : 6，且不拉伸高度 */
   .ledger-layout {
     flex-direction: row !important;
-    align-items: flex-start !important; /* [NEW] 關鍵：不讓子項被拉伸 */
+    align-items: flex-start !important;
+    justify-content: flex-start !important; /* [NEW] 從頂部對齊 */
     gap: 16px !important;
     height: auto !important;
+    min-height: 0 !important; /* [NEW] 允許收縮 */
+    flex: 0 0 auto !important; /* [NEW] 不撐滿剩餘空間 */
   }
   .ledger-form-card {
     flex: 3 1 0 !important;
@@ -818,10 +822,10 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
     justify-content: center !important;
   }
 
-  /* Footer 貼底 */
+  /* Footer 貼底（平板：留足底部空間，避免貼邊） */
   .site-footer {
     margin-top: auto !important;
-    padding-bottom: calc(20px + env(safe-area-inset-bottom)) !important;
+    padding-bottom: calc(40px + env(safe-area-inset-bottom)) !important;
     text-align: center !important;
   }
   .nav {
@@ -830,10 +834,10 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
   }
 }
 
-/* ═══════════════ PWA 與平板/手機底部安全區域終極修正 ═══════════════ */
-@media (max-width: 1100px) {
-  .site-footer { 
-    padding-bottom: calc(20px + env(safe-area-inset-bottom)) !important; 
+/* ═══════════════ PWA 與手機底部安全區域終極修正 ═══════════════ */
+@media (max-width: 768px) {
+  .site-footer {
+    padding-bottom: calc(140px + env(safe-area-inset-bottom)) !important;
     margin-bottom: 0 !important;
   }
 }
