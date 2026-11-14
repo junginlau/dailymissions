@@ -386,15 +386,40 @@
 
   function initWeather() {
     const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-    if (!navigator.geolocation) { $('#weatherInfo').innerHTML = '⛅ ' + dict.weatherNoGeo; return; }
-    navigator.geolocation.getCurrentPosition(function (pos) {
-      const lat = pos.coords.latitude; const lon = pos.coords.longitude;
-      fetch('https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current_weather=true').then(r => r.json()).then(data => {
-        const w = data.current_weather; const code = w.weathercode; let icon = '⛅';
-        if (code === 0) icon = '☀️'; else if (code === 1 || code === 2) icon = '🌤️'; else if (code === 3) icon = '☁️'; else if (code >= 51 && code <= 67) icon = '🌧️'; else if (code >= 71 && code <= 77) icon = '❄️'; else if (code >= 80 && code <= 82) icon = '🌦️'; else if (code >= 95) icon = '⛈️';
-        $('#weatherInfo').innerHTML = '<span class="weather-icon">' + icon + '</span> ' + w.temperature + '°C · ' + dict.weatherWind + ' ' + w.windspeed + ' km/h';
-      }).catch(() => { $('#weatherInfo').innerHTML = '⛅ ' + dict.weatherFail; });
-    }, function () { $('#weatherInfo').innerHTML = '⛅ ' + dict.weatherNoGeo; }, { timeout: 5000 });
+    const weatherInfo = $('#weatherInfo');
+
+    function fetchWeather(lat, lon) {
+      fetch('https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current_weather=true')
+        .then(r => r.json())
+        .then(data => {
+          const w = data.current_weather; const code = w.weathercode; let icon = '⛅';
+          if (code === 0) icon = '☀️'; else if (code === 1 || code === 2) icon = '🌤️'; else if (code === 3) icon = '☁️'; else if (code >= 51 && code <= 67) icon = '🌧️'; else if (code >= 71 && code <= 77) icon = '❄️'; else if (code >= 80 && code <= 82) icon = '🌦️'; else if (code >= 95) icon = '⛈️';
+          weatherInfo.innerHTML = '<span class="weather-icon">' + icon + '</span> ' + w.temperature + '°C · ' + dict.weatherWind + ' ' + w.windspeed + ' km/h';
+        }).catch(() => {
+          weatherInfo.innerHTML = '⛅ ' + dict.weatherFail;
+        });
+    }
+
+    function fallbackIP() {
+      fetch('https://ipapi.co/json/')
+        .then(r => r.json())
+        .then(data => {
+          if (data && data.latitude && data.longitude) {
+            fetchWeather(data.latitude, data.longitude);
+          } else {
+            weatherInfo.innerHTML = '⛅ ' + dict.weatherNoGeo;
+          }
+        }).catch(() => {
+          weatherInfo.innerHTML = '⛅ ' + dict.weatherFail;
+        });
+    }
+
+    if (!navigator.geolocation) { fallbackIP(); return; }
+    navigator.geolocation.getCurrentPosition(
+      function (pos) { fetchWeather(pos.coords.latitude, pos.coords.longitude); },
+      function () { fallbackIP(); },
+      { timeout: 5000 }
+    );
   }
   initWeather();
 

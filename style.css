@@ -569,8 +569,15 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
   html, body { overflow-y: auto !important; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
   .nav { display: none !important; }
   .shortcuts-grid { display: none !important; }
-  .app { padding: 16px !important; padding-top: 16px !important; height: auto !important; min-height: 100dvh !important; overflow: visible !important; display: flex; flex-direction: column; }
-  .view, .view.active { height: auto !important; min-height: 0 !important; flex: 0 0 auto !important; overflow: visible !important; }
+  .app {
+    padding: 16px !important;
+    padding-top: calc(60px + env(safe-area-inset-top) + 16px) !important; /* [NEW] 為固定導覽列留出空間 */
+    height: auto !important;
+    min-height: 100dvh !important;
+    overflow: visible !important;
+    display: flex;
+    flex-direction: column;
+  }  .view, .view.active { height: auto !important; min-height: 0 !important; flex: 0 0 auto !important; overflow: visible !important; }
   .home-layout, .home-main, .home-side { height: auto !important; overflow: visible !important; }
   .scroll-box { overflow: visible !important; height: auto !important; max-height: none !important; padding-bottom: 16px; }
   
@@ -589,14 +596,41 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
   .scroll-box { overflow-y: visible; padding-right: 0; flex: 0 0 auto; }
   #view-home.active, #view-todo.active, #view-calendar.active, #view-diary.active, #view-notes.active, #view-photos.active, #view-ledger.active { height: auto; min-height: 0; }
 
-  .home-layout { flex-direction: column; height: auto; flex: 0 0 auto; }
-  .home-main, .home-side { width: 100%; height: auto; flex: 0 0 auto; }
-  .home-side { display: flex; flex-direction: column; gap: 16px; }
-  .bookmarks { height: auto; max-height: none; flex: 0 0 auto; }
-  .bm-list { max-height: 300px; overflow-y: auto; overflow-x: hidden; }
+  .home-layout {
+    flex-direction: column;
+    height: auto;
+    flex: 0 0 auto;
+  }
+  .home-main,
+  .home-side {
+    width: 100%;
+    height: auto;
+    flex: 0 0 auto;
+  }
+  .home-side {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  /* [NEW] 手機版隱藏目標、倒數、書籤等玻璃方塊，保持清爽 */
+  .goal-card,
+  .countdown-card,
+  .bookmarks {
+    display: none !important;
+  }
 
-  .site-footer { padding: 10px 16px 85px 16px !important; padding-bottom: calc(85px + env(safe-area-inset-bottom)) !important; text-align: left !important; font-size: 11px; line-height: 1.4; white-space: normal; margin-bottom: 0; margin-top: 0 !important; background: transparent; border-top: none; }
-  .site-footer div { max-width: calc(100% - 60px); }
+  .site-footer {
+    padding: 10px 16px !important;
+    padding-bottom: calc(140px + env(safe-area-inset-bottom)) !important; /* [NEW] 容納底部導覽 + 更多選單展開 */
+    text-align: left !important;
+    font-size: 11px;
+    line-height: 1.4;
+    white-space: normal;
+    margin-bottom: 0;
+    margin-top: 0 !important;
+    background: transparent;
+    border-top: none;
+  }  .site-footer div { max-width: calc(100% - 60px); }
   .about-layout { grid-template-columns: 1fr; }
 
   .nav { display: grid !important; grid-template-columns: auto 1fr auto; padding: 0 12px !important; padding-top: env(safe-area-inset-top) !important; height: calc(60px + env(safe-area-inset-top)) !important; gap: 8px !important; }
@@ -660,18 +694,20 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
 }
 
 /* ═══════════════ iPad 平板專屬修正 (769px ~ 1100px) ═══════════════ */
+/* ═══════════════ iPad 平板專屬修正 (769px ~ 1100px) ═══════════════ */
 @media (min-width: 769px) and (max-width: 1100px) {
-  html, body { 
-    overflow-y: auto !important; 
-    overflow-x: hidden; 
+  html,
+  body {
+    overflow-y: auto !important;
+    overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
   }
-  .app { 
-    height: auto !important; 
+  .app {
+    height: auto !important;
     min-height: 100dvh !important;
-    padding: 80px 24px 40px !important; 
-    max-width: 960px !important; 
-    margin: 0 auto !important; 
+    padding: 80px 24px 120px !important; /* [NEW] 底部留足空間，避免貼 footer */
+    max-width: 960px !important;
+    margin: 0 auto !important;
     display: flex !important;
     flex-direction: column !important;
     overflow: visible !important;
@@ -690,41 +726,58 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
     max-height: none !important;
     flex: 0 0 auto !important;
   }
-  .home-layout, .home-main, .home-side {
+  .home-layout,
+  .home-main,
+  .home-side {
     height: auto !important;
     overflow: visible !important;
+    flex: 0 0 auto !important; /* [NEW] 避免被拉伸 */
   }
-  .stats { grid-template-columns: repeat(4, 1fr) !important; }
-  .shortcuts-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .stats {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+  .shortcuts-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
 
   /* 每週必做：左右並排 */
-  .today-layout { 
-    flex-direction: row !important; 
-    align-items: flex-start !important; 
+  .today-layout {
+    flex-direction: row !important;
+    align-items: flex-start !important;
     justify-content: space-between !important;
     gap: 16px !important;
-    height: auto !important; 
+    height: auto !important;
   }
-  .tomorrow-col { flex: 0 0 180px !important; }
-  .today-col { flex: 1 1 auto !important; }
-  .today-card { 
-    height: auto !important; 
-    min-height: 300px !important; 
-    max-width: none !important; 
-    margin: 0 !important; 
+  .tomorrow-col {
+    flex: 0 0 180px !important;
+  }
+  .today-col {
+    flex: 1 1 auto !important;
+  }
+  .today-card {
+    height: auto !important;
+    min-height: 300px !important;
+    max-width: none !important;
+    margin: 0 !important;
   }
 
   /* 日曆：滿版並置中 */
-  .cal-container { 
-    max-width: 720px !important; 
+  .cal-container {
+    max-width: 720px !important;
     width: 100% !important;
-    height: auto !important; 
+    height: auto !important;
     margin: 16px auto 0 !important;
     align-self: center !important;
   }
-  .cal-card { height: auto !important; }
-  .cal-grid { grid-template-rows: auto !important; }
-  .cal-cell { aspect-ratio: 1 / 1; }
+  .cal-card {
+    height: auto !important;
+  }
+  .cal-grid {
+    grid-template-rows: auto !important;
+  }
+  .cal-cell {
+    aspect-ratio: 1 / 1;
+  }
   .cal-layout {
     flex-direction: row !important;
     gap: 16px !important;
@@ -738,35 +791,43 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
     width: auto !important;
   }
 
-  /* 記帳：左右並排 3 : 6 */
-  .ledger-layout { 
-    flex-direction: row !important; 
-    align-items: flex-start !important; 
+  /* 記帳：左右並排 3 : 6，且不拉伸高度 */
+  .ledger-layout {
+    flex-direction: row !important;
+    align-items: flex-start !important; /* [NEW] 關鍵：不讓子項被拉伸 */
     gap: 16px !important;
-    height: auto !important; 
+    height: auto !important;
   }
-  .ledger-form-card { 
-    flex: 3 1 0 !important; 
-    width: auto !important; 
-    max-width: none !important; 
+  .ledger-form-card {
+    flex: 3 1 0 !important;
+    width: auto !important;
+    max-width: none !important;
+    align-self: flex-start !important; /* [NEW] 表單卡片不貼底 */
+    height: auto !important; /* [NEW] 高度隨內容 */
   }
-  .ledger-list-card { 
-    flex: 6 1 0 !important; 
-    width: auto !important; 
-    max-width: none !important; 
-    min-height: 400px !important; 
+  .ledger-list-card {
+    flex: 6 1 0 !important;
+    width: auto !important;
+    max-width: none !important;
+    min-height: 400px !important;
+    align-self: flex-start !important; /* [NEW] 列表卡片不貼底 */
   }
 
   /* 關於本站 */
-  .about-layout { justify-content: center !important; }
+  .about-layout {
+    justify-content: center !important;
+  }
 
   /* Footer 貼底 */
-  .site-footer { 
-    margin-top: auto !important; 
-    padding-bottom: calc(20px + env(safe-area-inset-bottom)) !important; 
-    text-align: center !important; 
+  .site-footer {
+    margin-top: auto !important;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom)) !important;
+    text-align: center !important;
   }
-  .nav { height: 64px !important; padding-top: 0 !important; }
+  .nav {
+    height: 64px !important;
+    padding-top: 0 !important;
+  }
 }
 
 /* ═══════════════ PWA 與平板/手機底部安全區域終極修正 ═══════════════ */
