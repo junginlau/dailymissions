@@ -1,5 +1,5 @@
 // [NEW] 對應全域正式版 v1.0.8
-const CACHE_NAME = 'my-space-cache-v1.0.9-beta-a';
+const CACHE_NAME = 'my-space-cache-v1.0.9-beta-c';
 
 const ASSETS = [
   './',
