@@ -555,7 +555,21 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
    ═══════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
   html, body { overflow-y: auto; overflow-x: hidden; }
-  .app { padding: 16px !important; padding-top: calc(76px + env(safe-area-inset-top)) !important; height: auto; min-height: 100vh; overflow: visible; display: flex; flex-direction: column; }
+  .nav { display: none !important; } /* [NEW] 手機版隱藏頂部導覽列 */
+  .shortcuts-grid { display: none !important; } /* [NEW] 手機版隱藏首頁四個捷徑方塊 */
+  .app { padding: 16px !important; padding-top: 16px !important; height: auto; min-height: 100vh; overflow: visible; display: flex; flex-direction: column; }
+  
+  /* [NEW] 修復手機版日期輸入框超出界線的問題 */
+  input[type="date"], input[type="time"] {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* [NEW] 手機版相冊：一行五個 */
+  .photo-grid {
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 6px !important;
+  }
   .view { min-height: auto; height: auto; flex: 0 0 auto; }
   .scroll-box { overflow-y: visible; padding-right: 0; flex: 0 0 auto; }
   #view-home.active, #view-todo.active, #view-calendar.active, #view-diary.active, #view-notes.active, #view-photos.active, #view-ledger.active { height: auto; min-height: 0; }
@@ -629,14 +643,52 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
 
 /* ═══════════════ iPad 平板專屬修正 (769px ~ 1100px) ═══════════════ */
 @media (min-width: 769px) and (max-width: 1100px) {
-  .app { height: auto !important; min-height: 100vh !important; padding-bottom: 40px !important; }
-  .today-layout { flex-direction: row !important; align-items: flex-start !important; }
-  .today-card { flex: 1 1 auto !important; height: auto !important; min-height: 250px !important; }
-  .site-footer { margin-top: auto !important; padding-bottom: 30px !important; }
+  html, body { overflow-y: auto !important; overflow-x: hidden; }
+  .app { 
+    height: auto !important; 
+    min-height: 100vh !important; 
+    padding: 80px 24px 40px !important; 
+    max-width: 900px !important; 
+    margin: 0 auto !important; 
+    align-items: stretch !important;
+    overflow: visible !important;
+  }
+  .view.active {
+    height: auto !important;
+    min-height: 0 !important;
+    flex: 0 0 auto !important;
+    overflow: visible !important;
+  }
+  .scroll-box {
+    overflow-y: visible !important;
+    flex: 0 0 auto !important;
+  }
+  .home-layout { 
+    flex-direction: column !important; 
+    justify-content: center !important;
+    align-items: center !important;
+    height: auto !important;
+  }
+  .home-main { width: 100% !important; max-width: 800px !important; flex: 0 0 auto !important; overflow-y: visible !important; }
+  .home-side { width: 100% !important; max-width: 800px !important; flex: 0 0 auto !important; overflow-y: visible !important; }
+  .today-layout { flex-direction: row !important; align-items: flex-start !important; justify-content: center !important; height: auto !important; }
+  .today-card { flex: 1 1 auto !important; height: auto !important; min-height: 250px !important; max-width: 650px !important; margin: 0 auto !important; }
+  .ledger-layout { flex-direction: column !important; align-items: center !important; height: auto !important; }
+  .ledger-form-card { width: 100% !important; max-width: 500px !important; }
+  .ledger-list-card { width: 100% !important; max-width: 800px !important; min-height: 400px !important; }
+  .cal-container { max-width: 100% !important; height: auto !important; }
+  .about-layout { justify-content: center !important; }
+  .site-footer { margin-top: auto !important; padding-bottom: 30px !important; text-align: center !important; }
   .nav { height: 64px !important; padding-top: 0 !important; }
 }
 
-/* ═══════════════ PWA 與手機底部安全區域終極修正 ═══════════════ */
+/* ═══════════════ PWA 與平板/手機底部安全區域終極修正 ═══════════════ */
+@media (max-width: 1100px) {
+  .site-footer { 
+    padding-bottom: calc(20px + env(safe-area-inset-bottom)) !important; 
+    margin-bottom: 0 !important;
+  }
+}
 @media all and (display-mode: standalone) {
   .site-footer { padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important; }
 }
