@@ -79,22 +79,20 @@ body.lock { overflow: hidden; }
 #navMoreBtn { font-size: 20px; font-weight: bold; line-height: 1; padding-bottom: 4px; }
 .nav-more-menu {
   display: none;
-  position: fixed; /* [NEW] 改為 fixed 避免被父層 overflow 切斷 */
+  position: fixed;
   top: 60px;
   left: 20px;
   background: var(--panel-bg-solid);
   border: 1px solid var(--panel-border);
   border-radius: 12px;
   padding: 8px;
-  z-index: 99999; /* [NEW] 最高層級 */
+  z-index: 99999;
   box-shadow: 0 10px 30px rgba(0,0,0,.3);
   min-width: 130px;
   flex-direction: column;
   gap: 4px;
 }
-.nav-more-menu.open {
-  display: flex !important;
-}
+.nav-more-menu.open { display: flex !important; }
 .nav-more-menu button { background: transparent; border: none; color: var(--fg); text-align: left; padding: 10px 16px; font-size: 14px; border-radius: 8px; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
 .nav-more-menu button:hover { background: var(--hover); }
 
@@ -124,23 +122,20 @@ input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius
   z-index: 1;
   max-width: 1280px;
   margin: 0 auto;
-  /* [NEW] 留出頂部導覽列與底部 Footer 的空間 */
   padding: 80px 24px 80px; 
-  height: 100%; /* 使用 100% 跟隨 body */
+  height: 100%;
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* 不讓外層滾動，交給內部 scroll-box */
+  overflow: hidden;
 }
-.view {
-  display: none;
-}
+.view { display: none; }
 .view.active { 
   display: flex; 
   flex-direction: column; 
   flex: 1 1 auto; 
   min-height: 0; 
-  height: 100%; /* 撐滿剩餘空間 */
-  overflow: hidden; /* 禁止視圖本身滾動 */
+  height: 100%;
+  overflow: hidden;
   animation: fadeUp .4s var(--ease) both; 
 }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
@@ -161,10 +156,9 @@ h1 { font-size: clamp(24px, 4vw, 34px); font-weight: 700; letter-spacing: -.02em
   border: none; 
   background: transparent; 
   padding-right: 6px; 
-  /* [NEW] 底部留白由這裡控制，確保滾動到底部時內容不被遮擋 */
   padding-bottom: 140px !important; 
   scroll-behavior: smooth; 
-  -webkit-overflow-scrolling: touch; /* [NEW] 解決 iOS 滑動卡頓 */
+  -webkit-overflow-scrolling: touch;
 }
 .scroll-box::-webkit-scrollbar { width: 6px; }
 .scroll-box::-webkit-scrollbar-track { background: transparent; }
@@ -189,9 +183,9 @@ select,
   padding: 10px 12px;
   outline: none;
   width: 100%;
-  max-width: 100%; /* [NEW] 防止撐破 */
-  min-width: 0;    /* [NEW] 允許縮小 */
-  box-sizing: border-box; /* [NEW] 確保 padding 不增加寬度 */
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   transition: border-color .2s var(--ease), background .2s var(--ease);
 }
 input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, input[type="number"]:focus, textarea:focus, select:focus, .input:focus { border-color: var(--fg-dim); background: transparent; }
@@ -324,7 +318,7 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
   .cal-jump-wrap input[type="date"] {
     flex: 1 1 120px !important;
     width: auto !important;
-    max-width: 100% !important; /* 改為 100% 避免溢出 */
+    max-width: 100% !important;
     margin-bottom: 0 !important;
   }
 .cal-tz { flex: 0 0 auto; font-size: 11px; color: var(--fg-dim); margin-bottom: 12px; letter-spacing: .02em; }
@@ -451,12 +445,10 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
   background: var(--hover); 
   border: 1px solid var(--panel-border); 
   border-radius: 999px; 
-  overflow: hidden; /* 防止內部元素超出圓角 */
+  overflow: hidden;
   transition: all .2s var(--ease); 
 }
-.tag-chip-ledger-wrap:hover { 
-  background: var(--panel-border); 
-}
+.tag-chip-ledger-wrap:hover { background: var(--panel-border); }
 .tag-chip-ledger { 
   font: inherit; 
   font-size: 12px; 
@@ -466,9 +458,7 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
   transition: color .2s var(--ease); 
   user-select: none;
 }
-.tag-chip-ledger:hover { 
-  color: var(--fg); 
-}
+.tag-chip-ledger:hover { color: var(--fg); }
 .tag-del-btn { 
   font: inherit;
   font-size: 14px; 
@@ -654,15 +644,18 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
    響應式設計（手機版 < 768px）
    ═══════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
+  /* [NEW] 恢復手機版自然滾動 */
   html, body { 
     overflow-y: auto !important; 
     overflow-x: hidden; 
     -webkit-overflow-scrolling: touch; 
+    height: auto !important;
+    min-height: 100% !important;
   }
+  
   .app {
     padding: 16px !important;
     padding-top: calc(60px + env(safe-area-inset-top) + 16px) !important;
-    /* [NEW] 為底部導航列與 Footer 預留空間 */
     padding-bottom: calc(140px + env(safe-area-inset-bottom)) !important; 
     height: auto !important;
     min-height: 100dvh !important;
@@ -670,6 +663,7 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
     flex-direction: column;
     overflow: visible !important; 
   }
+  
   .view,
   .view.active {
     height: auto !important;
@@ -677,27 +671,27 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
     flex: 0 0 auto !important;
     overflow: visible !important;
   }
+  
   .home-layout, .home-main, .home-side { height: auto !important; overflow: visible !important; }
+  
   .scroll-box { 
     overflow: visible !important; 
     height: auto !important; 
     max-height: none !important; 
     padding-bottom: 0 !important; 
+    flex: 0 0 auto !important;
   }
   
-  /* [NEW] 修復手機版日期輸入框超出界線的問題 */
   input[type="date"], input[type="time"] {
     max-width: 100% !important;
     box-sizing: border-box !important;
   }
 
-  /* [NEW] 手機版相冊：一行五個 */
   .photo-grid {
     grid-template-columns: repeat(5, 1fr) !important;
     gap: 6px !important;
   }
   .view { min-height: auto; height: auto; flex: 0 0 auto; }
-  .scroll-box { overflow-y: visible; padding-right: 0; flex: 0 0 auto; }
   #view-home.active, #view-todo.active, #view-calendar.active, #view-diary.active, #view-notes.active, #view-photos.active, #view-ledger.active { height: auto; min-height: 0; }
 
   .home-layout {
@@ -716,7 +710,7 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
     flex-direction: column;
     gap: 16px;
   }
-  /* [NEW] 手機版隱藏目標、倒數、書籤等玻璃方塊，保持清爽 */
+  
   .goal-card,
   .countdown-card,
   .bookmarks {
@@ -957,7 +951,6 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
   /* Footer 固定（继承基础规则，这里只微调平板的内边距） */
   .site-footer {
     padding: 10px 24px !important;
-    /* [NEW] 確保 Footer 在平板上不要被網址列擋住，並保留安全區 */
     padding-bottom: calc(10px + env(safe-area-inset-bottom)) !important;
   }
   .nav {
@@ -1007,15 +1000,14 @@ input[type="month"] {
   display: block !important;
   width: 100% !important;
   max-width: 100% !important;
-  min-width: 0 !important;       /* 關鍵：允許它被壓縮到比 Safari 預設值更小 */
-  -webkit-appearance: none !important; /* 移除 Safari 預設外觀 */
+  min-width: 0 !important;
+  -webkit-appearance: none !important;
   appearance: none !important;
   box-sizing: border-box !important;
   padding: 10px 12px !important;
   margin: 0 !important;
 }
 
-/* 針對 Safari 內部的日曆小圖標進行微調，避免它佔用太多空間 */
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator {
   margin-left: 0;
@@ -1023,7 +1015,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
 }
 
-/* 確保日期輸入框在特定的 flex 容器中也能乖乖縮小 */
 .cal-jump-wrap input[type="date"],
 .ledger-form .row input[type="date"],
 .diary-toolbar input[type="date"] {
@@ -1032,37 +1023,36 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   max-width: 100% !important;
 }
 
-/* ═══════════════ 終極滾動與安全區域修正 (手機/平板專用) ═══════════════ */
+/* ═══════════════ 解除鎖定，讓手機與平板自然滾動 ═══════════════ */
 @media (max-width: 1366px) {
-  /* 1. 鎖定外層，禁止整頁滾動 */
+  /* 1. 恢復網頁外層的正常滾動 */
   html, body {
-    height: 100% !important;
-    overflow: hidden !important;
-    -webkit-overflow-scrolling: touch;
+    height: auto !important;
+    min-height: 100% !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
   }
 
-  /* 2. 主程式容器：填滿可用空間，預留頂部與底部空間 */
+  /* 2. 主程式容器：高度自適應，預留底部給導覽列或 Footer */
   .app {
-    height: 100% !important;
-    min-height: 0 !important;
+    height: auto !important;
+    min-height: 100vh !important;
     padding-top: calc(64px + env(safe-area-inset-top) + 10px) !important;
-    padding-bottom: calc(70px + env(safe-area-inset-bottom) + 10px) !important; /* 預留給底部導覽列 */
-    overflow: hidden !important; 
-    display: flex !important;
-    flex-direction: column !important;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+    overflow: visible !important;
   }
 
-  /* 3. 每個視圖都要能撐滿剩餘空間，且不能自己滾動 */
+  /* 3. 解除所有視圖的高度鎖定，讓它們自然撐開 */
+  .view,
   .view.active {
-    flex: 1 1 auto !important;
+    height: auto !important;
     min-height: 0 !important;
-    height: 100% !important;
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: hidden !important; 
+    flex: 0 0 auto !important;
+    overflow: visible !important;
   }
 
-  /* 4. 關鍵：讓內部的「抽屜」可以滾動，並預留底部空間避免被遮擋 */
+  /* 4. 把原本設定為「內部抽屜」的區塊全部解除，恢復自然顯示 */
   .scroll-box,
   .home-main,
   .home-side,
@@ -1073,30 +1063,22 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   .ledger-items,
   .cal-sidebar-list,
   .event-list {
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch;
-    /* 預留底部空間給導覽列（70px）或 Footer，加上 iPhone 的 Home 條空間 */
-    padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important; 
+    height: auto !important;
+    max-height: none !important;
+    flex: 0 0 auto !important;
+    overflow: visible !important;
+    padding-bottom: 0 !important;
   }
 
-  /* 5. 手機版專屬微調 */
+  /* 5. 手機版專屬微調：讓首頁、必做、日曆維持上下排列，交給外層滾動 */
   @media (max-width: 768px) {
-    .app {
-      /* 手機版如果有底部導覽列，需留更多空間 */
-      padding-bottom: calc(90px + env(safe-area-inset-bottom)) !important;
-    }
-    
-    /* 強制首頁在手機版是上下排列，且交給外層的 .app 滾動 */
-    .home-layout {
+    .home-layout, .today-layout {
       flex-direction: column !important;
       height: auto !important;
     }
     .home-main, .home-side {
+      width: 100% !important;
       height: auto !important;
-      overflow: visible !important; /* 把手機版首頁交給外層的 .app 或 body 滾動 */
-      padding-bottom: 0 !important;
     }
   }
 }
