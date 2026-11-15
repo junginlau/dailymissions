@@ -1039,7 +1039,40 @@ html, body {
   -webkit-overflow-scrolling: touch;
 }
 
-/* 確保手機版與平板版都是內部滾動 */
+/* ═══════════════ 任務四：Landing Page 與主程式顯示防呆 ═══════════════ */
+/* 預設隱藏主程式，由 JS 控制顯示 */
+.nav,
+.app,
+.mobile-nav,
+#pomoFab {
+  display: none;
+}
+
+/* Landing Page 預設隱藏，由 JS 控制顯示 */
+#public-landing {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  background: var(--bg, #12141a);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 確保視圖切換正常 */
+.view {
+  display: none !important;
+}
+
+.view.active {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
 @media (max-width: 1366px) {
   .app {
     height: 100% !important;
@@ -1057,6 +1090,7 @@ html, body {
     min-height: 0 !important;
     overflow: hidden !important;
   }
+}
 
   .scroll-box {
     flex: 1 1 auto !important;
