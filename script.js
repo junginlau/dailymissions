@@ -1099,8 +1099,24 @@
   // ==========================================
   function renderNotes() {
     const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-    const grid = $('#notesGrid'); if (!notes.length) { grid.innerHTML = ''; return; }
-    grid.innerHTML = notes.map(function (n) { const excerpt = (n.content || '').replace(/\s+/g, ' ').slice(0, 70); return '<button class="card note" data-id="' + n.id + '">' + (n.image ? '<div class="note-thumb" style="background-image:url(\'' + n.image + '\')"></div>' : '') + '<div class="note-h">' + escapeHtml(n.title || dict.noteUntitled) + '</div><div class="note-b">' + escapeHtml(excerpt) + '</div><div class="note-d">' + escapeHtml(n.date || '') + '</div></button>'; }).join('');
+    const grid = $('#notesGrid'); 
+    if (!notes.length) { 
+      grid.innerHTML = ''; 
+      return; 
+    }
+    
+    // [NEW] 將所有筆記卡片包在一個可以獨立滾動的容器裡
+    const cardsHtml = notes.map(function (n) { 
+      const excerpt = (n.content || '').replace(/\s+/g, ' ').slice(0, 70); 
+      return '<button class="card note" data-id="' + n.id + '">' + 
+               (n.image ? '<div class="note-thumb" style="background-image:url(\'' + n.image + '\')"></div>' : '') + 
+               '<div class="note-h">' + escapeHtml(n.title || dict.noteUntitled) + '</div>' + 
+               '<div class="note-b">' + escapeHtml(excerpt) + '</div>' + 
+               '<div class="note-d">' + escapeHtml(n.date || '') + '</div>' + 
+             '</button>'; 
+    }).join('');
+    
+    grid.innerHTML = '<div class="notes-inner-scroll">' + cardsHtml + '</div>';
   }
   let editingNoteId = null; let noteImageData = null;
   function updateNoteImagePreview() { const wrap = $('#noteImgWrap'); if (noteImageData) { $('#noteImgPreview').src = noteImageData; wrap.hidden = false; } else { $('#noteImgPreview').removeAttribute('src'); wrap.hidden = true; } }

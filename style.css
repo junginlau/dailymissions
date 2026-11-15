@@ -342,8 +342,28 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
 .cal-main {flex: 1 1 auto;min-width: 0;display: flex;flex-direction: column;}
 
 /* 日記 */
-#view-diary.active { display: flex; flex-direction: column; height: 100%; min-height: 0; }
-.diary-compose { flex: 0 0 auto; display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+#view-diary.active { 
+  display: flex; 
+  flex-direction: column; 
+  height: 100%; 
+  min-height: 0; 
+  overflow: hidden; /* 禁止外層滾動 */
+}
+.diary-compose { 
+  flex: 0 0 auto; /* 編輯區固定不壓縮 */
+  display: flex; 
+  flex-direction: column; 
+  gap: 10px; 
+  margin-top: 16px; 
+}
+.diary-viewer {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin-top: 14px;
+  overflow: hidden; /* 讓內部的 .diary-scroll 去滾動 */
+}
 .diary-compose .row select { flex: 1 1 130px; width: auto; }
 .diary-viewer { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; margin-top: 14px; }
 .diary-toolbar { flex: 0 0 auto; display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
@@ -362,8 +382,42 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
 .diary-img-acts { position: absolute; right: 6px; top: 6px; }
 
 /* 筆記本 */
-#view-notes.active { display: flex; flex-direction: column; height: 100%; min-height: 0; }
-.notes-scroll { flex: 1 1 auto; min-height: 0; margin-top: 16px; margin-bottom: 16px; }
+#view-notes.active { 
+  display: flex; 
+  flex-direction: column; 
+  height: 100%; 
+  min-height: 0; 
+  overflow: hidden; /* 禁止外層滾動 */
+}
+
+/* 這是包住卡片的那個「抽屜」，讓它在裡面滾動 */
+.notes-inner-scroll {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 6px;
+  padding-bottom: 20px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 這是原本的 grid，我們把它設為內容物，讓它撐滿抽屜 */
+#notesGrid {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden; /* 讓內部的 .notes-inner-scroll 去滾動 */
+  display: flex;
+  flex-direction: column;
+}
+
+/* 把按鈕釘死在底部，不要跟著卡片跑 */
+#noteAdd {
+  flex: 0 0 auto; /* 固定高度不壓縮 */
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
 .note { text-align: left; font: inherit; cursor: pointer; display: flex; flex-direction: column; gap: 8px; overflow: hidden; transition: transform .25s var(--ease); }
 .note:hover { transform: translateY(-3px); }
 .note-thumb { height: 96px; border-radius: 12px; margin: -2px -2px 2px; background-size: cover; background-position: center; }
