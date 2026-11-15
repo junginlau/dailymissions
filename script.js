@@ -287,12 +287,7 @@
   if (navMoreBtn && navMoreMenu) {
     navMoreBtn.addEventListener('click', function (e) {
       e.preventDefault(); e.stopPropagation();
-      const isOpen = navMoreMenu.style.display === 'flex';
-      if (isOpen) { navMoreMenu.style.display = 'none'; } else {
-        navMoreMenu.style.display = 'flex'; navMoreMenu.style.position = 'fixed'; navMoreMenu.style.top = '60px'; navMoreMenu.style.left = '20px';
-        navMoreMenu.style.flexDirection = 'column'; navMoreMenu.style.background = 'var(--panel-bg-solid)'; navMoreMenu.style.border = '1px solid var(--panel-border)';
-        navMoreMenu.style.borderRadius = '12px'; navMoreMenu.style.padding = '8px'; navMoreMenu.style.zIndex = '99999'; navMoreMenu.style.boxShadow = '0 10px 30px rgba(0,0,0,.3)'; navMoreMenu.style.gap = '4px';
-      }
+      navMoreMenu.classList.toggle('open');
     });
     navMoreMenu.addEventListener('click', function (e) { const btn = e.target.closest('button'); if (btn) { e.stopPropagation(); showView(btn.dataset.view); navMoreMenu.style.display = 'none'; } });
     document.addEventListener('click', function (e) { if (navMoreMenu.style.display === 'flex' && !navMoreMenu.contains(e.target) && e.target !== navMoreBtn) navMoreMenu.style.display = 'none'; });

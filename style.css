@@ -18,8 +18,8 @@
   --panel-bg-solid: rgba(245, 247, 250, 0.92);
 }
 
-html { height: 100%; overflow: hidden; }
-body { height: 100%; overflow: hidden; }
+html { min-height: 100%; }
+body { min-height: 100%; overflow-x: hidden; }
 html { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -125,17 +125,25 @@ input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius
   z-index: 1;
   max-width: 1280px;
   margin: 0 auto;
-  padding: 80px 24px 80px;
-  height: 100vh;
+  /* [NEW] 留出頂部導覽列與底部 Footer 的空間 */
+  padding: 80px 24px 80px; 
+  height: 100%; /* 使用 100% 跟隨 body */
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden; /* 不讓外層滾動，交給內部 scroll-box */
 }
 .view {
   display: none;
 }
-.view.active { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; animation: fadeUp .4s var(--ease) both; }
+.view.active { 
+  display: flex; 
+  flex-direction: column; 
+  flex: 1 1 auto; 
+  min-height: 0; 
+  height: 100%; /* 撐滿剩餘空間 */
+  overflow: hidden; /* 禁止視圖本身滾動 */
+  animation: fadeUp .4s var(--ease) both; 
+}
 @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 h1 { font-size: clamp(24px, 4vw, 34px); font-weight: 700; letter-spacing: -.02em; line-height: 1.2; flex: 0 0 auto; }
 .sub { margin-top: 8px; font-size: 14px; line-height: 1.6; color: var(--fg-dim); font-weight: 400; flex: 0 0 auto; }
@@ -154,8 +162,10 @@ h1 { font-size: clamp(24px, 4vw, 34px); font-weight: 700; letter-spacing: -.02em
   border: none; 
   background: transparent; 
   padding-right: 6px; 
-  padding-bottom: 100px; /* [NEW] 預留 Footer 空間 */
+  /* [NEW] 底部留白由這裡控制，確保滾動到底部時內容不被遮擋 */
+  padding-bottom: 140px !important; 
   scroll-behavior: smooth; 
+  -webkit-overflow-scrolling: touch; /* [NEW] 解決 iOS 滑動卡頓 */
 }
 .scroll-box::-webkit-scrollbar { width: 6px; }
 .scroll-box::-webkit-scrollbar-track { background: transparent; }
@@ -622,6 +632,7 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
   backdrop-filter: blur(24px) saturate(180%);
   border-top: 1px solid var(--panel-border);
   pointer-events: none;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom)) !important;
 }
 .site-footer a {
   pointer-events: auto;
@@ -644,19 +655,15 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
    響應式設計（手機版 < 768px）
    ═══════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-  html, body { overflow-y: auto !important; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
-  .nav { display: none !important; }
-  .shortcuts-grid { display: none !important; }
+  html, body { overflow: hidden !important; }
   .app {
     padding: 16px !important;
     padding-top: calc(60px + env(safe-area-inset-top) + 16px) !important;
-    padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
-    height: 100dvh !important;
-    min-height: 0 !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
+    padding-bottom: 0 !important; /* Footer 的空間交給 scroll-box */
+    height: 100% !important;
     display: flex;
     flex-direction: column;
+    overflow: hidden !important;
   }
   .view,
   .view.active {
@@ -790,44 +797,27 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
 
 /* ═══════════════ 平板區間（流式佈局 + 主內容內部滾動） ═══════════════ */
 @media (min-width: 769px) and (max-width: 1366px) {
-    .app {
-    height: 100vh !important;
-    min-height: 0 !important;
-    padding: 80px 3vw 0 !important; /* 底部 padding 交給 scroll-box */
+  .app {
+    padding: 80px 3vw 0 !important;
     max-width: 100% !important;
     margin: 0 auto !important;
     display: flex !important;
     flex-direction: column !important;
-    overflow-y: hidden !important; /* 讓內部滾動 */
-    overflow-x: hidden !important;
+    height: 100% !important;
+    overflow: hidden !important;
   }
   .view.active {
     display: flex !important;
     flex-direction: column !important;
     flex: 1 1 auto !important;
     height: 100% !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-  }
-  #view-todo.active,
-  #view-calendar.active,
-  #view-diary.active,
-  #view-notes.active,
-  #view-photos.active,
-  #view-ledger.active,
-  #view-about.active {
-    height: 100% !important;
-    min-height: 0 !important;
-    flex: 1 1 auto !important;
     overflow: hidden !important;
   }
   .scroll-box {
     overflow-y: auto !important;
-    height: 100% !important;
-    max-height: 100% !important;
+    height: auto !important;
     flex: 1 1 auto !important;
     min-height: 0 !important;
-    padding-bottom: 120px !important; /* 確保內容能滾動到 Footer 上方 */
   }
   .home-layout,
   .home-main,
@@ -962,6 +952,7 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
   /* Footer 固定（继承基础规则，这里只微调平板的内边距） */
   .site-footer {
     padding: 10px 24px !important;
+    /* [NEW] 確保 Footer 在平板上不要被網址列擋住，並保留安全區 */
     padding-bottom: calc(10px + env(safe-area-inset-bottom)) !important;
   }
   .nav {
