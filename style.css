@@ -758,16 +758,174 @@ input[type="date"], input[type="time"], input[type="datetime-local"], input[type
 input[type="date"]::-webkit-calendar-picker-indicator, input[type="time"]::-webkit-calendar-picker-indicator { margin-left: 0; padding: 0; cursor: pointer; }
 .cal-jump-wrap input[type="date"], .ledger-form .row input[type="date"], .diary-toolbar input[type="date"] { flex: 1 1 auto !important; width: 100% !important; max-width: 100% !important; }
 
-/* 解除鎖定，讓手機與平板自然滾動 */
-@media (max-width: 1366px) {
-  html, body { height: auto !important; min-height: 100% !important; overflow-y: auto !important; overflow-x: hidden !important; -webkit-overflow-scrolling: touch !important; }
-  .app { height: auto !important; min-height: 100vh !important; padding-top: calc(64px + env(safe-area-inset-top) + 10px) !important; padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important; overflow: visible !important; }
-  .view, .view.active { height: auto !important; min-height: 0 !important; flex: 0 0 auto !important; overflow: visible !important; }
-  .scroll-box, .home-main, .home-side, .today-list, .diary-scroll, .notes-scroll, .photos-scroll, .ledger-items, .cal-sidebar-list, .event-list { height: auto !important; max-height: none !important; flex: 0 0 auto !important; overflow: visible !important; padding-bottom: 0 !important; }
-  @media (max-width: 768px) {
-    .home-layout, .today-layout { flex-direction: column !important; height: auto !important; }
-    .home-main, .home-side { width: 100% !important; height: auto !important; }
-  }
+/* ═══════════════════════════════════════════════════════
+   桌面版霸權佈局（框框對比高度、只有該滾動的滾動）
+   ═══════════════════════════════════════════════════════ */
+
+/* 確保所有 View 都是滿版，且外層絕對不滾動 */
+.view.active {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
 }
 
-.site-footer { position: fixed; bottom: 0; left: 0; right: 0; z-index: 90; padding-bottom: env(safe-area-inset-bottom) !important; }
+/* 1. 首頁：左邊滑動，右邊固定 */
+.home-layout {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  gap: 22px !important;
+  margin-top: 16px !important;
+  overflow: hidden !important;
+}
+.home-main {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  overflow-y: auto !important; /* 左邊滑動 */
+  padding-right: 6px !important;
+  padding-bottom: 40px !important;
+}
+.home-side {
+  flex: 0 0 280px !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  overflow: hidden !important; /* 右邊固定 */
+}
+
+/* 2. 每週必做：填滿高度，只讓清單滾動 */
+.today-layout {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  gap: 16px !important;
+  margin-top: 20px !important;
+  overflow: hidden !important;
+}
+.today-col {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+.today-card {
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+.today-list {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important; /* 只讓列表滾動 */
+  padding-bottom: 20px !important;
+}
+
+/* 3. 日曆：格子撐滿高度，不讓下面空空如也 */
+.cal-layout {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  gap: 20px !important;
+  margin-top: 16px !important;
+  overflow: hidden !important;
+}
+.cal-card {
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+.cal-grid {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-rows: repeat(7, 1fr) !important; /* 格子填滿 */
+}
+
+/* 4. 日記：左 4 右 3，左邊輸入區自己滑動 */
+#view-diary.active { overflow: hidden !important; }
+.diary-container {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  gap: 20px !important;
+  margin-top: 16px !important;
+  overflow: hidden !important;
+}
+.diary-left {
+  flex: 4 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+  overflow-y: auto !important; /* 左邊滑動 */
+  padding-right: 10px !important;
+}
+.diary-right {
+  flex: 3 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+.diary-right .diary-scroll {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important; /* 右邊列表滑動 */
+}
+#diaryContent {
+  flex: 1 1 auto !important;
+  min-height: 250px !important;
+  resize: vertical !important;
+}
+
+/* 5. 筆記本：按鈕固定在底部，卡片在框框內滾動 */
+#view-notes.active { overflow: hidden !important; }
+.notes-scroll {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  margin-top: 16px !important;
+}
+#notesGrid {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important; /* 卡片滑動 */
+  padding-bottom: 20px !important;
+}
+#noteAdd {
+  flex: 0 0 auto !important;
+  margin-top: 10px !important;
+}
+
+/* 6. 照片庫、記帳、關於本站：填滿高度，只讓內容滑動 */
+#view-photos.active,
+#view-ledger.active,
+#view-about.active {
+  overflow: hidden !important;
+}
+.photos-scroll,
+.ledger-layout,
+.about-layout {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important; /* 內容滑動 */
+  padding-bottom: 40px !important;
+}
+
+/* 修復 Footer 貼底的問題 */
+.site-footer {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 90 !important;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+}
