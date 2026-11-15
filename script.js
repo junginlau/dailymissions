@@ -1754,19 +1754,19 @@
     // 定義全域切換函數（供 HTML onclick 呼叫）
     window.enterDashboard = function() {
       if (landingEl) {
-        landingEl.style.display = 'none';
+        landingEl.style.setProperty('display', 'none', 'important');
       }
       if (navEl) {
-        navEl.style.display = 'flex';
+        navEl.style.setProperty('display', 'flex', 'important');
       }
       if (appMainEl) {
-        appMainEl.style.display = 'flex';
+        appMainEl.style.setProperty('display', 'flex', 'important');
       }
       if (mobileNavEl && window.innerWidth <= 768) {
-        mobileNavEl.style.display = 'flex';
+        mobileNavEl.style.setProperty('display', 'flex', 'important');
       }
       if (pomoFabEl) {
-        pomoFabEl.style.display = 'flex';
+        pomoFabEl.style.setProperty('display', 'flex', 'important');
       }
       if (typeof renderHome === 'function') {
         renderHome();
@@ -1780,19 +1780,19 @@
 
     const showLanding = () => {
       if (landingEl) {
-        landingEl.style.display = 'flex';
+        landingEl.style.setProperty('display', 'flex', 'important');
       }
       if (navEl) {
-        navEl.style.display = 'none';
+        navEl.style.setProperty('display', 'none', 'important');
       }
       if (appMainEl) {
-        appMainEl.style.display = 'none';
+        appMainEl.style.setProperty('display', 'none', 'important');
       }
       if (mobileNavEl) {
-        mobileNavEl.style.display = 'none';
+        mobileNavEl.style.setProperty('display', 'none', 'important');
       }
       if (pomoFabEl) {
-        pomoFabEl.style.display = 'none';
+        pomoFabEl.style.setProperty('display', 'none', 'important');
       }
     };
 
