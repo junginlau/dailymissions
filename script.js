@@ -142,7 +142,7 @@
     // 4. 重新渲染動態內容（讓首頁卡片、清單立刻切換語言）
     updateClock();
     initWeather();
-    updateQuote(); // [NEW] 補上名言重繪
+    updateQuote(); 
     if (typeof renderHome === 'function') renderHome();
     if (typeof renderTodos === 'function') renderTodos();
     if (typeof renderCalendar === 'function') renderCalendar();
@@ -322,7 +322,7 @@
       e.preventDefault();
       closeSettings();
       $('#pomoPanel').classList.remove('open');
-      closePomoEditor(); // 確保關閉番茄鐘編輯器
+      closePomoEditor();
       $$('.modal.open').forEach(function (m) { closeModal('#' + m.id); });
       if ($('#lightbox').classList.contains('open')) closeLightbox();
       return;
@@ -514,13 +514,11 @@
       let existingCard = document.getElementById('welcomeCard');
       
       if (homeMain && !existingCard) {
-        // 首次生成
         const card = document.createElement('div'); card.id = 'welcomeCard'; card.className = 'card welcome-card';
         card.innerHTML = `<div style="font-weight:600; margin-bottom:6px;">${dict.welcomeTitle}</div><div style="font-size:13px; line-height:1.6; color:var(--fg-dim); margin-bottom:10px;">${dict.welcomeDesc}</div><button class="btn primary" id="welcomeCloseBtn" style="font-size:12px; padding:6px 12px;">${dict.welcomeBtn}</button>`;
         homeMain.prepend(card);
         document.getElementById('welcomeCloseBtn').addEventListener('click', () => { LS.set('onboarded', true); card.remove(); });
       } else if (existingCard) {
-        // [NEW] 如果卡片已存在，切換語言時直接更新內容
         existingCard.innerHTML = `<div style="font-weight:600; margin-bottom:6px;">${dict.welcomeTitle}</div><div style="font-size:13px; line-height:1.6; color:var(--fg-dim); margin-bottom:10px;">${dict.welcomeDesc}</div><button class="btn primary" id="welcomeCloseBtn" style="font-size:12px; padding:6px 12px;">${dict.welcomeBtn}</button>`;
         document.getElementById('welcomeCloseBtn').addEventListener('click', () => { LS.set('onboarded', true); existingCard.remove(); });
       }
@@ -866,9 +864,7 @@
     $('#calTz').textContent = dict.calTz.replace('{tz}', TIMEZONE);
     if (!$('#calJumpDate').value) $('#calJumpDate').value = y + '-' + pad(m + 1) + '-01';
     const firstDow = new Date(y, m, 1).getDay(); const daysInMonth = new Date(y, m + 1, 0).getDate(); const daysInPrev = new Date(y, m, 0).getDate(); const totalCells = Math.ceil((firstDow + daysInMonth) / 7) * 7; const tk = todayKey();
-      let html = dict.weekdays.map(function (d) {
-      return '<div class="cal-dow">' + d + '</div>';
-    }).join('');
+    let html = dict.weekdays.map(function (d) { return '<div class="cal-dow">' + d + '</div>'; }).join('');
     for (let i = 0; i < totalCells; i++) {
       const dn = i - firstDow + 1;
       if (dn < 1) html += '<div class="cal-cell muted">' + (daysInPrev + dn) + '</div>';
@@ -1807,3 +1803,5 @@
       showLanding();
     }
   })();
+
+})();
