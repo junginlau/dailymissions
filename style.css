@@ -1032,112 +1032,87 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   max-width: 100% !important;
 }
 
-/* ═══════════════ 強制統一滾動邏輯 (覆蓋所有舊設定) ═══════════════ */
-html, body {
-  height: 100%;
-  overflow: hidden !important; /* 永久鎖定外層滾動 */
-  -webkit-overflow-scrolling: touch;
-}
-
-/* ═══════════════ 任務四：Landing Page 與主程式顯示防呆 ═══════════════ */
-/* 預設隱藏主程式，由 JS 控制顯示 */
-.nav,
-.app,
-.mobile-nav,
-#pomoFab {
-  display: none !important;
-}
-
-/* Landing Page 預設隱藏，由 JS 控制顯示 */
-#public-landing {
-  display: none !important;
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  z-index: 9999 !important; /* 把它拉到最上層！ */
-  background: var(--bg, #12141a) !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  overflow-y: auto !important;
-}
-
-/* 確保視圖切換正常 */
-.view {
-  display: none !important;
-}
-
-.view.active {
-  display: flex !important;
-  flex-direction: column !important;
-}
-
+/* ═══════════════ 終極滾動與安全區域修正 (手機/平板專用) ═══════════════ */
 @media (max-width: 1366px) {
+  /* 1. 鎖定外層，禁止整頁滾動，讓內容在內部滾動 */
+  html, body {
+    height: 100% !important;
+    overflow: hidden !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 2. 主程式容器：填滿可用空間，留出頂部導覽列與底部導航列的空間 */
   .app {
     height: 100% !important;
     min-height: 0 !important;
-    /* [NEW] 移除 display: flex !important; 讓 JS 的 display: none 能生效 */
+    padding-top: calc(64px + env(safe-area-inset-top) + 10px) !important;
+    padding-bottom: calc(70px + env(safe-area-inset-bottom) + 10px) !important; /* 預留給底部導覽列或 Footer */
+    overflow: hidden !important; /* 外層不滾動 */
+    display: flex !important;
     flex-direction: column !important;
-    overflow: hidden !important;
   }
-  
+
+  /* 3. 每個視圖都要能撐滿剩餘空間 */
   .view.active {
-    /* [NEW] 移除 display: flex !important; 讓 JS 能正確切換 */
-    flex-direction: column !important;
     flex: 1 1 auto !important;
-    height: 100% !important;
     min-height: 0 !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
     overflow: hidden !important;
   }
-}
 
-  .scroll-box {
+  /* 4. 關鍵：讓內部的內容區塊（抽屜）可以滾動，並確保滾動到底部時有足夠的留白 */
+  .scroll-box,
+  .home-main,
+  .home-side,
+  .today-list,
+  .diary-scroll,
+  .notes-scroll,
+  .photos-scroll,
+  .ledger-items,
+  .cal-sidebar-list,
+  .event-list {
     flex: 1 1 auto !important;
     min-height: 0 !important;
-    height: auto !important;
-    max-height: none !important;
-    overflow-y: auto !important; /* 強制內部滾動 */
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 140px !important; /* 確保底部不被 Footer 遮擋 */
-  }
-
-  /* 首頁的左右兩側也要正確滾動 */
-  .home-main, .home-side {
-    height: 100% !important;
     overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    /* 滾動到底部時，預留給手機底部導航列（約 70px）或 Footer 的高度，避免被遮擋 */
+    padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important; 
+  }
+
+  /* 5. 手機版專屬微調 */
+  @media (max-width: 768px) {
+    .app {
+      /* 手機版如果有底部導覽列，需留更多空間 */
+      padding-bottom: calc(90px + env(safe-area-inset-bottom)) !important;
+    }
+    
+    /* 確保首頁的左右兩欄在手機版是上下排列，且可以滾動 */
+    .home-layout {
+      flex-direction: column !important;
+      height: auto !important;
+    }
+    .home-main, .home-side {
+      height: auto !important;
+      overflow: visible !important; /* 讓手機版首頁交給外層的 .app 或 body 滾動，或者確保它們不會被卡住 */
+      padding-bottom: 0 !important;
+    }
+    
+    /* 如果首頁是在 .scroll-box 裡面，強制它滾動 */
+    .home-layout {
+       overflow-y: auto !important;
+    }
   }
 }
 
-/* ═══════════════ 強制修復 iOS/iPadOS 日期與時間輸入框超出 ═══════════════ */
-input[type="date"],
-input[type="time"],
-input[type="datetime-local"],
-input[type="month"] {
-  display: block !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  min-width: 0 !important;
-  -webkit-appearance: none !important;
-  appearance: none !important;
-  box-sizing: border-box !important;
-  padding: 10px 12px !important;
-  margin: 0 !important;
-}
-
-input[type="date"]::-webkit-calendar-picker-indicator,
-input[type="time"]::-webkit-calendar-picker-indicator {
-  margin-left: 0;
-  padding: 0;
-}
-
-/* 確保視圖切換正常（覆蓋底部的強制規則） */
-.view {
-  display: none !important;
-}
-
-.view.active {
-  display: flex !important;
-  flex-direction: column !important;
+/* 確保頁面底部的 Footer 不會擋住內容（給有 Footer 的頁面用） */
+.site-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 90;
+  /* 加上安全區域 */
+  padding-bottom: env(safe-area-inset-bottom) !important; 
 }
