@@ -79,16 +79,15 @@ body.lock { overflow: hidden; }
 #navMoreBtn { font-size: 20px; font-weight: bold; line-height: 1; padding-bottom: 4px; }
 .nav-more-menu {
   display: none;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  margin-top: 8px;
+  position: fixed; /* [NEW] 改為 fixed 避免被父層 overflow 切斷 */
+  top: 60px;
+  left: 20px;
   background: var(--panel-bg-solid);
   border: 1px solid var(--panel-border);
   border-radius: 12px;
   padding: 8px;
-  z-index: 99999;
-  box-shadow: 0 10px 30px rgba(0,0,0,.2);
+  z-index: 99999; /* [NEW] 最高層級 */
+  box-shadow: 0 10px 30px rgba(0,0,0,.3);
   min-width: 130px;
   flex-direction: column;
   gap: 4px;
@@ -1031,4 +1030,94 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   flex: 1 1 auto !important;
   width: 100% !important;
   max-width: 100% !important;
+}
+
+/* ═══════════════ 強制統一滾動邏輯 (覆蓋所有舊設定) ═══════════════ */
+html, body {
+  height: 100%;
+  overflow: hidden !important; /* 永久鎖定外層滾動 */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 確保手機版與平板版都是內部滾動 */
+@media (max-width: 1366px) {
+  .app {
+    height: 100% !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+  
+  .view.active {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .scroll-box {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: auto !important; /* 強制內部滾動 */
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 140px !important; /* 確保底部不被 Footer 遮擋 */
+  }
+
+  /* 首頁的左右兩側也要正確滾動 */
+  .home-main, .home-side {
+    height: 100% !important;
+    overflow-y: auto !important;
+  }
+}
+
+/* ═══════════════ 強制修復 iOS/iPadOS 日期與時間輸入框超出 ═══════════════ */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input[type="month"] {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  box-sizing: border-box !important;
+  padding: 10px 12px !important;
+  margin: 0 !important;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  margin-left: 0;
+  padding: 0;
+}
+
+/* ═══════════════ 底部安全區域終極修正 ═══════════════ */
+.site-footer {
+  padding-bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+  z-index: 90;
+}
+
+/* 手機版：Footer 要浮在底部導航列上方 */
+@media (max-width: 768px) {
+  .site-footer {
+    bottom: calc(64px + env(safe-area-inset-bottom)) !important;
+    z-index: 1400;
+  }
+  .app {
+    padding-top: calc(60px + env(safe-area-inset-top) + 16px) !important;
+    padding-bottom: 0 !important;
+  }
+}
+
+/* 平板版 */
+@media (min-width: 769px) and (max-width: 1366px) {
+  .app {
+    padding: 80px 3vw 0 !important;
+  }
 }
