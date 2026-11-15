@@ -14,8 +14,6 @@
   function keyToDate(key) { const p = key.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
   function fmtDateTime(d) { return d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); }
   function escapeHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  function isNonEmptyString(v) { return typeof v === 'string' && v.length > 0; }
-  function isArray(v) { return Array.isArray(v); }
 
   const STORAGE_OK = (function () {
     try { const k = '__test__'; localStorage.setItem(k, '1'); localStorage.removeItem(k); return true; } catch (e) { return false; }
@@ -109,40 +107,22 @@
   function applyLanguage(lang) {
     if (!window.I18N || !window.I18N[lang]) return;
     const dict = window.I18N[lang];
-    
-    // 1. 替換所有帶有 data-i18n 的靜態元素
     document.querySelectorAll('[data-i18n]').forEach(function(el) {
       const key = el.dataset.i18n;
       if (dict[key]) {
-        if (key === 'landingDesc' || key === 'landingPrivacy' || key === 'welcomeDesc') {
-          el.innerHTML = dict[key];
-        } else {
-          el.textContent = dict[key];
-        }
+        if (key === 'landingDesc' || key === 'landingPrivacy' || key === 'welcomeDesc') el.innerHTML = dict[key];
+        else el.textContent = dict[key];
       }
     });
-
-    // 2. 替換所有帶有 data-i18n-placeholder 的輸入框
     document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
       const key = el.dataset.i18nPlaceholder;
       if (dict[key]) el.placeholder = dict[key];
     });
-
-    // 3. 更新切換按鈕文字（動態顯示下一種語言）
     const nextLangMap = { 'zh-TW': 'EN', 'en': '日本語', 'ja': '中文' };
-    const switchBtn = $('#langSwitchBtn');
-    if (switchBtn) {
-      switchBtn.textContent = nextLangMap[lang] || 'EN';
-    }
-    const landingLangBtn = $('#landingLangBtn');
-    if (landingLangBtn) {
-      landingLangBtn.textContent = nextLangMap[lang] || 'EN';
-    }
+    const switchBtn = $('#langSwitchBtn'); if (switchBtn) switchBtn.textContent = nextLangMap[lang] || 'EN';
+    const landingLangBtn = $('#landingLangBtn'); if (landingLangBtn) landingLangBtn.textContent = nextLangMap[lang] || 'EN';
 
-    // 4. 重新渲染動態內容（讓首頁卡片、清單立刻切換語言）
-    updateClock();
-    initWeather();
-    updateQuote(); // [NEW] 補上名言重繪
+    updateClock(); initWeather(); updateQuote();
     if (typeof renderHome === 'function') renderHome();
     if (typeof renderTodos === 'function') renderTodos();
     if (typeof renderCalendar === 'function') renderCalendar();
@@ -152,8 +132,6 @@
     if (typeof renderGoals === 'function') renderGoals();
     if (typeof renderBookmarks === 'function') renderBookmarks();
     if (typeof renderLedger === 'function') renderLedger();
-
-    // 5. 儲存語言設定
     LS.set('userLang', lang);
   }
 
@@ -278,19 +256,18 @@
     if (name === 'diary') renderDiaries();
     if (name === 'ledger') renderLedger();
     if (name === 'photos') renderPhotos();
-    if (window.innerWidth <= 768) window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   $('#navLinks').addEventListener('click', function (e) { const btn = e.target.closest('.nav-btn'); if (btn) showView(btn.dataset.view); });
 
   const navMoreBtn = $('#navMoreBtn'); const navMoreMenu = $('#navMoreMenu');
   if (navMoreBtn && navMoreMenu) {
-    navMoreBtn.addEventListener('pointerdown', function (e) {
+    navMoreBtn.addEventListener('click', function (e) {
       e.preventDefault(); e.stopPropagation();
       navMoreMenu.classList.toggle('open');
     });
-    navMoreMenu.addEventListener('click', function (e) { const btn = e.target.closest('button'); if (btn) { e.stopPropagation(); showView(btn.dataset.view); navMoreMenu.style.display = 'none'; } });
-    document.addEventListener('click', function (e) { if (navMoreMenu.style.display === 'flex' && !navMoreMenu.contains(e.target) && e.target !== navMoreBtn) navMoreMenu.style.display = 'none'; });
+    navMoreMenu.addEventListener('click', function (e) { const btn = e.target.closest('button'); if (btn) { e.stopPropagation(); showView(btn.dataset.view); navMoreMenu.classList.remove('open'); } });
+    document.addEventListener('click', function (e) { if (navMoreMenu.classList.contains('open') && !navMoreMenu.contains(e.target) && e.target !== navMoreBtn) navMoreMenu.classList.remove('open'); });
   }
 
   mobileNavBtns.forEach(function (btn) { btn.addEventListener('click', function () { const view = this.dataset.view; if (view === 'more') { mobileMoreMenu.classList.toggle('open'); } else { showView(view); } }); });
@@ -316,52 +293,27 @@
 
   document.addEventListener('keydown', function (e) {
     const tag = document.activeElement.tagName; if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-
-    // 1. Esc 關閉所有彈窗與面板
     if (e.key === 'Escape') {
-      e.preventDefault();
-      closeSettings();
-      $('#pomoPanel').classList.remove('open');
-      closePomoEditor(); // 確保關閉番茄鐘編輯器
+      e.preventDefault(); closeSettings(); $('#pomoPanel').classList.remove('open'); closePomoEditor();
       $$('.modal.open').forEach(function (m) { closeModal('#' + m.id); });
       if ($('#lightbox').classList.contains('open')) closeLightbox();
       return;
     }
-
-    // 2. / 快速聚焦搜尋欄
-    if (e.key === '/') {
-      e.preventDefault();
-      $('#searchInput').focus();
-      return;
-    }
-
-    // 3. n 快速新增筆記
-    if ((e.key === 'n' || e.key === 'N') && (currentView === 'home' || currentView === 'notes')) {
-      e.preventDefault();
-      openNoteModal(null);
-      return;
-    }
-
-    // 4. 數字鍵 1-6 切換分頁
-    if (['1', '2', '3', '4', '5', '6'].includes(e.key)) {
-      e.preventDefault();
-      const views = { '1': 'home', '2': 'todo', '3': 'calendar', '4': 'diary', '5': 'notes', '6': 'ledger' };
-      showView(views[e.key]);
-      return;
-    }
+    if (e.key === '/') { e.preventDefault(); $('#searchInput').focus(); return; }
+    if ((e.key === 'n' || e.key === 'N') && (currentView === 'home' || currentView === 'notes')) { e.preventDefault(); openNoteModal(null); return; }
+    if (['1', '2', '3', '4', '5', '6'].includes(e.key)) { e.preventDefault(); const views = { '1': 'home', '2': 'todo', '3': 'calendar', '4': 'diary', '5': 'notes', '6': 'ledger' }; showView(views[e.key]); return; }
   });
 
   const copyrightEl = document.getElementById('copyrightYear');
   if (copyrightEl) copyrightEl.textContent = new Date().getFullYear();
 
   // ==========================================
-  // 7. 首頁 (時鐘、天氣、名言、統計、目標、書籤)
+  // 7. 首頁
   // ==========================================
   function updateClock() {
     const now = new Date();
     let timeStr = pad(now.getHours()) + ':' + pad(now.getMinutes());
     if (window.innerWidth > 768) timeStr += ':' + pad(now.getSeconds());
-    
     const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     const days = dict.weekdays || ['日','一','二','三','四','五','六'];
     let dateStr;
@@ -374,47 +326,29 @@
     } else {
       dateStr = now.getFullYear() + ' 年 ' + (now.getMonth() + 1) + ' 月 ' + now.getDate() + ' 日 · 星期' + days[now.getDay()];
     }
-    $('#clockTime').textContent = timeStr;
-    $('#clockDate').textContent = dateStr;
+    $('#clockTime').textContent = timeStr; $('#clockDate').textContent = dateStr;
   }
   setInterval(updateClock, 1000); updateClock(); window.addEventListener('resize', updateClock);
 
   function initWeather() {
     const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     const weatherInfo = $('#weatherInfo');
-
     function fetchWeather(lat, lon) {
       fetch('https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current_weather=true')
-        .then(r => r.json())
-        .then(data => {
+        .then(r => r.json()).then(data => {
           const w = data.current_weather; const code = w.weathercode; let icon = '⛅';
           if (code === 0) icon = '☀️'; else if (code === 1 || code === 2) icon = '🌤️'; else if (code === 3) icon = '☁️'; else if (code >= 51 && code <= 67) icon = '🌧️'; else if (code >= 71 && code <= 77) icon = '❄️'; else if (code >= 80 && code <= 82) icon = '🌦️'; else if (code >= 95) icon = '⛈️';
           weatherInfo.innerHTML = '<span class="weather-icon">' + icon + '</span> ' + w.temperature + '°C · ' + dict.weatherWind + ' ' + w.windspeed + ' km/h';
-        }).catch(() => {
-          weatherInfo.innerHTML = '⛅ ' + dict.weatherFail;
-        });
+        }).catch(() => { weatherInfo.innerHTML = '⛅ ' + dict.weatherFail; });
     }
-
     function fallbackIP() {
-      fetch('https://ipapi.co/json/')
-        .then(r => r.json())
-        .then(data => {
-          if (data && data.latitude && data.longitude) {
-            fetchWeather(data.latitude, data.longitude);
-          } else {
-            weatherInfo.innerHTML = '⛅ ' + dict.weatherNoGeo;
-          }
-        }).catch(() => {
-          weatherInfo.innerHTML = '⛅ ' + dict.weatherFail;
-        });
+      fetch('https://ipapi.co/json/').then(r => r.json()).then(data => {
+        if (data && data.latitude && data.longitude) fetchWeather(data.latitude, data.longitude);
+        else weatherInfo.innerHTML = '⛅ ' + dict.weatherNoGeo;
+      }).catch(() => { weatherInfo.innerHTML = '⛅ ' + dict.weatherFail; });
     }
-
     if (!navigator.geolocation) { fallbackIP(); return; }
-    navigator.geolocation.getCurrentPosition(
-      function (pos) { fetchWeather(pos.coords.latitude, pos.coords.longitude); },
-      function () { fallbackIP(); },
-      { timeout: 5000 }
-    );
+    navigator.geolocation.getCurrentPosition(function (pos) { fetchWeather(pos.coords.latitude, pos.coords.longitude); }, function () { fallbackIP(); }, { timeout: 5000 });
   }
   initWeather();
 
@@ -423,10 +357,7 @@
     'en': ['Slow is smooth, smooth is fast.', 'What you do today determines who you are tomorrow.', 'Do not go so far that you forget why you started.', 'Focus on the present; everything is perfectly arranged.', 'You don\'t have to be great to start, but you have to start to be great.', 'Treat every day as a new beginning.', 'A journey of a thousand miles begins with a single step.'],
     'ja': ['急がば回れ。', '今日の行いが、明日のあなたを決める。', '遠くへ行きすぎて、なぜ出発したかを忘れないで。', '今に集中すれば、すべてが最高の配置になる。', '上手く始める必要はない、始めることが上手くなる秘訣だ。', '毎日を新しいスタートとして捉えよう。', '千里の道も一歩から。']
   };
-  function updateQuote() {
-    const list = QUOTES[currentLang] || QUOTES['zh-TW'];
-    $('#quoteText').textContent = list[Math.floor(Math.random() * list.length)];
-  }
+  function updateQuote() { const list = QUOTES[currentLang] || QUOTES['zh-TW']; $('#quoteText').textContent = list[Math.floor(Math.random() * list.length)]; }
   updateQuote();
 
   let cdInterval = null; let cdIndex = 0; let cdListData = [];
@@ -437,8 +368,7 @@
       (events[k] || []).forEach(function (ev) { list.push({ kind: 'event', id: ev.id, date: k, time: ev.time || '', title: ev.title }); });
     });
     (countdowns || []).forEach(function (cd) {
-      if (!cd || !cd.date) return;
-      const target = new Date(cd.date); target.setHours(0, 0, 0, 0); if (target < today) return;
+      if (!cd || !cd.date) return; const target = new Date(cd.date); target.setHours(0, 0, 0, 0); if (target < today) return;
       list.push({ kind: 'countdown', id: cd.id, date: cd.date, time: '', title: cd.title });
     });
     list.sort(function (a, b) { if (a.date !== b.date) return a.date < b.date ? -1 : 1; if (!a.time && !b.time) return 0; if (!a.time) return -1; if (!b.time) return 1; return a.time < b.time ? -1 : (a.time > b.time ? 1 : 0); });
@@ -491,8 +421,7 @@
         const btn = e.target.closest('.cd-del'); if (!btn) return; const id = btn.dataset.cdId; if (!id) return;
         const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
         customConfirm(dict.cdConfirmDelTitle, dict.cdConfirmDelMsg, dict.delete, dict.cancel, true).then(function (ok) {
-          if (!ok) return;
-          countdowns = countdowns.filter(function (c) { return c.id !== id; }); save('countdowns'); renderCountdowns(); toast(dict.cdDeleted);
+          if (!ok) return; countdowns = countdowns.filter(function (c) { return c.id !== id; }); save('countdowns'); renderCountdowns(); toast(dict.cdDeleted);
         });
       });
     }
@@ -500,27 +429,18 @@
 
   function countTodayTags() { const tk = dayKeyOf(new Date()); return (todos.schedule[tk] || []).length; }
   function countUpcoming(days) { const now = new Date(); let n = 0; for (let i = 0; i < days; i++) { const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i); const list = events[dateKey(d)]; if (list) n += list.length; } return n; }
-  function getTodayExpense() {
-    const tk = todayKey(); let totalTWD = 0;
-    ledger.forEach(item => { if (item.date === tk && item.type === 'expense') totalTWD += item.amount; });
-    const rate = exchangeRates[mainCurrency] || 1;
-    return Math.round(totalTWD / rate);
-  }
+  function getTodayExpense() { const tk = todayKey(); let totalTWD = 0; ledger.forEach(item => { if (item.date === tk && item.type === 'expense') totalTWD += item.amount; }); const rate = exchangeRates[mainCurrency] || 1; return Math.round(totalTWD / rate); }
 
   function renderHome() {
     const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     if (!LS.get('onboarded', false)) {
-      const homeMain = document.querySelector('.home-main');
-      let existingCard = document.getElementById('welcomeCard');
-      
+      const homeMain = document.querySelector('.home-main'); let existingCard = document.getElementById('welcomeCard');
       if (homeMain && !existingCard) {
-        // 首次生成
         const card = document.createElement('div'); card.id = 'welcomeCard'; card.className = 'card welcome-card';
         card.innerHTML = `<div style="font-weight:600; margin-bottom:6px;">${dict.welcomeTitle}</div><div style="font-size:13px; line-height:1.6; color:var(--fg-dim); margin-bottom:10px;">${dict.welcomeDesc}</div><button class="btn primary" id="welcomeCloseBtn" style="font-size:12px; padding:6px 12px;">${dict.welcomeBtn}</button>`;
         homeMain.prepend(card);
         document.getElementById('welcomeCloseBtn').addEventListener('click', () => { LS.set('onboarded', true); card.remove(); });
       } else if (existingCard) {
-        // [NEW] 如果卡片已存在，切換語言時直接更新內容
         existingCard.innerHTML = `<div style="font-weight:600; margin-bottom:6px;">${dict.welcomeTitle}</div><div style="font-size:13px; line-height:1.6; color:var(--fg-dim); margin-bottom:10px;">${dict.welcomeDesc}</div><button class="btn primary" id="welcomeCloseBtn" style="font-size:12px; padding:6px 12px;">${dict.welcomeBtn}</button>`;
         document.getElementById('welcomeCloseBtn').addEventListener('click', () => { LS.set('onboarded', true); existingCard.remove(); });
       }
@@ -552,7 +472,7 @@
   function openGoalModal(id) {
     const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     editingGoalId = id || null; const g = id ? goals.find(function (x) { return x.id === id; }) : null;
-        $('#goalModalTitle').textContent = g ? dict.goalEdit : dict.goalNew; 
+    $('#goalModalTitle').textContent = g ? dict.goalEdit : dict.goalNew; 
     document.querySelector('#goalModal .sub2').textContent = g ? dict.goalEditSub : dict.goalNewSub;
     $('#goalTitle').value = g ? g.title : ''; $('#goalNote').value = g ? (g.note || '') : ''; $('#goalProgress').value = g ? (g.progress || 0) : 0; $('#goalProgressVal').textContent = g ? (g.progress || 0) : 0; $('#goalDelete').style.display = g ? '' : 'none';
     openModal('#goalModal'); setTimeout(function () { $('#goalTitle').focus(); }, 80);
@@ -584,7 +504,7 @@
     const list = $('#bmList'); if (!bookmarks.length) { list.innerHTML = '<div class="empty small">' + dict.bmEmpty + '</div>'; return; }
     list.innerHTML = bookmarks.map(function (b) {
       let host = ''; try { host = new URL(b.url).hostname; } catch (e) { host = ''; } const name = b.name || host || b.url;
-            return '<div class="bm-item" data-id="' + b.id + '" title="' + escapeHtml(name) + '"><span class="bm-drag-handle">⠿</span><img class="bm-fav" src="' + faviconUrl(b.url) + '" alt="" onerror="this.style.display=\'none\'"><span class="bm-name">' + escapeHtml(name) + '</span><div class="bm-acts"><button class="bm-act" data-act="edit" title="' + dict.bmEdit + '" aria-label="' + dict.bmEdit + '">✎</button><button class="bm-act del" data-act="del" title="' + dict.bmDelete + '" aria-label="' + dict.bmDelete + '">×</button></div></div>';
+      return '<div class="bm-item" data-id="' + b.id + '" title="' + escapeHtml(name) + '"><span class="bm-drag-handle">⠿</span><img class="bm-fav" src="' + faviconUrl(b.url) + '" alt="" onerror="this.style.display=\'none\'"><span class="bm-name">' + escapeHtml(name) + '</span><div class="bm-acts"><button class="bm-act" data-act="edit" title="' + dict.bmEdit + '" aria-label="' + dict.bmEdit + '">✎</button><button class="bm-act del" data-act="del" title="' + dict.bmDelete + '" aria-label="' + dict.bmDelete + '">×</button></div></div>';
     }).join('');
   }
 
@@ -634,7 +554,7 @@
   $('#bmDelete').addEventListener('click', function () { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; if (!editingBmId) return; bookmarks = bookmarks.filter(function (x) { return x.id !== editingBmId; }); save('bookmarks'); renderBookmarks(); closeModal('#bmModal'); toast(dict.bookmarkDeleted); });
 
   // ==========================================
-  // 8. 記帳與匯率
+  // 8. 記帳
   // ==========================================
   function renderRateFreshness() {
     const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
@@ -642,21 +562,18 @@
     if (!exchangeRatesUpdatedAt) { el.textContent = dict.ledgerRateNote; return; }
     el.textContent = dict.ledgerRateNote + '：' + fmtDateTime(new Date(exchangeRatesUpdatedAt));
   }
-
   function fetchExchangeRates() {
     const now = Date.now();
     if (exchangeRatesUpdatedAt && (now - exchangeRatesUpdatedAt) < RATE_MIN_INTERVAL) { renderRateFreshness(); return; }
-    fetch('https://open.er-api.com/v6/latest/TWD')
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.rates) {
-          const newRates = Object.assign({}, DEFAULT_RATES);
-          ['USD', 'JPY', 'HKD', 'EUR', 'GBP', 'CNY'].forEach(function (cur) { if (data.rates[cur]) newRates[cur] = 1 / data.rates[cur]; });
-          exchangeRates = newRates; exchangeRatesUpdatedAt = Date.now();
-          LS.set('exchangeRates', { rates: newRates, updatedAt: exchangeRatesUpdatedAt });
-          renderRateFreshness(); renderLedger(); renderHome();
-        }
-      }).catch(() => { renderRateFreshness(); });
+    fetch('https://open.er-api.com/v6/latest/TWD').then(res => res.json()).then(data => {
+      if (data && data.rates) {
+        const newRates = Object.assign({}, DEFAULT_RATES);
+        ['USD', 'JPY', 'HKD', 'EUR', 'GBP', 'CNY'].forEach(function (cur) { if (data.rates[cur]) newRates[cur] = 1 / data.rates[cur]; });
+        exchangeRates = newRates; exchangeRatesUpdatedAt = Date.now();
+        LS.set('exchangeRates', { rates: newRates, updatedAt: exchangeRatesUpdatedAt });
+        renderRateFreshness(); renderLedger(); renderHome();
+      }
+    }).catch(() => { renderRateFreshness(); });
   }
   fetchExchangeRates();
 
@@ -664,60 +581,33 @@
     const wrap = $('#ledgerTags'); if (!wrap) return;
     if (!ledgerCategories.length) { wrap.innerHTML = ''; return; }
     wrap.innerHTML = ledgerCategories.map(function(cat) { 
-      return '<div class="tag-chip-ledger-wrap">' +
-               '<span class="tag-chip-ledger" data-cat="' + escapeHtml(cat) + '">' + escapeHtml(cat) + '</span>' +
-               '<button class="tag-del-btn" type="button" data-del-cat="' + escapeHtml(cat) + '" title="刪除標籤" aria-label="刪除標籤">×</button>' +
-             '</div>'; 
+      return '<div class="tag-chip-ledger-wrap"><span class="tag-chip-ledger" data-cat="' + escapeHtml(cat) + '">' + escapeHtml(cat) + '</span><button class="tag-del-btn" type="button" data-del-cat="' + escapeHtml(cat) + '" title="刪除標籤" aria-label="刪除標籤">×</button></div>'; 
     }).join('');
   }
-
   (function bindLedgerDropdown() {
-    const wrap = $('#ledgerTags');
-    const inp = $('#ledgerCategory');
+    const wrap = $('#ledgerTags'); const inp = $('#ledgerCategory');
     if (!wrap || !inp || wrap.dataset.bound) return;
-    
-    wrap.dataset.bound = '1';
-    inp.dataset.bound = '1';
-
-    inp.addEventListener('focus', function() {
-      renderLedgerTags();
-      wrap.classList.add('open');
-    });
-
+    wrap.dataset.bound = '1'; inp.dataset.bound = '1';
+    inp.addEventListener('focus', function() { renderLedgerTags(); wrap.classList.add('open'); });
     wrap.addEventListener('click', function(e) {
       const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
       const delBtn = e.target.closest('.tag-del-btn');
       if (delBtn) {
-        e.stopPropagation();
-        const catToDelete = delBtn.dataset.delCat;
+        e.stopPropagation(); const catToDelete = delBtn.dataset.delCat;
         customConfirm(dict.ledgerDelTagTitle, dict.ledgerDelTagMsg.replace('{c}', escapeHtml(catToDelete)), dict.delete, dict.cancel, true).then(function(ok) {
-          if (!ok) return;
-          ledgerCategories = ledgerCategories.filter(function(c) { return c !== catToDelete; });
-          save('ledgerCategories');
-          renderLedgerTags();
-          toast(dict.ledgerTagDeleted);
+          if (!ok) return; ledgerCategories = ledgerCategories.filter(function(c) { return c !== catToDelete; }); save('ledgerCategories'); renderLedgerTags(); toast(dict.ledgerTagDeleted);
         });
         return;
       }
-
-      const btn = e.target.closest('.tag-chip-ledger'); 
-      if (!btn) return;
-      inp.value = btn.dataset.cat;
-      wrap.classList.remove('open');
+      const btn = e.target.closest('.tag-chip-ledger'); if (!btn) return; inp.value = btn.dataset.cat; wrap.classList.remove('open');
     });
-
-    document.addEventListener('click', function(e) {
-      if (wrap.classList.contains('open') && !inp.contains(e.target) && !wrap.contains(e.target)) {
-        wrap.classList.remove('open');
-      }
-    });
+    document.addEventListener('click', function(e) { if (wrap.classList.contains('open') && !inp.contains(e.target) && !wrap.contains(e.target)) { wrap.classList.remove('open'); } });
   })();
 
   function renderLedger() {
     const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     if (!$('#ledgerDate').value) $('#ledgerDate').value = todayKey();
     $('#ledgerDate').max = todayKey();
-
     const now = new Date(); const thisMonth = now.getFullYear() + '-' + pad(now.getMonth() + 1); const monthItems = ledger.filter(item => item.date.startsWith(thisMonth));
     let totalExpenseTWD = 0; let totalIncomeTWD = 0;
     monthItems.forEach(item => { if (item.type === 'income') totalIncomeTWD += item.amount; else totalExpenseTWD += item.amount; });
@@ -733,11 +623,7 @@
       if (item.currency && item.currency !== mainCurrency && item.originalAmount) {
         amountDisplay = sign + item.currency + ' ' + item.originalAmount; const itemInTWD = item.amount; const converted = Math.round(itemInTWD / currentRate);
         extraNote = ` <span style="font-size:11px;color:var(--fg-dim)">(約 ${symbol}${converted})</span>`;
-      } else if (item.currency && item.currency === mainCurrency && item.originalAmount) {
-        amountDisplay = sign + symbol + ' ' + item.originalAmount;
-      } else {
-        amountDisplay = sign + symbol + ' ' + Math.round(item.amount / currentRate);
-      }
+      } else if (item.currency && item.currency === mainCurrency && item.originalAmount) { amountDisplay = sign + symbol + ' ' + item.originalAmount; } else { amountDisplay = sign + symbol + ' ' + Math.round(item.amount / currentRate); }
       return '<div class="ledger-item"><div class="ledger-date">' + item.date.slice(5) + '</div><div class="ledger-cat">' + escapeHtml(item.category) + '</div><div class="ledger-note">' + escapeHtml(item.note || '-') + '</div><div class="ledger-amount ' + colorClass + '">' + amountDisplay + extraNote + '</div><button class="mini del ledger-del" data-id="' + item.id + '" title="刪除">×</button></div>';
     }).join('');
     renderRateFreshness();
@@ -750,19 +636,12 @@
       addBtn.addEventListener('click', function () {
         const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
         const type = $('#ledgerType').value; const currency = $('#ledgerCurrency').value;
-        const amountRaw = parseFloat($('#ledgerAmount').value);
-        const category = $('#ledgerCategory').value.trim() || '其他';
+        const amountRaw = parseFloat($('#ledgerAmount').value); const category = $('#ledgerCategory').value.trim() || '其他';
         const date = $('#ledgerDate').value || todayKey(); const note = $('#ledgerNote').value.trim();
-        
         if (!amountRaw || amountRaw <= 0) { toast(dict.ledgerAmountInvalid); $('#ledgerAmount').focus(); return; }
         if (!date) { toast(dict.ledgerDateFuture); return; }
         if (date > todayKey()) { toast(dict.ledgerDateFuture); $('#ledgerDate').value = todayKey(); return; }
-        
-        if (!ledgerCategories.includes(category)) {
-          ledgerCategories.push(category);
-          save('ledgerCategories');
-        }
-
+        if (!ledgerCategories.includes(category)) { ledgerCategories.push(category); save('ledgerCategories'); }
         const rateToBase = exchangeRates[currency] || 1; const amountInBase = amountRaw * rateToBase;
         ledger.push({ id: uid(), type: type, currency: currency, originalAmount: amountRaw, amount: amountInBase, category: category, date: date, note: note, createdAt: Date.now() });
         save('ledger'); $('#ledgerAmount').value = ''; $('#ledgerNote').value = ''; $('#ledgerCategory').value = ''; renderLedger(); renderHome(); toast(dict.ledgerSaved);
@@ -774,8 +653,7 @@
         const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
         const btn = e.target.closest('.ledger-del'); if (!btn) return; const id = btn.dataset.id; if (!id) return;
         customConfirm(dict.ledgerConfirmDelTitle, dict.ledgerConfirmDelMsg, dict.ledgerDelOk, dict.cancel, true).then(function (ok) {
-          if (!ok) return;
-          ledger = ledger.filter(function (x) { return x.id !== id; }); save('ledger'); renderLedger(); renderHome(); toast(dict.ledgerDeleted);
+          if (!ok) return; ledger = ledger.filter(function (x) { return x.id !== id; }); save('ledger'); renderLedger(); renderHome(); toast(dict.ledgerDeleted);
         });
       });
     }
@@ -827,8 +705,7 @@
     const today = todayKey(); if (LS.get('lastTodoCheck', '') === today) return;
     const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1); const yKey = dayKeyOf(yesterday); const yDateKey = dateKey(yesterday);
     const yTags = tagsForDay(yKey); const yDone = Array.isArray(todos.done[yDateKey]) ? todos.done[yDateKey] : []; const unfinishedCount = yTags.filter(t => yDone.indexOf(t.id) < 0).length;
-    if (unfinishedCount > 0) { LS.set('lastTodoCheck', today); toast(dict.yesterdayUnfinished.replace('{n}', unfinishedCount)); }
-    else { LS.set('lastTodoCheck', today); }
+    if (unfinishedCount > 0) { LS.set('lastTodoCheck', today); toast(dict.yesterdayUnfinished.replace('{n}', unfinishedCount)); } else { LS.set('lastTodoCheck', today); }
   }
   $('#tagAddBtn').addEventListener('click', function () {
     const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
@@ -879,44 +756,18 @@
 
   function renderCalSidebar() {
     const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-    const listEl = $('#calSidebarList');
-    if (!listEl) return;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const allEvents = [];
-
-    // 收集所有事件
+    const listEl = $('#calSidebarList'); if (!listEl) return;
+    const today = new Date(); today.setHours(0, 0, 0, 0); const allEvents = [];
     Object.keys(events).forEach(function (k) {
-      const targetDate = keyToDate(k);
-      if (targetDate < today) return; // 只顯示今天與未來
-      (events[k] || []).forEach(function (ev) {
-        allEvents.push({ date: k, time: ev.time || '', title: ev.title, content: ev.content || '' });
-      });
+      const targetDate = keyToDate(k); if (targetDate < today) return;
+      (events[k] || []).forEach(function (ev) { allEvents.push({ date: k, time: ev.time || '', title: ev.title, content: ev.content || '' }); });
     });
-
-    // 根據日期與時間排序
-    allEvents.sort(function (a, b) {
-      if (a.date !== b.date) return a.date < b.date ? -1 : 1;
-      if (!a.time && !b.time) return 0;
-      if (!a.time) return -1;
-      if (!b.time) return 1;
-      return a.time < b.time ? -1 : (a.time > b.time ? 1 : 0);
-    });
-
-    if (!allEvents.length) {
-      listEl.innerHTML = '<div class="empty small" style="padding:6px 0;">' + (dict.upcomingEmpty || '近期沒有要事。') + '</div>';
-      return;
-    }
-
+    allEvents.sort(function (a, b) { if (a.date !== b.date) return a.date < b.date ? -1 : 1; if (!a.time && !b.time) return 0; if (!a.time) return -1; if (!b.time) return 1; return a.time < b.time ? -1 : (a.time > b.time ? 1 : 0); });
+    if (!allEvents.length) { listEl.innerHTML = '<div class="empty small" style="padding:6px 0;">' + (dict.upcomingEmpty || '近期沒有要事。') + '</div>'; return; }
     listEl.innerHTML = allEvents.map(function (ev) {
-      const d = keyToDate(ev.date);
-      const dateLabel = d.getFullYear() + '/' + pad(d.getMonth() + 1) + '/' + pad(d.getDate());
+      const d = keyToDate(ev.date); const dateLabel = d.getFullYear() + '/' + pad(d.getMonth() + 1) + '/' + pad(d.getDate());
       const timeLabel = ev.time ? '<span class="cal-sidebar-time">' + escapeHtml(ev.time) + '</span>' : '';
-      return '<div class="cal-sidebar-item">' +
-               '<div class="cal-sidebar-date">' + dateLabel + ' ' + timeLabel + '</div>' +
-               '<div class="cal-sidebar-ev-title">' + escapeHtml(ev.title) + '</div>' +
-             '</div>';
+      return '<div class="cal-sidebar-item"><div class="cal-sidebar-date">' + dateLabel + ' ' + timeLabel + '</div><div class="cal-sidebar-ev-title">' + escapeHtml(ev.title) + '</div></div>';
     }).join('');
   }
   function inCalendarRange(date) { const now = new Date(); const minIdx = monthIndex(now.getFullYear(), now.getMonth()) - 6; const maxIdx = monthIndex(now.getFullYear(), now.getMonth()) + 12; const idx = monthIndex(date.getFullYear(), date.getMonth()); return idx >= minIdx && idx <= maxIdx; }
@@ -941,7 +792,13 @@
   function renderEventList() {
     const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     const wrap = $('#eventList'); const list = events[eventDateKey] || []; if (!list.length) { wrap.innerHTML = '<div class="empty small">' + dict.calEventEmpty + '</div>'; return; }
-    wrap.innerHTML = list.map(function (ev) { return '<div class="event-item" data-id="' + ev.id + '">' + (ev.time ? '<div class="ev-time">' + escapeHtml(ev.time) + '</div>' : '') + '<div class="ev-main"><div class="ev-title">' + escapeHtml(ev.title) + '</div>' + (ev.content ? '<div class="ev-content">' + escapeHtml(ev.content) + '</div>' : '') + '</div><div class="ev-acts"><button class="mini" data-act="edit">' + dict.edit + '</button><button class="mini del" data-act="del">×</button></div></div>'; }).join('');
+    wrap.innerHTML = list.map(function (ev) { 
+      return '<div class="event-item" data-id="' + ev.id + '">' + 
+               (ev.time ? '<div class="ev-time">' + escapeHtml(ev.time) + '</div>' : '') + 
+               '<div class="ev-main"><div class="ev-title">' + escapeHtml(ev.title) + '</div>' + (ev.content ? '<div class="ev-content">' + escapeHtml(ev.content) + '</div>' : '') + '</div>' +
+               '<div class="ev-acts"><button class="mini" data-act="edit" title="' + dict.edit + '">✎</button><button class="mini del" data-act="del" title="' + dict.delete + '">×</button></div>' +
+             '</div>'; 
+    }).join('');
   }
   $('#eventForm').addEventListener('submit', function (e) {
     const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
@@ -958,33 +815,17 @@
     if (btn.dataset.act === 'del') { events[eventDateKey] = list.filter(function (x) { return x.id !== id; }); if (!events[eventDateKey].length) delete events[eventDateKey]; save('events'); if (editingEventId === id) { editingEventId = null; $('#eventForm').reset(); $('#eventSubmit').textContent = dict.evSave; $('#eventCancelEdit').hidden = true; } renderEventList(); renderCalendar(); renderHome(); toast(dict.eventDeleted); }
     else if (btn.dataset.act === 'edit') { editingEventId = id; $('#evTitle').value = ev.title; $('#evTime').value = ev.time || ''; $('#evContent').value = ev.content || ''; $('#eventSubmit').textContent = dict.evUpdate; $('#eventCancelEdit').hidden = false; $('#evTitle').focus(); }
   });
-  function pruneEvents() {
-    const now = new Date(); const minKey = dateKey(new Date(now.getFullYear(), now.getMonth() - 6, 1)); const maxKey = dateKey(new Date(now.getFullYear(), now.getMonth() + 13, 0)); let changed = false;
-    Object.keys(events).forEach(function (k) { if (k < minKey || k > maxKey) { delete events[k]; changed = true; } }); if (changed) save('events');
-  }
+  function pruneEvents() { const now = new Date(); const minKey = dateKey(new Date(now.getFullYear(), now.getMonth() - 6, 1)); const maxKey = dateKey(new Date(now.getFullYear(), now.getMonth() + 13, 0)); let changed = false; Object.keys(events).forEach(function (k) { if (k < minKey || k > maxKey) { delete events[k]; changed = true; } }); if (changed) save('events'); }
 
   // ==========================================
   // 11. 日記
   // ==========================================
-  let diaryFilterDate = '';
-  let editingDiaryId = null;
-  let diaryImageData = null;
-
-  function updateDiaryImagePreview() {
-    const wrap = $('#diaryImgWrap');
-    if (diaryImageData) { $('#diaryImgPreview').src = diaryImageData; wrap.hidden = false; } else { $('#diaryImgPreview').removeAttribute('src'); wrap.hidden = true; }
-  }
-
+  let diaryFilterDate = ''; let editingDiaryId = null; let diaryImageData = null;
+  function updateDiaryImagePreview() { const wrap = $('#diaryImgWrap'); if (diaryImageData) { $('#diaryImgPreview').src = diaryImageData; wrap.hidden = false; } else { $('#diaryImgPreview').removeAttribute('src'); wrap.hidden = true; } }
   function resetDiaryForm() {
     const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-    editingDiaryId = null; diaryImageData = null;
-    $('#diaryTitle').value = ''; $('#diaryContent').value = ''; $('#diaryWeather').value = ''; $('#diaryMood').value = '';
-    updateDiaryImagePreview();
-    $('#diaryCancelEdit').hidden = true;
-    $('#diarySave').textContent = dict.diarySave;
-    $('#diaryLockNote').textContent = dict.diaryLockNote;
+    editingDiaryId = null; diaryImageData = null; $('#diaryTitle').value = ''; $('#diaryContent').value = ''; $('#diaryWeather').value = ''; $('#diaryMood').value = ''; updateDiaryImagePreview(); $('#diaryCancelEdit').hidden = true; $('#diarySave').textContent = dict.diarySave; $('#diaryLockNote').textContent = dict.diaryLockNote;
   }
-
   function renderDiaries() {
     const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     let list = diaries.slice().sort(function (a, b) { return b.createdAt - a.createdAt; });
@@ -992,96 +833,46 @@
     const wrap = $('#diaryList'); if (!list.length) { wrap.innerHTML = '<div class="empty">' + (diaryFilterDate ? dict.diaryEmptyDay : dict.diaryEmpty) + '</div>'; return; }
     wrap.innerHTML = list.map(function (d) { const dt = new Date(d.createdAt); return '<div class="diary-card" data-id="' + d.id + '"><div class="diary-meta"><span>' + fmtDateTime(dt) + '</span>' + (d.weather ? '<span class="tag">' + escapeHtml(d.weather) + '</span>' : '') + (d.mood ? '<span class="tag">' + escapeHtml(d.mood) + '</span>' : '') + '</div><div class="diary-title">' + escapeHtml(d.title) + '</div><div class="diary-preview">' + escapeHtml(d.content) + '</div></div>'; }).join('');
   }
-
   $('#diaryList').addEventListener('click', function (e) { const card = e.target.closest('.diary-card[data-id]'); if (card) openDiaryModal(card.dataset.id); });
-  
   function openDiaryModal(id) {
     const d = diaries.find(function (x) { return x.id === id; }); if (!d) return; const dt = new Date(d.createdAt);
-    $('#diaryModalTitle').textContent = d.title; 
-    $('#diaryModalMeta').innerHTML = fmtDateTime(dt) + (d.weather ? ' · ' + escapeHtml(d.weather) : '') + (d.mood ? ' · ' + escapeHtml(d.mood) : '');
-    $('#diaryModalBody').textContent = d.content; 
-    
+    $('#diaryModalTitle').textContent = d.title; $('#diaryModalMeta').innerHTML = fmtDateTime(dt) + (d.weather ? ' · ' + escapeHtml(d.weather) : '') + (d.mood ? ' · ' + escapeHtml(d.mood) : ''); $('#diaryModalBody').textContent = d.content;
     if (d.image) { $('#diaryModalImg').src = d.image; $('#diaryModalImg').hidden = false; } else { $('#diaryModalImg').removeAttribute('src'); $('#diaryModalImg').hidden = true; }
-    
-    $('#diaryModalEditBtn').onclick = function() {
-      closeModal('#diaryModal');
-      editDiary(id);
-    };
-    
+    $('#diaryModalEditBtn').onclick = function() { closeModal('#diaryModal'); editDiary(id); };
     openModal('#diaryModal');
   }
-
   function editDiary(id) {
     const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     const d = diaries.find(function (x) { return x.id === id; }); if (!d) return;
-    editingDiaryId = id; diaryImageData = d.image || null;
-    $('#diaryTitle').value = d.title; $('#diaryContent').value = d.content; $('#diaryWeather').value = d.weather || ''; $('#diaryMood').value = d.mood || '';
-    updateDiaryImagePreview();
-    $('#diaryCancelEdit').hidden = false;
-    $('#diarySave').textContent = dict.diaryUpdate;
-    $('#diaryLockNote').textContent = dict.diaryEditingNote;
-    showView('diary');
-    $('#diaryCompose').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    editingDiaryId = id; diaryImageData = d.image || null; $('#diaryTitle').value = d.title; $('#diaryContent').value = d.content; $('#diaryWeather').value = d.weather || ''; $('#diaryMood').value = d.mood || ''; updateDiaryImagePreview(); $('#diaryCancelEdit').hidden = false; $('#diarySave').textContent = dict.diaryUpdate; $('#diaryLockNote').textContent = dict.diaryEditingNote;
+    showView('diary'); $('#diaryCompose').scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
-
   $('#diaryImgPick').addEventListener('click', function() { $('#diaryImgInput').click(); });
-  $('#diaryImgInput').addEventListener('change', function(e) {
-    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-    const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return; toast(dict.imgProcessing);
-    compressImage(file, 1200, 0.75).then(function(data) { diaryImageData = data; updateDiaryImagePreview(); }).catch(function() { toast(dict.imgFail); });
-  });
+  $('#diaryImgInput').addEventListener('change', function(e) { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return; toast(dict.imgProcessing); compressImage(file, 1200, 0.75).then(function(data) { diaryImageData = data; updateDiaryImagePreview(); }).catch(function() { toast(dict.imgFail); }); });
   $('#diaryImgClear').addEventListener('click', function() { diaryImageData = null; updateDiaryImagePreview(); });
   $('#diaryCancelEdit').addEventListener('click', function() { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; resetDiaryForm(); toast(dict.diaryEditCancelled); });
-
   $('#diarySave').addEventListener('click', function () {
     const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     const title = $('#diaryTitle').value.trim(); const content = $('#diaryContent').value.trim(); 
     if (!title) { toast(dict.diaryTitleRequired); $('#diaryTitle').focus(); return; } 
     if (!content) { toast(dict.diaryContentRequired); $('#diaryContent').focus(); return; }
-    
     if (editingDiaryId) {
       const d = diaries.find(function (x) { return x.id === editingDiaryId; });
       if (d) {
         d.title = title; d.weather = $('#diaryWeather').value; d.mood = $('#diaryMood').value; d.content = content;
-        if (diaryImageData && diaryImageData !== d.image) {
-          const newId = uid();
-          if (IDB.available()) IDB.put('photos', { id: newId, src: diaryImageData }).catch(function(){});
-          photoCache[newId] = diaryImageData;
-          const dDate = dateKey(new Date(d.createdAt));
-          photoMeta.push({ id: newId, title: dDate });
-          d.image = diaryImageData;
-          save('photoMeta');
-        } else if (!diaryImageData && d.image) {
-          d.image = null;
-        } else if (diaryImageData) {
-          d.image = diaryImageData;
-        }
+        if (diaryImageData && diaryImageData !== d.image) { const newId = uid(); if (IDB.available()) IDB.put('photos', { id: newId, src: diaryImageData }).catch(function(){}); photoCache[newId] = diaryImageData; photoMeta.push({ id: newId, title: dateKey(new Date(d.createdAt)) }); d.image = diaryImageData; save('photoMeta'); }
+        else if (!diaryImageData && d.image) { d.image = null; }
+        else if (diaryImageData) { d.image = diaryImageData; }
       }
       save('diaries'); resetDiaryForm(); renderDiaries(); renderPhotos(); renderHome(); toast(dict.diaryUpdated);
     } else {
-      const newDiaryId = uid();
-      let finalImg = null;
-      if (diaryImageData) {
-        finalImg = diaryImageData;
-        const newId = uid();
-        if (IDB.available()) IDB.put('photos', { id: newId, src: diaryImageData }).catch(function(){});
-        photoCache[newId] = diaryImageData;
-        const today = todayKey();
-        photoMeta.push({ id: newId, title: today });
-        save('photoMeta');
-      }
-      diaries.push({ id: newDiaryId, title: title, weather: $('#diaryWeather').value, mood: $('#diaryMood').value, content: content, image: finalImg, createdAt: Date.now() }); 
-      save('diaries');
-      resetDiaryForm(); renderDiaries(); renderPhotos(); renderHome(); toast(dict.diarySaved);
+      const newDiaryId = uid(); let finalImg = null;
+      if (diaryImageData) { finalImg = diaryImageData; const newId = uid(); if (IDB.available()) IDB.put('photos', { id: newId, src: diaryImageData }).catch(function(){}); photoCache[newId] = diaryImageData; photoMeta.push({ id: newId, title: todayKey() }); save('photoMeta'); }
+      diaries.push({ id: newDiaryId, title: title, weather: $('#diaryWeather').value, mood: $('#diaryMood').value, content: content, image: finalImg, createdAt: Date.now() }); save('diaries'); resetDiaryForm(); renderDiaries(); renderPhotos(); renderHome(); toast(dict.diarySaved);
     }
   });
-
   $('#diaryDatePickerBtn').addEventListener('click', function () { $('#diaryDateInput').value = diaryFilterDate || todayKey(); openModal('#diaryDateModal'); });
-  $('#diaryDateConfirm').addEventListener('click', function () {
-    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-    const val = $('#diaryDateInput').value;
-    if (val) { diaryFilterDate = val; $('#diaryDatePickerBtn').textContent = dict.diaryFilterDate.replace('{d}', val); $('#diaryClearFilter').hidden = false; renderDiaries(); } closeModal('#diaryDateModal');
-  });
+  $('#diaryDateConfirm').addEventListener('click', function () { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; const val = $('#diaryDateInput').value; if (val) { diaryFilterDate = val; $('#diaryDatePickerBtn').textContent = dict.diaryFilterDate.replace('{d}', val); $('#diaryClearFilter').hidden = false; renderDiaries(); } closeModal('#diaryDateModal'); });
   $('#diaryClearFilter').addEventListener('click', function () { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; diaryFilterDate = ''; $('#diaryDatePickerBtn').textContent = dict.diaryFilterAll; $('#diaryClearFilter').hidden = true; renderDiaries(); });
 
   // ==========================================
@@ -1103,11 +894,7 @@
   $('#noteAdd').addEventListener('click', function () { openNoteModal(null); });
   $('#notesGrid').addEventListener('click', function (e) { const card = e.target.closest('.note[data-id]'); if (card) openNoteModal(card.dataset.id); });
   $('#noteImgPick').addEventListener('click', function () { $('#noteImgInput').click(); });
-  $('#noteImgInput').addEventListener('change', function (e) {
-    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-    const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return; toast(dict.imgProcessing);
-    compressImage(file, 1200, 0.75).then(function (data) { noteImageData = data; updateNoteImagePreview(); }).catch(function () { toast(dict.imgFail); });
-  });
+  $('#noteImgInput').addEventListener('change', function (e) { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return; toast(dict.imgProcessing); compressImage(file, 1200, 0.75).then(function (data) { noteImageData = data; updateNoteImagePreview(); }).catch(function () { toast(dict.imgFail); }); });
   $('#noteImgClear').addEventListener('click', function () { noteImageData = null; updateNoteImagePreview(); });
   $('#noteSave').addEventListener('click', function () {
     const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
@@ -1122,12 +909,7 @@
   // ==========================================
   // 13. 照片庫
   // ==========================================
-  function loadPhotoSrc(id) {
-    if (photoCache[id]) return Promise.resolve(photoCache[id]);
-    const fallbackLegacy = function () { const legacy = (legacyPhotos || []).find(function (p) { return p.id === id; }); if (legacy && legacy.src) { photoCache[id] = legacy.src; return legacy.src; } return null; };
-    if (!IDB.available()) return Promise.resolve(fallbackLegacy());
-    return IDB.get('photos', id).then(function (rec) { if (rec && rec.src) { photoCache[id] = rec.src; return rec.src; } return fallbackLegacy(); }).catch(function () { return fallbackLegacy(); });
-  }
+  function loadPhotoSrc(id) { if (photoCache[id]) return Promise.resolve(photoCache[id]); const fallbackLegacy = function () { const legacy = (legacyPhotos || []).find(function (p) { return p.id === id; }); if (legacy && legacy.src) { photoCache[id] = legacy.src; return legacy.src; } return null; }; if (!IDB.available()) return Promise.resolve(fallbackLegacy()); return IDB.get('photos', id).then(function (rec) { if (rec && rec.src) { photoCache[id] = rec.src; return rec.src; } return fallbackLegacy(); }).catch(function () { return fallbackLegacy(); }); }
   function renderPhotos() {
     const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     const grid = $('#photoGrid'); if (!photoMeta.length) { grid.innerHTML = '<div class="empty" style="grid-column:1/-1;">' + dict.photoEmpty + '</div>'; return; }
@@ -1145,10 +927,7 @@
   });
   $('#photoGrid').addEventListener('click', function (e) { const btn = e.target.closest('.photo[data-id]'); if (btn) openLightbox(btn.dataset.id); });
   let lightboxId = null;
-  function openLightbox(id) {
-    const meta = photoMeta.find(function (x) { return x.id === id; }); if (!meta) return; lightboxId = id;
-    loadPhotoSrc(id).then(function (src) { if (!src) { toast((window.I18N[currentLang] || window.I18N['zh-TW']).imgFail); return; } $('#lightboxImg').src = src; $('#lightboxCaption').value = meta.title || ''; $('#lightbox').classList.add('open'); document.body.classList.add('lock'); });
-  }
+  function openLightbox(id) { const meta = photoMeta.find(function (x) { return x.id === id; }); if (!meta) return; lightboxId = id; loadPhotoSrc(id).then(function (src) { if (!src) { toast((window.I18N[currentLang] || window.I18N['zh-TW']).imgFail); return; } $('#lightboxImg').src = src; $('#lightboxCaption').value = meta.title || ''; $('#lightbox').classList.add('open'); document.body.classList.add('lock'); }); }
   function closeLightbox() { $('#lightbox').classList.remove('open'); lightboxId = null; if (!document.querySelector('.modal.open, .lightbox.open')) document.body.classList.remove('lock'); }
   $('#lightboxClose').addEventListener('click', closeLightbox);
   $('#lightbox').addEventListener('click', function (e) { if (e.target.id === 'lightbox') closeLightbox(); });
@@ -1158,209 +937,62 @@
   // ==========================================
   // 14. 番茄鐘
   // ==========================================
-  let pomoState = 'idle'; 
-  let pomoRemaining = 0;
-  let pomoTotalSet = 25 * 60;
-  let pomoInterval = null;
-  
-  const pomoTimeDisplay = $('#pomoTimeDisplay');
-  const pomoEditor = $('#pomoEditor');
-  const pomoBtnLeft = $('#pomoBtnLeft');
-  const pomoBtnRight = $('#pomoBtnRight');
-  
+  let pomoState = 'idle'; let pomoRemaining = 0; let pomoTotalSet = 25 * 60; let pomoInterval = null;
+  const pomoTimeDisplay = $('#pomoTimeDisplay'); const pomoEditor = $('#pomoEditor'); const pomoBtnLeft = $('#pomoBtnLeft'); const pomoBtnRight = $('#pomoBtnRight');
   let audioCtx = null; let customAudioData = null; let soundType = LS.get('pomoSoundType', 'synth'); let pomoVolume = LS.get('pomoVolume', 70);
-
-  function loadCustomAudio() {
-    if (!IDB.available()) return Promise.resolve();
-    return IDB.get('audio', 'pomo').then(function (rec) { if (rec && rec.data) { customAudioData = rec.data; } if (typeof updateSoundUI === 'function') updateSoundUI(); }).catch(function () {});
-  }
-
+  function loadCustomAudio() { if (!IDB.available()) return Promise.resolve(); return IDB.get('audio', 'pomo').then(function (rec) { if (rec && rec.data) { customAudioData = rec.data; } if (typeof updateSoundUI === 'function') updateSoundUI(); }).catch(function () {}); }
   function initAudio() { if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); }
   function playBell() {
     const vol = Math.max(0, Math.min(1, pomoVolume / 100));
     if (soundType === 'custom' && customAudioData) { try { const audio = new Audio(customAudioData); audio.volume = vol; audio.play().catch(function () {}); } catch (e) {} return; }
     if (!audioCtx) initAudio(); if (!audioCtx) return;
-    try {
-      const playNote = (freq, startTime, duration) => { const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'sine'; osc.frequency.value = freq; gain.gain.setValueAtTime(0, startTime); gain.gain.linearRampToValueAtTime(0.5 * vol, startTime + 0.05); gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration); osc.start(startTime); osc.stop(startTime + duration); };
-      playNote(880, audioCtx.currentTime, 0.4); playNote(1046.50, audioCtx.currentTime + 0.15, 0.6); playNote(880, audioCtx.currentTime + 0.45, 0.4); playNote(1046.50, audioCtx.currentTime + 0.6, 0.8);
-    } catch (e) {}
+    try { const playNote = (freq, startTime, duration) => { const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'sine'; osc.frequency.value = freq; gain.gain.setValueAtTime(0, startTime); gain.gain.linearRampToValueAtTime(0.5 * vol, startTime + 0.05); gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration); osc.start(startTime); osc.stop(startTime + duration); }; playNote(880, audioCtx.currentTime, 0.4); playNote(1046.50, audioCtx.currentTime + 0.15, 0.6); playNote(880, audioCtx.currentTime + 0.45, 0.4); playNote(1046.50, audioCtx.currentTime + 0.6, 0.8); } catch (e) {}
   }
-
-  function formatPomoTime(secs) {
-    const h = Math.floor(secs / 3600);
-    const m = Math.floor((secs % 3600) / 60);
-    const s = secs % 60;
-    return pad(h) + ':' + pad(m) + ':' + pad(s);
-  }
-
+  function formatPomoTime(secs) { const h = Math.floor(secs / 3600); const m = Math.floor((secs % 3600) / 60); const s = secs % 60; return pad(h) + ':' + pad(m) + ':' + pad(s); }
   function updatePomoUI() {
     const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-    pomoTimeDisplay.textContent = formatPomoTime(pomoRemaining);
-    pomoTimeDisplay.style.display = 'flex';
-    pomoEditor.classList.remove('active');
-    
-    if (pomoState === 'idle') {
-      pomoBtnLeft.textContent = dict.pomoStart;
-      pomoBtnLeft.className = 'pomo-btn start';
-      pomoBtnLeft.disabled = pomoRemaining === 0;
-      
-      pomoBtnRight.textContent = dict.pomoReset;
-      pomoBtnRight.className = 'pomo-btn stop';
-    } else if (pomoState === 'running') {
-      pomoBtnLeft.textContent = dict.pomoPause;
-      pomoBtnLeft.className = 'pomo-btn pause';
-      pomoBtnLeft.disabled = false;
-      
-      pomoBtnRight.textContent = dict.pomoStop;
-      pomoBtnRight.className = 'pomo-btn stop';
-    } else if (pomoState === 'paused') {
-      pomoBtnLeft.textContent = dict.pomoResume;
-      pomoBtnLeft.className = 'pomo-btn resume';
-      pomoBtnLeft.disabled = false;
-      
-      pomoBtnRight.textContent = dict.pomoStop;
-      pomoBtnRight.className = 'pomo-btn stop';
-    }
+    pomoTimeDisplay.textContent = formatPomoTime(pomoRemaining); pomoTimeDisplay.style.display = 'flex'; pomoEditor.classList.remove('active');
+    if (pomoState === 'idle') { pomoBtnLeft.textContent = dict.pomoStart; pomoBtnLeft.className = 'pomo-btn start'; pomoBtnLeft.disabled = pomoRemaining === 0; pomoBtnRight.textContent = dict.pomoReset; pomoBtnRight.className = 'pomo-btn stop'; }
+    else if (pomoState === 'running') { pomoBtnLeft.textContent = dict.pomoPause; pomoBtnLeft.className = 'pomo-btn pause'; pomoBtnLeft.disabled = false; pomoBtnRight.textContent = dict.pomoStop; pomoBtnRight.className = 'pomo-btn stop'; }
+    else if (pomoState === 'paused') { pomoBtnLeft.textContent = dict.pomoResume; pomoBtnLeft.className = 'pomo-btn resume'; pomoBtnLeft.disabled = false; pomoBtnRight.textContent = dict.pomoStop; pomoBtnRight.className = 'pomo-btn stop'; }
   }
-
-  function getInputSecs() {
-    const h = parseInt($('#pomoInpH').value, 10) || 0;
-    const m = parseInt($('#pomoInpM').value, 10) || 0;
-    const s = parseInt($('#pomoInpS').value, 10) || 0;
-    let total = h * 3600 + m * 60 + s;
-    if (total > 99 * 3600 + 99 * 60 + 99) total = 99 * 3600 + 99 * 60 + 99;
-    return total;
-  }
-
-  function savePomoSettings() {
-    const total = getInputSecs();
-    pomoTotalSet = total;
-    pomoRemaining = total;
-    LS.set('pomoDuration', total);
-    updatePomoUI();
-  }
-
-   pomoTimeDisplay.addEventListener('click', function (e) {
-    e.stopPropagation();
-    if (pomoState !== 'idle') return;
-    
-    const h = Math.floor(pomoRemaining / 3600);
-    const m = Math.floor((pomoRemaining % 3600) / 60);
-    const s = pomoRemaining % 60;
-    $('#pomoInpH').value = pad(h);
-    $('#pomoInpM').value = pad(m);
-    $('#pomoInpS').value = pad(s);
-    
-    pomoTimeDisplay.style.display = 'none';
-    pomoEditor.classList.add('active');
-    $('#pomoInpM').focus();
+  function getInputSecs() { const h = parseInt($('#pomoInpH').value, 10) || 0; const m = parseInt($('#pomoInpM').value, 10) || 0; const s = parseInt($('#pomoInpS').value, 10) || 0; let total = h * 3600 + m * 60 + s; if (total > 99 * 3600 + 99 * 60 + 99) total = 99 * 3600 + 99 * 60 + 99; return total; }
+  function savePomoSettings() { const total = getInputSecs(); pomoTotalSet = total; pomoRemaining = total; LS.set('pomoDuration', total); updatePomoUI(); }
+  pomoTimeDisplay.addEventListener('click', function (e) {
+    e.stopPropagation(); if (pomoState !== 'idle') return; const h = Math.floor(pomoRemaining / 3600); const m = Math.floor((pomoRemaining % 3600) / 60); const s = pomoRemaining % 60;
+    $('#pomoInpH').value = pad(h); $('#pomoInpM').value = pad(m); $('#pomoInpS').value = pad(s); pomoTimeDisplay.style.display = 'none'; pomoEditor.classList.add('active'); $('#pomoInpM').focus();
   });
-
   $$('.pomo-arrow').forEach(function(el) {
     el.addEventListener('click', function(e) {
-      e.stopPropagation();
-      const unit = this.dataset.unit;
-      const act = this.dataset.act;
-      const inp = unit === 'h' ? $('#pomoInpH') : (unit === 'm' ? $('#pomoInpM') : $('#pomoInpS'));
-      let val = parseInt(inp.value, 10) || 0;
-      if (act === 'up') { val = Math.min(99, val + 1); } 
-      else { val = Math.max(0, val - 1); }
-      inp.value = pad(val);
-      
-      const tempTotal = getInputSecs();
-      pomoTimeDisplay.textContent = formatPomoTime(tempTotal);
+      e.stopPropagation(); const unit = this.dataset.unit; const act = this.dataset.act; const inp = unit === 'h' ? $('#pomoInpH') : (unit === 'm' ? $('#pomoInpM') : $('#pomoInpS')); let val = parseInt(inp.value, 10) || 0;
+      if (act === 'up') { val = Math.min(99, val + 1); } else { val = Math.max(0, val - 1); } inp.value = pad(val); const tempTotal = getInputSecs(); pomoTimeDisplay.textContent = formatPomoTime(tempTotal);
     });
   });
-
   $('#pomoInpH').addEventListener('change', function() { this.value = pad(Math.min(99, Math.max(0, parseInt(this.value,10)||0))); pomoTimeDisplay.textContent = formatPomoTime(getInputSecs()); });
   $('#pomoInpM').addEventListener('change', function() { this.value = pad(Math.min(99, Math.max(0, parseInt(this.value,10)||0))); pomoTimeDisplay.textContent = formatPomoTime(getInputSecs()); });
   $('#pomoInpS').addEventListener('change', function() { this.value = pad(Math.min(99, Math.max(0, parseInt(this.value,10)||0))); pomoTimeDisplay.textContent = formatPomoTime(getInputSecs()); });
-
-  function closePomoEditor() {
-    if (pomoEditor.classList.contains('active')) {
-      savePomoSettings();
-      pomoEditor.classList.remove('active');
-      pomoTimeDisplay.style.display = 'flex';
-    }
-  }
-
-  pomoEditor.addEventListener('click', function(e) {
-    e.stopPropagation();
-  });
-
+  function closePomoEditor() { if (pomoEditor.classList.contains('active')) { savePomoSettings(); pomoEditor.classList.remove('active'); pomoTimeDisplay.style.display = 'flex'; } }
+  pomoEditor.addEventListener('click', function(e) { e.stopPropagation(); });
   function startPomoTimer() {
-    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-    pomoState = 'running';
-    updatePomoUI();
-    pomoInterval = setInterval(function() {
-      pomoRemaining--;
-      pomoTimeDisplay.textContent = formatPomoTime(pomoRemaining);
-      if (pomoRemaining <= 0) {
-        clearInterval(pomoInterval);
-        pomoState = 'idle';
-        pomoRemaining = pomoTotalSet;
-        updatePomoUI();
-        playBell();
-        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-        toast(dict.pomoTimeUp);
-      }
-    }, 1000);
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW']; pomoState = 'running'; updatePomoUI();
+    pomoInterval = setInterval(function() { pomoRemaining--; pomoTimeDisplay.textContent = formatPomoTime(pomoRemaining); if (pomoRemaining <= 0) { clearInterval(pomoInterval); pomoState = 'idle'; pomoRemaining = pomoTotalSet; updatePomoUI(); playBell(); if (navigator.vibrate) navigator.vibrate([200, 100, 200]); toast(dict.pomoTimeUp); } }, 1000);
   }
-
   pomoBtnLeft.addEventListener('click', function() {
-    initAudio();
-    
-    if (pomoEditor.classList.contains('active')) {
-      closePomoEditor();
-      return;
-    }
-    
-    if (pomoState === 'idle') {
-      if (pomoRemaining <= 0) return;
-      startPomoTimer();
-    } else if (pomoState === 'running') {
-      clearInterval(pomoInterval);
-      pomoState = 'paused';
-      updatePomoUI();
-    } else if (pomoState === 'paused') {
-      startPomoTimer();
-    }
+    initAudio(); if (pomoEditor.classList.contains('active')) { closePomoEditor(); return; }
+    if (pomoState === 'idle') { if (pomoRemaining <= 0) return; startPomoTimer(); } else if (pomoState === 'running') { clearInterval(pomoInterval); pomoState = 'paused'; updatePomoUI(); } else if (pomoState === 'paused') { startPomoTimer(); }
   });
-
   pomoBtnRight.addEventListener('click', function() {
-    if (pomoEditor.classList.contains('active')) {
-      closePomoEditor();
-      return;
-    }
-    
-    clearInterval(pomoInterval);
-    
-    if (pomoState === 'idle') {
-      pomoTotalSet = 0;
-      pomoRemaining = 0;
-      LS.set('pomoDuration', 0);
-      updatePomoUI();
-    } else {
-      pomoState = 'idle';
-      pomoRemaining = pomoTotalSet; 
-      updatePomoUI();
-    }
+    if (pomoEditor.classList.contains('active')) { closePomoEditor(); return; } clearInterval(pomoInterval);
+    if (pomoState === 'idle') { pomoTotalSet = 0; pomoRemaining = 0; LS.set('pomoDuration', 0); updatePomoUI(); } else { pomoState = 'idle'; pomoRemaining = pomoTotalSet; updatePomoUI(); }
   });
-
-  const savedDur = LS.get('pomoDuration', null);
-  if (savedDur !== null && savedDur >= 0) {
-    pomoTotalSet = savedDur;
-    pomoRemaining = savedDur;
-  }
+  const savedDur = LS.get('pomoDuration', null); if (savedDur !== null && savedDur >= 0) { pomoTotalSet = savedDur; pomoRemaining = savedDur; }
   updatePomoUI();
-
   function updateSoundUI() { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; $$('input[name="soundType"]').forEach(function (r) { r.checked = (r.value === soundType); }); $('#soundFileName').textContent = customAudioData ? dict.pomoCustomLoaded : dict.pomoSoundNoFile; }
   $('#pomoSoundBtn').addEventListener('click', function () { updateSoundUI(); openModal('#soundModal'); });
   $('#soundFilePick').addEventListener('click', function () { $('#soundFileInput').click(); });
   $('#soundFileInput').addEventListener('change', function (e) { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return; if (file.size > 1024 * 1024) { toast(dict.pomoAudioTooBig); return; } const reader = new FileReader(); reader.onload = function (ev) { customAudioData = ev.target.result; $('#soundFileName').textContent = file.name; $$('input[name="soundType"]').forEach(function (r) { if (r.value === 'custom') r.checked = true; }); toast(dict.pomoAudioLoaded); }; reader.readAsDataURL(file); });
   $('#soundSaveBtn').addEventListener('click', function () {
-    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-    const selected = $('input[name="soundType"]:checked').value; if (selected === 'custom' && !customAudioData) { toast(dict.pomoSoundNoFile); return; }
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW']; const selected = $('input[name="soundType"]:checked').value; if (selected === 'custom' && !customAudioData) { toast(dict.pomoSoundNoFile); return; }
     soundType = selected; LS.set('pomoSoundType', soundType);
     if (IDB.available()) { if (customAudioData) { IDB.put('audio', { id: 'pomo', data: customAudioData }).catch(function () {}); } else { IDB.del('audio', 'pomo').catch(function () {}); } }
     closeModal('#soundModal'); toast(dict.pomoSoundSaved); initAudio(); playBell();
@@ -1368,14 +1000,8 @@
   function updateVolumeUI() { $('#pomoVolume').value = pomoVolume; $('#pomoVolumeVal').textContent = pomoVolume; }
   $('#pomoVolume').addEventListener('input', function () { pomoVolume = parseInt(this.value, 10); $('#pomoVolumeVal').textContent = pomoVolume; LS.set('pomoVolume', pomoVolume); });
   updateVolumeUI();
-
   $('#pomoFab').addEventListener('click', function () { $('#pomoPanel').classList.toggle('open'); });
-
-  document.addEventListener('click', function(e) {
-    if (pomoEditor.classList.contains('active') && !pomoEditor.contains(e.target) && !pomoTimeDisplay.contains(e.target)) {
-      closePomoEditor();
-    }
-  });
+  document.addEventListener('click', function(e) { if (pomoEditor.classList.contains('active') && !pomoEditor.contains(e.target) && !pomoTimeDisplay.contains(e.target)) { closePomoEditor(); } });
 
   // ==========================================
   // 15. 設定面板與備份
@@ -1390,12 +1016,8 @@
   $('#clearBg').addEventListener('click', function () { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; state.bg = null; applyTheme(); savePrefs(); toast(dict.bgRemoved); });
   $('#bgFileInput').addEventListener('change', function (e) { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return; toast(dict.imgProcessing); compressImage(file, 1600, 0.8).then(function (data) { state.bg = data; applyTheme(); savePrefs(); toast(dict.bgApplied); }).catch(function () { toast(dict.imgFail); }); });
   $('#themeToggle').addEventListener('click', function () { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; state.lum = state.lum > 50 ? 15 : 85; applyTheme(); savePrefs(); toast(state.lum > 50 ? dict.themeLight : dict.themeDark); });
-  
   $('#mainCurrencySelect').value = mainCurrency;
-  $('#mainCurrencySelect').addEventListener('change', function () {
-    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-    mainCurrency = this.value; LS.set('mainCurrency', mainCurrency); renderLedger(); renderHome(); toast(dict.currencyChanged.replace('{c}', mainCurrency));
-  });
+  $('#mainCurrencySelect').addEventListener('change', function () { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; mainCurrency = this.value; LS.set('mainCurrency', mainCurrency); renderLedger(); renderHome(); toast(dict.currencyChanged.replace('{c}', mainCurrency)); });
 
   const BACKUP_VERSION = 2;
   function exportData() {
@@ -1408,15 +1030,12 @@
     });
   }
   $('#exportBtn').addEventListener('click', exportData); $('#aboutExportBtn').addEventListener('click', exportData);
-
   $('#clearAllBtn').addEventListener('click', function () {
     const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     customConfirm(dict.confirmClearTitle, dict.confirmClearMsg, dict.confirmClearOk, dict.cancel, true).then(function (ok1) {
       if (!ok1) return;
       customConfirm(dict.confirmClear2Title, dict.confirmClear2Msg, dict.confirmClear2Ok, dict.cancel, true).then(function (ok2) {
-        if (!ok2) return;
-        try { localStorage.clear(); } catch (e) {}
-        accessToken = null;
+        if (!ok2) return; try { localStorage.clear(); } catch (e) {} accessToken = null;
         if (typeof updateGoogleUI === 'function') updateGoogleUI();
         document.cookie.split(';').forEach(function (c) { document.cookie = c.replace(/^ +/, '').replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/'); });
         if (IDB.available()) { ['photos', 'audio'].forEach(function (store) { IDB.getAll(store).then(function (rows) { rows.forEach(function (r) { IDB.del(store, r.id).catch(function () {}); }); }).catch(function () {}); }); }
@@ -1435,8 +1054,7 @@
   }
   $('#importBtn').addEventListener('click', function () { $('#importFileInput').click(); });
   $('#importFileInput').addEventListener('change', function (e) {
-    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-    const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return;
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW']; const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return;
     if (file.size > 60 * 1024 * 1024) { toast(dict.importTooLarge); return; }
     const reader = new FileReader();
     reader.onload = function (ev) {
@@ -1457,204 +1075,76 @@
           toast(dict.importing); closeSettings();
         });
       });
-    };
-    reader.readAsText(file);
+    }; reader.readAsText(file);
   });
 
   // ==========================================
-  // 16. Google Drive 雲端備份邏輯
+  // 16. Google Drive 雲端備份
   // ==========================================
   const CLIENT_ID = '355931371376-sdu9qo95t0ghojgsb6eicqgc5nd6i31o.apps.googleusercontent.com';
   const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
-  let tokenClient = null;
-  let accessToken = null;
-  // [NEW] 啟動時還原 Token（含過期檢查）
-  try {
-    const savedTok = LS.get('googleToken', null);
-    const savedExp = LS.get('googleTokenExp', 0);
-    if (savedTok && savedExp && Date.now() < savedExp - 60000) {
-      accessToken = savedTok;
-    } else if (savedTok) {
-      LS.remove('googleToken'); LS.remove('googleTokenExp');
-      accessToken = null;
-    }
-  } catch (e) { accessToken = null; }
-
-  // [NEW] 統一清除 Token 並更新 UI
-  function clearGoogleToken() {
-    accessToken = null;
-    try { LS.remove('googleToken'); LS.remove('googleTokenExp'); } catch (e) {}
-    if (typeof updateGoogleUI === 'function') updateGoogleUI();
-  }
-
-  const gLoginBtn = $('#gLoginBtn');
-  const gBackupBtn = $('#gBackupBtn');
-  const gRestoreBtn = $('#gRestoreBtn');
-  const gStatus = $('#gStatus');
-  const gActionWrap = $('#gActionWrap');
-
+  let tokenClient = null; let accessToken = null;
+  try { const savedTok = LS.get('googleToken', null); const savedExp = LS.get('googleTokenExp', 0); if (savedTok && savedExp && Date.now() < savedExp - 60000) { accessToken = savedTok; } else if (savedTok) { LS.remove('googleToken'); LS.remove('googleTokenExp'); accessToken = null; } } catch (e) { accessToken = null; }
+  function clearGoogleToken() { accessToken = null; try { LS.remove('googleToken'); LS.remove('googleTokenExp'); } catch (e) {} if (typeof updateGoogleUI === 'function') updateGoogleUI(); }
+  const gLoginBtn = $('#gLoginBtn'); const gBackupBtn = $('#gBackupBtn'); const gRestoreBtn = $('#gRestoreBtn'); const gStatus = $('#gStatus'); const gActionWrap = $('#gActionWrap');
   function updateGoogleUI() {
     const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-    if (accessToken) {
-      gLoginBtn.style.display = 'none';
-      gActionWrap.style.display = 'flex';
-      gStatus.textContent = dict.gStatusConnected;
-      gStatus.style.color = 'var(--income-color)';
-    } else {
-      gLoginBtn.style.display = 'block';
-      gActionWrap.style.display = 'none';
-      gStatus.textContent = dict.gStatusNone;
-      gStatus.style.color = 'var(--fg-dim)';
-    }
+    if (accessToken) { gLoginBtn.style.display = 'none'; gActionWrap.style.display = 'flex'; gStatus.textContent = dict.gStatusConnected; gStatus.style.color = 'var(--income-color)'; }
+    else { gLoginBtn.style.display = 'block'; gActionWrap.style.display = 'none'; gStatus.textContent = dict.gStatusNone; gStatus.style.color = 'var(--fg-dim)'; }
   }
-
   function initGoogleAuth() {
-    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-    if (typeof google === 'undefined') {
-      gStatus.textContent = dict.gLoadingFail;
-      return;
-    }
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW']; if (typeof google === 'undefined') { gStatus.textContent = dict.gLoadingFail; return; }
     tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: CLIENT_ID,
-      scope: SCOPES,
+      client_id: CLIENT_ID, scope: SCOPES,
       callback: (tokenResponse) => {
         const d = window.I18N[currentLang] || window.I18N['zh-TW'];
-        if (tokenResponse && tokenResponse.access_token) {
-          accessToken = tokenResponse.access_token;
-          // [NEW] 持久化 Token 與到期時間（預設 3600 秒，扣 60 秒緩衝）
-          const expiresIn = (tokenResponse.expires_in || 3600) * 1000;
-          try {
-            LS.set('googleToken', accessToken);
-            LS.set('googleTokenExp', Date.now() + expiresIn);
-          } catch (e) {}
-          updateGoogleUI();
-          toast(d.gLoginOk);
-        } else {
-          toast(d.gLoginFail);
-        }
+        if (tokenResponse && tokenResponse.access_token) { accessToken = tokenResponse.access_token; const expiresIn = (tokenResponse.expires_in || 3600) * 1000; try { LS.set('googleToken', accessToken); LS.set('googleTokenExp', Date.now() + expiresIn); } catch (e) {} updateGoogleUI(); toast(d.gLoginOk); } else { toast(d.gLoginFail); }
       },
     });
-    gLoginBtn.addEventListener('click', () => {
-      tokenClient.requestAccessToken({ prompt: 'consent' });
-    });
+    gLoginBtn.addEventListener('click', () => { tokenClient.requestAccessToken({ prompt: 'consent' }); });
   }
-
-  window.addEventListener('load', () => {
-    setTimeout(initGoogleAuth, 1000);
-  });
-
+  window.addEventListener('load', () => { setTimeout(initGoogleAuth, 1000); });
   gBackupBtn.addEventListener('click', async () => {
-    if (!accessToken) return;
-    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-    toast(dict.gBackupUploading);
+    if (!accessToken) return; const dict = window.I18N[currentLang] || window.I18N['zh-TW']; toast(dict.gBackupUploading);
     try {
       const exportPhotos = photoMeta.map(function (m) { return loadPhotoSrc(m.id).then(function (src) { return { id: m.id, title: m.title || '', src: src || '' }; }); });
       const photosData = await Promise.all(exportPhotos);
       const data = { version: BACKUP_VERSION, exportedAt: new Date().toISOString(), todos: todos, events: events, diaries: diaries, notes: notes, photos: photosData, goals: goals, bookmarks: bookmarks, ledger: ledger, countdowns: countdowns, ledgerCategories: ledgerCategories, prefs: { lum: state.lum, bg: state.bg }, pomoSoundType: soundType };
       const jsonString = JSON.stringify(data);
-
-      const searchRes = await fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder', {
-        headers: { 'Authorization': 'Bearer ' + accessToken }
-      });
+      const searchRes = await fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder', { headers: { 'Authorization': 'Bearer ' + accessToken } });
       if (searchRes.status === 401) { clearGoogleToken(); toast(dict.gTokenExpired); return; }
-      const searchData = await searchRes.json();
-      let fileId = null;
-      if (searchData.files && searchData.files.length > 0) {
-        fileId = searchData.files[0].id;
-      }
-
-      const boundary = '-------314159265358979323846';
-      const delimiter = "\r\n--" + boundary + "\r\n";
-      const close_delim = "\r\n--" + boundary + "--";
-      
-      let metadata = { name: 'my_space_backup.json', mimeType: 'application/json' };
-      if (!fileId) metadata.parents = ['appDataFolder'];
-      
-      const multipartRequestBody =
-        delimiter + 'Content-Type: application/json\r\n\r\n' + JSON.stringify(metadata) + 
-        delimiter + 'Content-Type: application/json\r\n\r\n' + jsonString + 
-        close_delim;
-
-      let url = 'https://www.googleapis.com/upload/drive/v3/files';
-      let method = 'POST';
-      if (fileId) { url += '/' + fileId; method = 'PATCH'; }
-      url += '?uploadType=multipart';
-
-      const res = await fetch(url, {
-        method: method,
-        headers: {
-          'Authorization': 'Bearer ' + accessToken,
-          'Content-Type': 'multipart/related; boundary="' + boundary + '"'
-        },
-        body: multipartRequestBody
-      });
-
-      if (res.ok) {
-        toast(dict.gBackupOk);
-      } else if (res.status === 401) {
-        clearGoogleToken();
-        toast(dict.gTokenExpired);
-      } else {
-        toast(dict.gBackupFail);
-      }
-    } catch (err) {
-      console.error(err);
-      toast(dict.gBackupFailNetwork);
-    }
+      const searchData = await searchRes.json(); let fileId = null;
+      if (searchData.files && searchData.files.length > 0) fileId = searchData.files[0].id;
+      const boundary = '-------314159265358979323846'; const delimiter = "\r\n--" + boundary + "\r\n"; const close_delim = "\r\n--" + boundary + "--";
+      let metadata = { name: 'my_space_backup.json', mimeType: 'application/json' }; if (!fileId) metadata.parents = ['appDataFolder'];
+      const multipartRequestBody = delimiter + 'Content-Type: application/json\r\n\r\n' + JSON.stringify(metadata) + delimiter + 'Content-Type: application/json\r\n\r\n' + jsonString + close_delim;
+      let url = 'https://www.googleapis.com/upload/drive/v3/files'; let method = 'POST'; if (fileId) { url += '/' + fileId; method = 'PATCH'; } url += '?uploadType=multipart';
+      const res = await fetch(url, { method: method, headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'multipart/related; boundary="' + boundary + '"' }, body: multipartRequestBody });
+      if (res.ok) { toast(dict.gBackupOk); } else if (res.status === 401) { clearGoogleToken(); toast(dict.gTokenExpired); } else { toast(dict.gBackupFail); }
+    } catch (err) { console.error(err); toast(dict.gBackupFailNetwork); }
   });
-
   gRestoreBtn.addEventListener('click', async () => {
-    if (!accessToken) return;
-    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-    const ok = await customConfirm(dict.gConfirmRestoreTitle, dict.gConfirmRestoreMsg, dict.gConfirmRestoreOk, dict.cancel, true);
-    if (!ok) return;
-
+    if (!accessToken) return; const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    const ok = await customConfirm(dict.gConfirmRestoreTitle, dict.gConfirmRestoreMsg, dict.gConfirmRestoreOk, dict.cancel, true); if (!ok) return;
     toast(dict.gRestoreDownloading);
     try {
-      const searchRes = await fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder', {
-        headers: { 'Authorization': 'Bearer ' + accessToken }
-      });
+      const searchRes = await fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder', { headers: { 'Authorization': 'Bearer ' + accessToken } });
       if (searchRes.status === 401) { clearGoogleToken(); toast(dict.gTokenExpired); return; }
-      const searchData = await searchRes.json();
-      if (!searchData.files || searchData.files.length === 0) { toast(dict.gRestoreEmpty); return; }
-      
+      const searchData = await searchRes.json(); if (!searchData.files || searchData.files.length === 0) { toast(dict.gRestoreEmpty); return; }
       const fileId = searchData.files[0].id;
-      const fileRes = await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media', {
-        headers: { 'Authorization': 'Bearer ' + accessToken }
-      });
+      const fileRes = await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media', { headers: { 'Authorization': 'Bearer ' + accessToken } });
       if (fileRes.status === 401) { clearGoogleToken(); toast(dict.gTokenExpired); return; }
       const data = await fileRes.json();
-
-      if (data.todos) todos = migrateTodos(data.todos); 
-      if (data.events) events = data.events; 
-      if (data.diaries) diaries = data.diaries; 
-      if (data.notes) notes = data.notes; 
-      if (data.goals) goals = data.goals; 
-      if (data.bookmarks) bookmarks = data.bookmarks; 
-      if (data.countdowns) countdowns = data.countdowns;
-      if (data.ledgerCategories) ledgerCategories = data.ledgerCategories;
-      if (data.ledger) ledger = data.ledger; else if (data.expenses) ledger = data.expenses.map(x => Object.assign({}, x, { type: 'expense' }));
-      
+      if (data.todos) todos = migrateTodos(data.todos); if (data.events) events = data.events; if (data.diaries) diaries = data.diaries; if (data.notes) notes = data.notes; if (data.goals) goals = data.goals; if (data.bookmarks) bookmarks = data.bookmarks; if (data.countdowns) countdowns = data.countdowns; if (data.ledgerCategories) ledgerCategories = data.ledgerCategories; if (data.ledger) ledger = data.ledger; else if (data.expenses) ledger = data.expenses.map(x => Object.assign({}, x, { type: 'expense' }));
       photoMeta = [];
-      const photoWrites = (data.photos || []).map(p => { 
-        photoMeta.push({ id: p.id, title: p.title || '' }); 
-        if (IDB.available() && p.src) { photoCache[p.id] = p.src; return IDB.put('photos', { id: p.id, src: p.src }).catch(()=>{}); } 
-        return Promise.resolve(); 
-      });
-      
+      const photoWrites = (data.photos || []).map(p => { photoMeta.push({ id: p.id, title: p.title || '' }); if (IDB.available() && p.src) { photoCache[p.id] = p.src; return IDB.put('photos', { id: p.id, src: p.src }).catch(()=>{}); } return Promise.resolve(); });
       if (data.prefs) { if (typeof data.prefs.lum === 'number') state.lum = Math.min(100, Math.max(0, data.prefs.lum)); if (typeof data.prefs.bg === 'string') state.bg = data.prefs.bg || null; applyTheme(); savePrefs(); }
       if (data.pomoSoundType === 'synth' || data.pomoSoundType === 'custom') { soundType = data.pomoSoundType; LS.set('pomoSoundType', soundType); }
-
       await Promise.all(photoWrites);
       ['todos', 'events', 'diaries', 'notes', 'goals', 'bookmarks', 'ledger', 'countdowns', 'ledgerCategories'].forEach(save); save('photoMeta'); pruneEvents(); pruneDone();
-      renderTodos(); renderCalendar(); renderDiaries(); renderNotes(); renderPhotos(); renderGoals(); renderBookmarks(); renderLedger(); renderHome();
-      toast(dict.gRestoreOk);
-    } catch (err) {
-      console.error(err);
-      toast(dict.gRestoreFail);
-    }
+      renderTodos(); renderCalendar(); renderDiaries(); renderNotes(); renderPhotos(); renderGoals(); renderBookmarks(); renderLedger(); renderHome(); toast(dict.gRestoreOk);
+    } catch (err) { console.error(err); toast(dict.gRestoreFail); }
   });
-
   updateGoogleUI();
 
   // ==========================================
@@ -1662,66 +1152,26 @@
   // ==========================================
   $$('[data-close]').forEach(function (btn) { btn.addEventListener('click', function () { closeModal(btn.dataset.close); }); });
   $$('.modal').forEach(function (m) { m.addEventListener('click', function (e) { if (e.target === m) closeModal('#' + m.id); }); });
-
   if (!STORAGE_OK) { setTimeout(function () { toast((window.I18N[currentLang] || window.I18N['zh-TW']).storageNo); }, 900); }
   loadPrefs(); applyTheme(); pruneEvents(); pruneDone();
+  currentLang = LS.get('userLang', 'zh-TW'); applyLanguage(currentLang);
 
-  // [NEW] 初始化語言與切換按鈕
-  currentLang = LS.get('userLang', 'zh-TW'); 
-  applyLanguage(currentLang);
-
-  // [NEW] 多語系輪替函式
   const LANG_CYCLE = ['zh-TW', 'en', 'ja'];
-  function cycleLanguage() {
-    const currentIndex = LANG_CYCLE.indexOf(currentLang);
-    currentLang = LANG_CYCLE[(currentIndex + 1) % LANG_CYCLE.length];
-    applyLanguage(currentLang);
-    toast(window.I18N[currentLang].welcomeLangSwitched);
-  }
+  function cycleLanguage() { const currentIndex = LANG_CYCLE.indexOf(currentLang); currentLang = LANG_CYCLE[(currentIndex + 1) % LANG_CYCLE.length]; applyLanguage(currentLang); toast(window.I18N[currentLang].welcomeLangSwitched); }
+  const langSwitchBtn = $('#langSwitchBtn'); if (langSwitchBtn && !langSwitchBtn.dataset.bound) { langSwitchBtn.dataset.bound = '1'; langSwitchBtn.addEventListener('click', cycleLanguage); }
+  const landingLangBtn = $('#landingLangBtn'); if (landingLangBtn && !landingLangBtn.dataset.bound) { landingLangBtn.dataset.bound = '1'; landingLangBtn.addEventListener('click', cycleLanguage); }
 
-  // [NEW] 主程式語系切換
-  const langSwitchBtn = $('#langSwitchBtn');
-  if (langSwitchBtn && !langSwitchBtn.dataset.bound) {
-    langSwitchBtn.dataset.bound = '1';
-    langSwitchBtn.addEventListener('click', cycleLanguage);
-  }
+  function safeRender(name, fn) { try { fn(); } catch (e) { console.warn('初始化渲染失敗：' + name, e); } }
+  safeRender('home', renderHome); safeRender('todos', renderTodos); safeRender('calendar', renderCalendar); safeRender('diaries', renderDiaries); safeRender('notes', renderNotes); safeRender('photos', renderPhotos); safeRender('goals', renderGoals); safeRender('bookmarks', renderBookmarks); safeRender('ledger', renderLedger);
 
-  // [NEW] Landing Page 語系切換
-  const landingLangBtn = $('#landingLangBtn');
-  if (landingLangBtn && !landingLangBtn.dataset.bound) {
-    landingLangBtn.dataset.bound = '1';
-    landingLangBtn.addEventListener('click', cycleLanguage);
-  }
-
-  function safeRender(name, fn) {
-    try { fn(); } catch (e) { console.warn('初始化渲染失敗：' + name, e); }
-  }
-  safeRender('home', renderHome);
-  safeRender('todos', renderTodos);
-  safeRender('calendar', renderCalendar);
-  safeRender('diaries', renderDiaries);
-  safeRender('notes', renderNotes);
-  safeRender('photos', renderPhotos);
-  safeRender('goals', renderGoals);
-  safeRender('bookmarks', renderBookmarks);
-  safeRender('ledger', renderLedger);
-
-  Promise.all([loadCustomAudio(), migrateLegacyPhotos()]).then(function () {
-    if (typeof updateSoundUI === 'function') updateSoundUI();
-    renderPhotos();
-  }).catch(function () {});
+  Promise.all([loadCustomAudio(), migrateLegacyPhotos()]).then(function () { if (typeof updateSoundUI === 'function') updateSoundUI(); renderPhotos(); }).catch(function () {});
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').then((reg) => {
         reg.onupdatefound = () => {
           const installingWorker = reg.installing;
-          installingWorker.onstatechange = () => {
-            if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              const banner = $('#updateBanner');
-              if (banner) banner.hidden = false;
-            }
-          };
+          installingWorker.onstatechange = () => { if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) { const banner = $('#updateBanner'); if (banner) banner.hidden = false; } };
         };
       }).catch((err) => { console.log('SW registration failed:', err); });
     });
@@ -1735,45 +1185,16 @@
     if (closeBtn) closeBtn.addEventListener('click', function () { banner.hidden = true; });
   })();
 
-  // [NEW] 處理未登入時的公開 Landing Page 顯示邏輯
   (function initPublicLanding() {
-    const landing = document.getElementById('public-landing');
-    const nav = document.querySelector('.nav');
-    const appMain = document.querySelector('.app');
-    const mobileNav = document.querySelector('.mobile-nav');
-    const pomoFab = document.getElementById('pomoFab');
-
-    // 定義全域切換函數（供 HTML onclick 呼叫）
+    const landing = document.getElementById('public-landing'); const nav = document.querySelector('.nav'); const appMain = document.querySelector('.app'); const mobileNav = document.querySelector('.mobile-nav'); const pomoFab = document.getElementById('pomoFab');
     window.enterDashboard = function() {
-      if (landing) landing.style.display = 'none';
-      if (nav) nav.style.display = 'flex';
-      if (appMain) appMain.style.display = 'flex';
-      if (mobileNav && window.innerWidth <= 768) mobileNav.style.display = 'flex';
-      if (pomoFab) pomoFab.style.display = 'flex';
+      if (landing) landing.style.display = 'none'; if (nav) nav.style.display = 'flex'; if (appMain) appMain.style.display = 'flex'; if (mobileNav && window.innerWidth <= 768) mobileNav.style.display = 'flex'; if (pomoFab) pomoFab.style.display = 'flex';
       if (typeof renderHome === 'function') renderHome();
-      
-      // 記錄已進入狀態，避免下次重整又卡在 Landing Page
       try { localStorage.setItem('guestEntered', 'true'); } catch(err) {}
     };
-
-    const showLanding = () => {
-      if (landing) landing.style.display = 'flex';
-      if (nav) nav.style.display = 'none';
-      if (appMain) appMain.style.display = 'none';
-      if (mobileNav) mobileNav.style.display = 'none';
-      if (pomoFab) pomoFab.style.display = 'none';
-    };
-
-    // 決定初始畫面（以 accessToken 為單一真相來源，過期已在啟動時清除）
-    const hasToken = !!accessToken;
-    const isGuest = localStorage.getItem('guestEntered') === 'true';
-
-    // 如果已經有 Token，或者訪客已經點過「進入儀表板」，就直接顯示主程式
-    if (hasToken || isGuest) {
-      window.enterDashboard();
-    } else {
-      showLanding();
-    }
+    const showLanding = () => { if (landing) landing.style.display = 'flex'; if (nav) nav.style.display = 'none'; if (appMain) appMain.style.display = 'none'; if (mobileNav) mobileNav.style.display = 'none'; if (pomoFab) pomoFab.style.display = 'none'; };
+    const hasToken = !!accessToken; const isGuest = localStorage.getItem('guestEntered') === 'true';
+    if (hasToken || isGuest) { window.enterDashboard(); } else { showLanding(); }
   })();
 
-})(); // <- 這裡是補齊的結尾，非常重要！
+})();
