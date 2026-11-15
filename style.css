@@ -655,15 +655,21 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
    響應式設計（手機版 < 768px）
    ═══════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-  html, body { overflow: hidden !important; }
+  html, body { 
+    overflow-y: auto !important; 
+    overflow-x: hidden; 
+    -webkit-overflow-scrolling: touch; 
+  }
   .app {
     padding: 16px !important;
     padding-top: calc(60px + env(safe-area-inset-top) + 16px) !important;
-    padding-bottom: 0 !important; /* Footer 的空間交給 scroll-box */
-    height: 100% !important;
+    /* [NEW] 為底部導航列與 Footer 預留空間 */
+    padding-bottom: calc(140px + env(safe-area-inset-bottom)) !important; 
+    height: auto !important;
+    min-height: 100dvh !important;
     display: flex;
     flex-direction: column;
-    overflow: hidden !important;
+    overflow: visible !important; 
   }
   .view,
   .view.active {

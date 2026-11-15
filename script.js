@@ -285,7 +285,7 @@
 
   const navMoreBtn = $('#navMoreBtn'); const navMoreMenu = $('#navMoreMenu');
   if (navMoreBtn && navMoreMenu) {
-    navMoreBtn.addEventListener('click', function (e) {
+    navMoreBtn.addEventListener('pointerdown', function (e) {
       e.preventDefault(); e.stopPropagation();
       navMoreMenu.classList.toggle('open');
     });
