@@ -283,43 +283,49 @@
   <section class="view" id="view-diary">
     <h1 data-i18n="viewDiaryTitle">日記</h1>
     <p class="sub" data-i18n="viewDiarySub">寫下來的，才是真的留下來的。</p>
-    <div class="card diary-compose" id="diaryCompose">
-      <input type="text" id="diaryTitle" placeholder="今天日記的標題…" data-i18n-placeholder="diaryTitlePlaceholder" maxlength="80">
-      <div class="row">
-        <select id="diaryWeather">
-          <option value="" data-i18n="diaryWeather">天氣</option>
-          <option data-i18n="wSunny">晴</option><option data-i18n="wCloudy">多雲</option><option data-i18n="wOvercast">陰</option>
-          <option data-i18n="wRain">雨</option><option data-i18n="wThunder">雷雨</option><option data-i18n="wSnow">雪</option><option data-i18n="wWind">風</option>
-        </select>
-        <select id="diaryMood">
-          <option value="" data-i18n="diaryMood">心情</option>
-          <option data-i18n="mHappy">愉快</option><option data-i18n="mCalm">平靜</option><option data-i18n="mFull">充實</option>
-          <option data-i18n="mTired">疲憊</option><option data-i18n="mDown">低落</option><option data-i18n="mAnxious">焦慮</option>
-          <option data-i18n="mExcited">興奮</option><option data-i18n="mIrritable">煩躁</option>
-        </select>
-      </div>
-      
-      <div class="diary-img-wrap" id="diaryImgWrap" hidden>
-        <img id="diaryImgPreview" alt="">
-        <div class="diary-img-acts">
-          <button class="mini" id="diaryImgClear" title="移除照片">×</button>
+    <div class="diary-container">
+      <div class="diary-left">
+        <div class="card diary-compose" id="diaryCompose">
+          <input type="text" id="diaryTitle" placeholder="今天日記的標題…" data-i18n-placeholder="diaryTitlePlaceholder" maxlength="80">
+          <div class="row">
+            <select id="diaryWeather">
+              <option value="" data-i18n="diaryWeather">天氣</option>
+              <option data-i18n="wSunny">晴</option><option data-i18n="wCloudy">多雲</option><option data-i18n="wOvercast">陰</option>
+              <option data-i18n="wRain">雨</option><option data-i18n="wThunder">雷雨</option><option data-i18n="wSnow">雪</option><option data-i18n="wWind">風</option>
+            </select>
+            <select id="diaryMood">
+              <option value="" data-i18n="diaryMood">心情</option>
+              <option data-i18n="mHappy">愉快</option><option data-i18n="mCalm">平靜</option><option data-i18n="mFull">充實</option>
+              <option data-i18n="mTired">疲憊</option><option data-i18n="mDown">低落</option><option data-i18n="mAnxious">焦慮</option>
+              <option data-i18n="mExcited">興奮</option><option data-i18n="mIrritable">煩躁</option>
+            </select>
+          </div>
+          
+          <div class="diary-img-wrap" id="diaryImgWrap" hidden>
+            <img id="diaryImgPreview" alt="">
+            <div class="diary-img-acts">
+              <button class="mini" id="diaryImgClear" title="移除照片">×</button>
+            </div>
+          </div>
+          <button class="btn ghost" id="diaryImgPick" style="align-self:flex-start; padding:6px 12px; font-size:13px;" data-i18n="diaryImgPick">📷 選擇照片</button>
+
+          <textarea id="diaryContent" placeholder="今天想記下點什麼…" data-i18n-placeholder="diaryContentPlaceholder"></textarea>
+          <div class="row">
+            <button class="btn ghost" id="diaryCancelEdit" style="flex:0 0 auto; color:#e5484d; border-color:rgba(229,72,77,.3);" data-i18n="diaryCancelEdit" hidden>取消編輯</button>
+            <button class="btn primary" id="diarySave" style="flex:1 1 auto;" data-i18n="diarySave">保存日記</button>
+          </div>
+          <div class="lock-note" id="diaryLockNote" data-i18n="diaryLockNote">🔒 保存後即可編輯。</div>
         </div>
       </div>
-      <button class="btn ghost" id="diaryImgPick" style="align-self:flex-start; padding:6px 12px; font-size:13px;" data-i18n="diaryImgPick">📷 選擇照片</button>
-
-      <textarea id="diaryContent" placeholder="今天想記下點什麼…" data-i18n-placeholder="diaryContentPlaceholder" style="min-height:100px;"></textarea>
-      <div class="row">
-        <button class="btn ghost" id="diaryCancelEdit" style="flex:0 0 auto; color:#e5484d; border-color:rgba(229,72,77,.3);" data-i18n="diaryCancelEdit" hidden>取消編輯</button>
-        <button class="btn primary" id="diarySave" style="flex:1 1 auto;" data-i18n="diarySave">保存日記</button>
+      <div class="diary-right">
+        <div class="card diary-viewer" style="height: 100%; margin-top: 0;">
+          <div class="diary-toolbar">
+            <button class="btn ghost" id="diaryDatePickerBtn" style="flex:1 1 auto;" data-i18n="diaryFilterAll">全部日記（點擊選擇日期）</button>
+            <button class="btn ghost" id="diaryClearFilter" style="flex:0 0 auto;" data-i18n="diaryClearFilter" hidden>清除篩選</button>
+          </div>
+          <div class="diary-scroll scroll-box" id="diaryList"></div>
+        </div>
       </div>
-      <div class="lock-note" id="diaryLockNote" data-i18n="diaryLockNote">🔒 保存後即可編輯。</div>
-    </div>
-    <div class="card diary-viewer">
-      <div class="diary-toolbar">
-        <button class="btn ghost" id="diaryDatePickerBtn" style="flex:1 1 auto;" data-i18n="diaryFilterAll">全部日記（點擊選擇日期）</button>
-        <button class="btn ghost" id="diaryClearFilter" style="flex:0 0 auto;" data-i18n="diaryClearFilter" hidden>清除篩選</button>
-      </div>
-      <div class="diary-scroll scroll-box" id="diaryList"></div>
     </div>
   </section>
 
