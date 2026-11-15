@@ -1044,13 +1044,13 @@ html, body {
   .app {
     height: 100% !important;
     min-height: 0 !important;
-    display: flex !important;
+    /* [NEW] 移除 display: flex !important; 讓 JS 的 display: none 能生效 */
     flex-direction: column !important;
     overflow: hidden !important;
   }
   
   .view.active {
-    display: flex !important;
+    /* [NEW] 移除 display: flex !important; 讓 JS 能正確切換 */
     flex-direction: column !important;
     flex: 1 1 auto !important;
     height: 100% !important;
@@ -1097,3 +1097,36 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   padding: 0;
 }
 
+/* ═══════════════ 任務四：Landing Page 與主程式顯示防呆 ═══════════════ */
+/* 預設隱藏主程式，由 JS 控制顯示 */
+.nav,
+.app,
+.mobile-nav,
+#pomoFab {
+  display: none;
+}
+
+/* Landing Page 預設隱藏，由 JS 控制顯示 */
+#public-landing {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  background: var(--bg, #12141a);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 確保視圖切換正常（覆蓋底部的強制規則） */
+.view {
+  display: none !important;
+}
+
+.view.active {
+  display: flex !important;
+  flex-direction: column !important;
+}

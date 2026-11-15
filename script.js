@@ -866,7 +866,9 @@
     $('#calTz').textContent = dict.calTz.replace('{tz}', TIMEZONE);
     if (!$('#calJumpDate').value) $('#calJumpDate').value = y + '-' + pad(m + 1) + '-01';
     const firstDow = new Date(y, m, 1).getDay(); const daysInMonth = new Date(y, m + 1, 0).getDate(); const daysInPrev = new Date(y, m, 0).getDate(); const totalCells = Math.ceil((firstDow + daysInMonth) / 7) * 7; const tk = todayKey();
-    let html = dict.calendarWeekdays.map(function (d) { return '<div class="cal-dow">' + d + '</div>'; }).join('');
+      let html = dict.weekdays.map(function (d) {
+      return '<div class="cal-dow">' + d + '</div>';
+    }).join('');
     for (let i = 0; i < totalCells; i++) {
       const dn = i - firstDow + 1;
       if (dn < 1) html += '<div class="cal-cell muted">' + (daysInPrev + dn) + '</div>';
@@ -1347,16 +1349,10 @@
     
     clearInterval(pomoInterval);
     
-    if (pomoState === 'idle') {
-      pomoTotalSet = 0;
-      pomoRemaining = 0;
-      LS.set('pomoDuration', 0);
-      updatePomoUI();
-    } else {
-      pomoState = 'idle';
-      pomoRemaining = pomoTotalSet; 
-      updatePomoUI();
-    }
+    // [NEW] 無論在哪個狀態，重置都應回到初始設定的時間，而不是歸零
+    pomoState = 'idle';
+    pomoRemaining = pomoTotalSet; 
+    updatePomoUI();
   });
 
   const savedDur = LS.get('pomoDuration', null);
@@ -1749,31 +1745,55 @@
 
   // [NEW] 處理未登入時的公開 Landing Page 顯示邏輯
   (function initPublicLanding() {
-    const landing = document.getElementById('public-landing');
-    const nav = document.querySelector('.nav');
-    const appMain = document.querySelector('.app');
-    const mobileNav = document.querySelector('.mobile-nav');
-    const pomoFab = document.getElementById('pomoFab');
+    const landingEl = document.getElementById('public-landing');
+    const navEl = document.querySelector('.nav');
+    const appMainEl = document.querySelector('.app');
+    const mobileNavEl = document.querySelector('.mobile-nav');
+    const pomoFabEl = document.getElementById('pomoFab');
 
     // 定義全域切換函數（供 HTML onclick 呼叫）
     window.enterDashboard = function() {
-      if (landing) landing.style.display = 'none';
-      if (nav) nav.style.display = 'flex';
-      if (appMain) appMain.style.display = 'flex';
-      if (mobileNav && window.innerWidth <= 768) mobileNav.style.display = 'flex';
-      if (pomoFab) pomoFab.style.display = 'flex';
-      if (typeof renderHome === 'function') renderHome();
+      if (landingEl) {
+        landingEl.style.display = 'none';
+      }
+      if (navEl) {
+        navEl.style.display = 'flex';
+      }
+      if (appMainEl) {
+        appMainEl.style.display = 'flex';
+      }
+      if (mobileNavEl && window.innerWidth <= 768) {
+        mobileNavEl.style.display = 'flex';
+      }
+      if (pomoFabEl) {
+        pomoFabEl.style.display = 'flex';
+      }
+      if (typeof renderHome === 'function') {
+        renderHome();
+      }
       
       // 記錄已進入狀態，避免下次重整又卡在 Landing Page
-      try { localStorage.setItem('guestEntered', 'true'); } catch(err) {}
+      try {
+        localStorage.setItem('guestEntered', 'true');
+      } catch (err) {}
     };
 
     const showLanding = () => {
-      if (landing) landing.style.display = 'flex';
-      if (nav) nav.style.display = 'none';
-      if (appMain) appMain.style.display = 'none';
-      if (mobileNav) mobileNav.style.display = 'none';
-      if (pomoFab) pomoFab.style.display = 'none';
+      if (landingEl) {
+        landingEl.style.display = 'flex';
+      }
+      if (navEl) {
+        navEl.style.display = 'none';
+      }
+      if (appMainEl) {
+        appMainEl.style.display = 'none';
+      }
+      if (mobileNavEl) {
+        mobileNavEl.style.display = 'none';
+      }
+      if (pomoFabEl) {
+        pomoFabEl.style.display = 'none';
+      }
     };
 
     // 決定初始畫面（以 accessToken 為單一真相來源，過期已在啟動時清除）
@@ -1787,5 +1807,3 @@
       showLanding();
     }
   })();
-
-})(); // <- 這裡是補齊的結尾，非常重要！
