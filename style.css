@@ -993,3 +993,36 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
 [data-i18n]:empty {
   display: none;
 }
+
+/* ═══════════════ 強制修復 iOS/iPadOS 日期與時間輸入框超出 ═══════════════ */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input[type="month"] {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;       /* 關鍵：允許它被壓縮到比 Safari 預設值更小 */
+  -webkit-appearance: none !important; /* 移除 Safari 預設外觀 */
+  appearance: none !important;
+  box-sizing: border-box !important;
+  padding: 10px 12px !important;
+  margin: 0 !important;
+}
+
+/* 針對 Safari 內部的日曆小圖標進行微調，避免它佔用太多空間 */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  margin-left: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* 確保日期輸入框在特定的 flex 容器中也能乖乖縮小 */
+.cal-jump-wrap input[type="date"],
+.ledger-form .row input[type="date"],
+.diary-toolbar input[type="date"] {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
