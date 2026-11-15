@@ -1034,35 +1034,35 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 
 /* ═══════════════ 終極滾動與安全區域修正 (手機/平板專用) ═══════════════ */
 @media (max-width: 1366px) {
-  /* 1. 鎖定外層，禁止整頁滾動，讓內容在內部滾動 */
+  /* 1. 鎖定外層，禁止整頁滾動 */
   html, body {
     height: 100% !important;
     overflow: hidden !important;
     -webkit-overflow-scrolling: touch;
   }
 
-  /* 2. 主程式容器：填滿可用空間，留出頂部導覽列與底部導航列的空間 */
+  /* 2. 主程式容器：填滿可用空間，預留頂部與底部空間 */
   .app {
     height: 100% !important;
     min-height: 0 !important;
     padding-top: calc(64px + env(safe-area-inset-top) + 10px) !important;
-    padding-bottom: calc(70px + env(safe-area-inset-bottom) + 10px) !important; /* 預留給底部導覽列或 Footer */
-    overflow: hidden !important; /* 外層不滾動 */
+    padding-bottom: calc(70px + env(safe-area-inset-bottom) + 10px) !important; /* 預留給底部導覽列 */
+    overflow: hidden !important; 
     display: flex !important;
     flex-direction: column !important;
   }
 
-  /* 3. 每個視圖都要能撐滿剩餘空間 */
+  /* 3. 每個視圖都要能撐滿剩餘空間，且不能自己滾動 */
   .view.active {
     flex: 1 1 auto !important;
     min-height: 0 !important;
     height: 100% !important;
     display: flex !important;
     flex-direction: column !important;
-    overflow: hidden !important;
+    overflow: hidden !important; 
   }
 
-  /* 4. 關鍵：讓內部的內容區塊（抽屜）可以滾動，並確保滾動到底部時有足夠的留白 */
+  /* 4. 關鍵：讓內部的「抽屜」可以滾動，並預留底部空間避免被遮擋 */
   .scroll-box,
   .home-main,
   .home-side,
@@ -1077,7 +1077,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
     min-height: 0 !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
-    /* 滾動到底部時，預留給手機底部導航列（約 70px）或 Footer 的高度，避免被遮擋 */
+    /* 預留底部空間給導覽列（70px）或 Footer，加上 iPhone 的 Home 條空間 */
     padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important; 
   }
 
@@ -1088,31 +1088,25 @@ input[type="time"]::-webkit-calendar-picker-indicator {
       padding-bottom: calc(90px + env(safe-area-inset-bottom)) !important;
     }
     
-    /* 確保首頁的左右兩欄在手機版是上下排列，且可以滾動 */
+    /* 強制首頁在手機版是上下排列，且交給外層的 .app 滾動 */
     .home-layout {
       flex-direction: column !important;
       height: auto !important;
     }
     .home-main, .home-side {
       height: auto !important;
-      overflow: visible !important; /* 讓手機版首頁交給外層的 .app 或 body 滾動，或者確保它們不會被卡住 */
+      overflow: visible !important; /* 把手機版首頁交給外層的 .app 或 body 滾動 */
       padding-bottom: 0 !important;
-    }
-    
-    /* 如果首頁是在 .scroll-box 裡面，強制它滾動 */
-    .home-layout {
-       overflow-y: auto !important;
     }
   }
 }
 
-/* 確保頁面底部的 Footer 不會擋住內容（給有 Footer 的頁面用） */
+/* Footer 固定底部，並加上安全區域 */
 .site-footer {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   z-index: 90;
-  /* 加上安全區域 */
   padding-bottom: env(safe-area-inset-bottom) !important; 
 }
