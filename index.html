@@ -11,7 +11,12 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="icon" type="image/png" href="./images/icon.png">
 <link rel="apple-touch-icon" href="./images/icon.png">
-<link rel="stylesheet" href="style.css">
+
+<!-- CSS 模組化載入 -->
+<link rel="stylesheet" href="./css/pc.css">
+<link rel="stylesheet" href="./css/pad.css">
+<link rel="stylesheet" href="./css/phone.css">
+
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
@@ -72,7 +77,7 @@
   </div>
 </div>
 
-<!-- [NEW] Update Banner -->
+<!-- Update Banner -->
 <div class="update-banner" id="updateBanner" hidden>
   <span class="update-banner-text" data-i18n="updateAvailable">✨ 有新版本可用</span>
   <div class="update-banner-actions">
@@ -84,7 +89,7 @@
 
 <div class="bg-layer" id="bgLayer"></div>
 
-<!-- [NEW] 主程式 Nav -->
+<!-- 主程式 Nav -->
 <header class="nav" style="display: none;">
   <div class="nav-left">
     <button class="logo-btn" id="logoBtn" aria-label="回到首頁" title="回到首頁">
@@ -767,7 +772,22 @@
 <input type="file" id="photoInput" accept="image/*" multiple hidden>
 <input type="file" id="importFileInput" accept="application/json" hidden>
 
-<script src="lang.js"></script>
-<script src="script.js"></script>
+<!-- JS 模組化載入順序 (重要！core 必須先載入) -->
+<script src="./lang.js"></script>
+<script src="./js/core.js"></script>
+<script src="./js/ui.js"></script>
+<script src="./js/homes.js"></script>
+<script src="./js/ledger.js"></script>
+<script src="./js/features/todo.js"></script>
+<script src="./js/features/calendar.js"></script>
+<script src="./js/features/diary.js"></script>
+<script src="./js/features/notes.js"></script>
+<script src="./js/features/photos.js"></script>
+<script src="./js/features/pomo.js"></script>
+<script src="./js/features/trash.js"></script>
+<script src="./js/features/settings.js"></script>
+<script src="./js/main.js"></script>
+
+
 </body>
 </html>

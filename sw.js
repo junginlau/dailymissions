@@ -1,30 +1,52 @@
-// [NEW] 對應全域正式版 v1.0.8
-const CACHE_NAME = 'my-space-cache-v1.0.8-beta-b30';
+// sw.js
+// 對應全域版本 v1.0.8-beta-b15
+const CACHE_NAME = 'my-space-cache-v1.0.8-beta-b15';
 
 const ASSETS = [
   './',
   './index.html',
-  './style.css',
-  './script.js',
-  './lang.js', 
+  './about.html',
+  './privacy.html',
+  './terms.html',
+  './css/pc.css',
+  './css/pad.css',
+  './css/phone.css',
+  './lang.js',
+  './js/core.js',
+  './js/ui.js',
+  './js/homes.js',
+  './js/ledger.js',
+  './js/features/todo.js',
+  './js/features/calendar.js',
+  './js/features/diary.js',
+  './js/features/notes.js',
+  './js/features/photos.js',
+  './js/features/pomo.js',
+  './js/features/trash.js',
+  './js/features/settings.js',
+  './js/main.js',
   './manifest.json',
   './images/logo.png',
   './images/icon.png'
 ];
 
-self.addEventListener('install', (e) => {
+self.addEventListener('install', function (e) {
   e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then(function (cache) {
+      return cache.addAll(ASSETS);
+    })
   );
   self.skipWaiting();
 });
 
-self.addEventListener('activate', (e) => {
+self.addEventListener('activate', function (e) {
   e.waitUntil(
-    caches.keys().then((keys) => {
+    caches.keys().then(function (keys) {
       return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) return caches.delete(key);
+        keys.map(function (key) {
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
         })
       );
     })
@@ -32,18 +54,20 @@ self.addEventListener('activate', (e) => {
   self.clients.claim();
 });
 
-self.addEventListener('fetch', (e) => {
+self.addEventListener('fetch', function (e) {
   if (!e.request.url.startsWith(self.location.origin)) return;
-  
+
   e.respondWith(
-    fetch(e.request).then((response) => {
-      const responseClone = response.clone();
-      caches.open(CACHE_NAME).then((cache) => {
-        cache.put(e.request, responseClone);
-      });
-      return response;
-    }).catch(() => {
-      return caches.match(e.request);
-    })
+    fetch(e.request)
+      .then(function (response) {
+        const responseClone = response.clone();
+        caches.open(CACHE_NAME).then(function (cache) {
+          cache.put(e.request, responseClone);
+        });
+        return response;
+      })
+      .catch(function () {
+        return caches.match(e.request);
+      })
   );
 });
