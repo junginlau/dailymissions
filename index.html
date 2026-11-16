@@ -243,7 +243,7 @@
     <div class="row" style="justify-content: flex-end; margin-top: 10px;">
       <button class="btn ghost" id="todoSettingsBtn" data-i18n="todoSettings" style="font-size:13px;">⚙ 設定標籤</button>
     </div>
-    <div class="today-layout">
+    <div class="todo-container">
       <aside class="tomorrow-col" id="tomorrowCol"></aside>
       <div class="today-col" id="todayCol"></div>
     </div>
@@ -253,27 +253,29 @@
   <section class="view" id="view-calendar">
     <h1 data-i18n="viewCalendarTitle">日曆</h1>
     <p class="sub" data-i18n="viewCalendarSub">點選任何一天，記下那天的重要事項。</p>
-    <div class="cal-layout">
-      <aside class="cal-sidebar card">
-        <h3 class="cal-sidebar-title" data-i18n="calSidebarTitle">接下來的要事</h3>
-        <div class="cal-sidebar-list scroll-box" id="calSidebarList"></div>
-      </aside>
-      <div class="cal-main">
-        <div class="card cal-card">
-          <div class="cal-head">
-            <div class="cal-nav">
-              <button class="mini" id="calPrev" aria-label="上個月" style="width:24px;height:24px;font-size:13px;">‹</button>
-              <div class="t" id="calTitle">—</div>
-              <button class="mini" id="calNext" aria-label="下個月" style="width:24px;height:24px;font-size:13px;">›</button>
+    <div class="cal-container">
+      <div class="cal-layout">
+        <aside class="cal-sidebar card">
+          <h3 class="cal-sidebar-title" data-i18n="calSidebarTitle">接下來的要事</h3>
+          <div class="cal-sidebar-list scroll-box" id="calSidebarList"></div>
+        </aside>
+        <div class="cal-main">
+          <div class="card cal-card">
+            <div class="cal-head">
+              <div class="cal-nav">
+                <button class="mini" id="calPrev" aria-label="上個月" style="width:24px;height:24px;font-size:13px;">‹</button>
+                <div class="t" id="calTitle">—</div>
+                <button class="mini" id="calNext" aria-label="下個月" style="width:24px;height:24px;font-size:13px;">›</button>
+              </div>
+              <div class="cal-jump-wrap">
+                <span data-i18n="calJump">跳轉日期：</span>
+                <input type="date" id="calJumpDate" title="點擊選擇年/月/日">
+                <button class="btn ghost" id="calToday" style="padding:4px 10px;font-size:12px;" data-i18n="calToday">今天</button>
+              </div>
             </div>
-            <div class="cal-jump-wrap">
-              <span data-i18n="calJump">跳轉日期：</span>
-              <input type="date" id="calJumpDate" title="點擊選擇年/月/日">
-              <button class="btn ghost" id="calToday" style="padding:4px 10px;font-size:12px;" data-i18n="calToday">今天</button>
-            </div>
+            <div class="cal-tz" id="calTz"></div>
+            <div class="cal-grid" id="calGrid"></div>
           </div>
-          <div class="cal-tz" id="calTz"></div>
-          <div class="cal-grid" id="calGrid"></div>
         </div>
       </div>
     </div>
@@ -333,22 +335,26 @@
   <section class="view" id="view-notes">
     <h1 data-i18n="viewNotesTitle">筆記本</h1>
     <p class="sub" data-i18n="viewNotesSub">想法很小的時候，就要先記下來。</p>
-    <div class="notes-scroll scroll-box">
-      <div class="grid three" id="notesGrid"></div>
+    <div class="notes-container">
+      <div class="notes-scroll scroll-box">
+        <div class="grid three" id="notesGrid"></div>
+      </div>
+      <button class="add-card" id="noteAdd" data-i18n="noteAddBtn">點擊這裡添加筆記</button>
     </div>
-    <button class="add-card" id="noteAdd" data-i18n="noteAddBtn">點擊這裡添加筆記</button>
   </section>
 
   <!-- 照片庫 -->
   <section class="view" id="view-photos">
     <h1 data-i18n="viewPhotosTitle">照片庫</h1>
     <p class="sub" data-i18n="viewPhotosSub">把喜歡的光線留在這裡。</p>
-    <div class="photos-toolbar">
-      <button class="btn primary" id="photoAdd" data-i18n="photoAdd">＋ 添加照片</button>
-      <span style="font-size:12px;color:var(--fg-dim);" data-i18n="photoHint">點擊照片可放大查看，下方可填寫標題。</span>
-    </div>
-    <div class="photos-scroll scroll-box">
-      <div class="photo-grid" id="photoGrid"></div>
+    <div class="photo-container">
+      <div class="photos-toolbar">
+        <button class="btn primary" id="photoAdd" data-i18n="photoAdd">＋ 添加照片</button>
+        <span style="font-size:12px;color:var(--fg-dim);" data-i18n="photoHint">點擊照片可放大查看，下方可填寫標題。</span>
+      </div>
+      <div class="photos-scroll scroll-box">
+        <div class="photo-grid" id="photoGrid"></div>
+      </div>
     </div>
   </section>
 
@@ -356,48 +362,50 @@
   <section class="view" id="view-ledger">
     <h1 data-i18n="viewLedgerTitle">記帳</h1>
     <p class="sub" data-i18n="viewLedgerSub">隨手記下一筆，掌握每一分錢的流向。</p>
-    <div class="ledger-layout">
-      <div class="card ledger-form-card">
-        <h3 style="font-size:16px;font-weight:600;" data-i18n="ledgerNewRecord">新增紀錄</h3>
-        <div class="ledger-form" style="display:flex;flex-direction:column;gap:12px;">
-          <div class="row" style="gap: 8px;">
-            <select id="ledgerType" style="flex: 1;">
-              <option value="expense" data-i18n="ledgerExpense">支出</option>
-              <option value="income" data-i18n="ledgerIncome">進帳</option>
-            </select>
-            <select id="ledgerCurrency" style="flex: 1;">
-              <option value="TWD">TWD (台幣)</option>
-              <option value="USD">USD (美元)</option>
-              <option value="JPY">JPY (日圓)</option>
-              <option value="HKD" selected>HKD (港幣)</option>
-              <option value="EUR">EUR (歐元)</option>
-              <option value="GBP">GBP (英鎊)</option>
-              <option value="CNY">CNY (人民幣)</option>
-            </select>
-          </div>
-          <input type="text" id="ledgerAmount" placeholder="輸入金額..." data-i18n-placeholder="ledgerAmountPlaceholder" inputmode="decimal" style="font-size:20px;font-weight:600;">
-          
-          <div class="dropdown-wrap">
-            <input type="text" id="ledgerCategory" class="ledger-input-sm" placeholder="輸入性質（如：飲食）" data-i18n-placeholder="ledgerCategoryPlaceholder" maxlength="20" autocomplete="off">
-            <div class="dropdown-menu" id="ledgerTags"></div>
-          </div>
+    <div class="ledger-container">
+      <div class="ledger-layout">
+        <div class="card ledger-form-card">
+          <h3 style="font-size:16px;font-weight:600;" data-i18n="ledgerNewRecord">新增紀錄</h3>
+          <div class="ledger-form" style="display:flex;flex-direction:column;gap:12px;">
+            <div class="row" style="gap: 8px;">
+              <select id="ledgerType" style="flex: 1;">
+                <option value="expense" data-i18n="ledgerExpense">支出</option>
+                <option value="income" data-i18n="ledgerIncome">進帳</option>
+              </select>
+              <select id="ledgerCurrency" style="flex: 1;">
+                <option value="TWD">TWD (台幣)</option>
+                <option value="USD">USD (美元)</option>
+                <option value="JPY">JPY (日圓)</option>
+                <option value="HKD" selected>HKD (港幣)</option>
+                <option value="EUR">EUR (歐元)</option>
+                <option value="GBP">GBP (英鎊)</option>
+                <option value="CNY">CNY (人民幣)</option>
+              </select>
+            </div>
+            <input type="text" id="ledgerAmount" placeholder="輸入金額..." data-i18n-placeholder="ledgerAmountPlaceholder" inputmode="decimal" style="font-size:20px;font-weight:600;">
+            
+            <div class="dropdown-wrap">
+              <input type="text" id="ledgerCategory" class="ledger-input-sm" placeholder="輸入性質（如：飲食）" data-i18n-placeholder="ledgerCategoryPlaceholder" maxlength="20" autocomplete="off">
+              <div class="dropdown-menu" id="ledgerTags"></div>
+            </div>
 
-          <div class="row">
-            <input type="date" id="ledgerDate">
+            <div class="row">
+              <input type="date" id="ledgerDate">
+            </div>
+            <input type="text" id="ledgerNote" placeholder="備註（選填，例如：和某某吃午餐）" data-i18n-placeholder="ledgerNotePlaceholder" maxlength="50">
+            <button class="btn primary" id="ledgerAddBtn" style="margin-top:8px;" data-i18n="ledgerSave">儲存這筆紀錄</button>
           </div>
-          <input type="text" id="ledgerNote" placeholder="備註（選填，例如：和某某吃午餐）" data-i18n-placeholder="ledgerNotePlaceholder" maxlength="50">
-          <button class="btn primary" id="ledgerAddBtn" style="margin-top:8px;" data-i18n="ledgerSave">儲存這筆紀錄</button>
+          <div id="rateFreshness" style="font-size:11px;color:var(--fg-dim);margin-top:4px;"></div>
+          <div class="lock-note" style="margin-top:4px;" data-i18n="ledgerHistoryNote">💡 歷史紀錄以「記帳當下匯率」換算。</div>
         </div>
-        <div id="rateFreshness" style="font-size:11px;color:var(--fg-dim);margin-top:4px;"></div>
-        <div class="lock-note" style="margin-top:4px;" data-i18n="ledgerHistoryNote">💡 歷史紀錄以「記帳當下匯率」換算。</div>
-      </div>
-      <div class="card ledger-list-card">
-        <div class="ledger-summary">
-          <div class="summary-item"><span data-i18n="ledgerMonthExpense">本月支出</span><b style="color: var(--expense-color);"><span id="monthExpenseTotal">0</span></b></div>
-          <div class="summary-item"><span data-i18n="ledgerMonthIncome">本月進帳</span><b style="color: var(--income-color);"><span id="monthIncomeTotal">0</span></b></div>
-          <div class="summary-item"><span data-i18n="ledgerMonthBalance">本月結餘</span><b id="monthBalanceTotal">$0</b></div>
+        <div class="card ledger-list-card">
+          <div class="ledger-summary">
+            <div class="summary-item"><span data-i18n="ledgerMonthExpense">本月支出</span><b style="color: var(--expense-color);"><span id="monthExpenseTotal">0</span></b></div>
+            <div class="summary-item"><span data-i18n="ledgerMonthIncome">本月進帳</span><b style="color: var(--income-color);"><span id="monthIncomeTotal">0</span></b></div>
+            <div class="summary-item"><span data-i18n="ledgerMonthBalance">本月結餘</span><b id="monthBalanceTotal">$0</b></div>
+          </div>
+          <div class="ledger-items scroll-box" id="ledgerList"></div>
         </div>
-        <div class="ledger-items scroll-box" id="ledgerList"></div>
       </div>
     </div>
   </section>
@@ -406,48 +414,50 @@
   <section class="view" id="view-about">
     <h1 data-i18n="viewAboutTitle">關於本站</h1>
     <p class="sub" data-i18n="viewAboutSub">一個極簡、高效且充滿個人風格的數位生活儀表板。</p>
-    <div class="about-layout mt-24">
-      <div class="card about-card">
-        <h3 data-i18n="aboutIntroTitle">📝 專案簡介</h3>
-        <p data-i18n="aboutIntroDesc">這個網站最初是為了打造一個「個人數位首頁」而誕生。它結合了搜尋引擎、書籤、待辦事項、日曆、日記、筆記、照片庫與記帳功能。所有資料皆儲存於瀏覽器本地端，無需註冊，隨開即用。</p>
-      </div>
-      <div class="card about-card">
-        <h3 data-i18n="aboutTechTitle">👨‍💻 開發者與技術棧</h3>
-        <p><span data-i18n="aboutTechBy">本專案由</span> <a href="https://github.com/junginlau" target="_blank" class="link">junginlau</a> <span data-i18n="aboutTechDev">開發與維護。</span></p>
-        <p data-i18n="aboutTechDesc">使用原生 HTML、CSS 與 JavaScript 打造，無任何外部框架依賴（Zero Dependencies）。</p>
-        <ul>
-          <li data-i18n="aboutTechFrontend">前端樣式：Vanilla CSS (Glassmorphism, Grid/Flexbox)</li>
-          <li data-i18n="aboutTechStorage">資料儲存：LocalStorage、IndexedDB（照片與音效）與 Cookie</li>
-          <li data-i18n="aboutTechService">外部服務：Open-Meteo API、Google Favicon API、ExchangeRate API</li>
-        </ul>
-      </div>
-      <div class="card about-card" style="border-color: #e5484d;">
-        <h3 style="color: #e5484d;" data-i18n="aboutPrivacyTitle">⚠️ 資料隱私與備份聲明</h3>
-        <p data-i18n="aboutPrivacyDesc1">本站不會將您的任何資料上傳至伺服器。所有資料僅保存在您當前的瀏覽器中。</p>
-        <p data-i18n="aboutPrivacyDesc2">請注意：如果您清理了瀏覽器快取，或更換了裝置，資料將會遺失。強烈建議您定期點擊右上角的「設定」->「匯出備份」。</p>
-        <button class="btn primary" id="aboutExportBtn" style="margin-top: 10px; background: #e5484d; border-color: transparent;" data-i18n="aboutPrivacyBtn">立即匯出備份</button>
-      </div>
-      <div class="card about-card">
-        <h3 data-i18n="aboutKeysTitle">⌨️ 實用快捷鍵</h3>
-        <ul>
-          <li><kbd>/</kbd> <span data-i18n="aboutKey1">快速聚焦搜尋欄</span></li>
-          <li><kbd>n</kbd> <span data-i18n="aboutKey2">在首頁或筆記本頁快速新增筆記</span></li>
-          <li><kbd>1</kbd> - <kbd>6</kbd> <span data-i18n="aboutKey4">快速切換分頁（首頁、必做、日曆、日記、筆記、記帳）</span></li>
-          <li><kbd>Esc</kbd> <span data-i18n="aboutKey3">關閉所有彈窗與面板</span></li>
-        </ul>
-      </div>
-      <div class="card about-card">
-        <h3 data-i18n="aboutFeaturesTitle">💡 功能清單</h3>
-        <ul>
-          <li data-i18n="aboutFeat1">自訂背景與深淺色切換</li>
-          <li data-i18n="aboutFeat2">每週必做（支援拖拽與標籤）</li>
-          <li data-i18n="aboutFeat3">日曆（支援星星標記與快速跳轉）</li>
-          <li data-i18n="aboutFeat4">日記（支援編輯與上傳照片）</li>
-          <li data-i18n="aboutFeat5">筆記本與照片庫（自動壓縮）</li>
-          <li data-i18n="aboutFeat6">記帳（支援多幣別、標籤與收支統計）</li>
-          <li data-i18n="aboutFeat7">番茄鐘（時分秒自訂、精細按鈕動畫）</li>
-          <li data-i18n="aboutFeat8">資料備份匯出／匯入</li>
-        </ul>
+    <div class="about-container">
+      <div class="about-layout mt-24">
+        <div class="card about-card">
+          <h3 data-i18n="aboutIntroTitle">📝 專案簡介</h3>
+          <p data-i18n="aboutIntroDesc">這個網站最初是為了打造一個「個人數位首頁」而誕生。它結合了搜尋引擎、書籤、待辦事項、日曆、日記、筆記、照片庫與記帳功能。所有資料皆儲存於瀏覽器本地端，無需註冊，隨開即用。</p>
+        </div>
+        <div class="card about-card">
+          <h3 data-i18n="aboutTechTitle">👨‍💻 開發者與技術棧</h3>
+          <p><span data-i18n="aboutTechBy">本專案由</span> <a href="https://github.com/junginlau" target="_blank" class="link">junginlau</a> <span data-i18n="aboutTechDev">開發與維護。</span></p>
+          <p data-i18n="aboutTechDesc">使用原生 HTML、CSS 與 JavaScript 打造，無任何外部框架依賴（Zero Dependencies）。</p>
+          <ul>
+            <li data-i18n="aboutTechFrontend">前端樣式：Vanilla CSS (Glassmorphism, Grid/Flexbox)</li>
+            <li data-i18n="aboutTechStorage">資料儲存：LocalStorage、IndexedDB（照片與音效）與 Cookie</li>
+            <li data-i18n="aboutTechService">外部服務：Open-Meteo API、Google Favicon API、ExchangeRate API</li>
+          </ul>
+        </div>
+        <div class="card about-card" style="border-color: #e5484d;">
+          <h3 style="color: #e5484d;" data-i18n="aboutPrivacyTitle">⚠️ 資料隱私與備份聲明</h3>
+          <p data-i18n="aboutPrivacyDesc1">本站不會將您的任何資料上傳至伺服器。所有資料僅保存在您當前的瀏覽器中。</p>
+          <p data-i18n="aboutPrivacyDesc2">請注意：如果您清理了瀏覽器快取，或更換了裝置，資料將會遺失。強烈建議您定期點擊右上角的「設定」->「匯出備份」。</p>
+          <button class="btn primary" id="aboutExportBtn" style="margin-top: 10px; background: #e5484d; border-color: transparent;" data-i18n="aboutPrivacyBtn">立即匯出備份</button>
+        </div>
+        <div class="card about-card">
+          <h3 data-i18n="aboutKeysTitle">⌨️ 實用快捷鍵</h3>
+          <ul>
+            <li><kbd>/</kbd> <span data-i18n="aboutKey1">快速聚焦搜尋欄</span></li>
+            <li><kbd>n</kbd> <span data-i18n="aboutKey2">在首頁或筆記本頁快速新增筆記</span></li>
+            <li><kbd>1</kbd> - <kbd>6</kbd> <span data-i18n="aboutKey4">快速切換分頁（首頁、必做、日曆、日記、筆記、記帳）</span></li>
+            <li><kbd>Esc</kbd> <span data-i18n="aboutKey3">關閉所有彈窗與面板</span></li>
+          </ul>
+        </div>
+        <div class="card about-card">
+          <h3 data-i18n="aboutFeaturesTitle">💡 功能清單</h3>
+          <ul>
+            <li data-i18n="aboutFeat1">自訂背景與深淺色切換</li>
+            <li data-i18n="aboutFeat2">每週必做（支援拖拽與標籤）</li>
+            <li data-i18n="aboutFeat3">日曆（支援星星標記與快速跳轉）</li>
+            <li data-i18n="aboutFeat4">日記（支援編輯與上傳照片）</li>
+            <li data-i18n="aboutFeat5">筆記本與照片庫（自動壓縮）</li>
+            <li data-i18n="aboutFeat6">記帳（支援多幣別、標籤與收支統計）</li>
+            <li data-i18n="aboutFeat7">番茄鐘（時分秒自訂、精細按鈕動畫）</li>
+            <li data-i18n="aboutFeat8">資料備份匯出／匯入</li>
+          </ul>
+        </div>
       </div>
     </div>
   </section>

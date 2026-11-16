@@ -122,8 +122,8 @@ input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius
   z-index: 1;
   max-width: 1280px;
   margin: 0 auto;
-  padding: 80px 24px 80px; 
-  height: 100%;
+  padding: 80px 24px 70px; /* 預留底部 Footer 空間 */
+  height: 100vh; /* 鎖定高度 */
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -208,9 +208,10 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
 .mini.del:hover { color: #e5484d; border-color: rgba(229,72,77,.45); }
 
 /* ══════════ 首頁 ══════════ */
-.home-layout { display: flex !important; gap: 22px !important; flex: 1 1 auto !important; min-height: 0 !important; margin-top: 16px !important; overflow: hidden !important; }
-.home-main { flex: 1 1 auto !important; min-width: 0 !important; overflow-y: auto !important; padding-right: 6px !important; padding-bottom: 40px !important; display: flex; flex-direction: column; gap: 16px; }
-.home-side { flex: 0 0 280px !important; min-width: 0 !important; display: flex !important; flex-direction: column !important; gap: 16px !important; overflow: hidden !important; }
+.home-layout { display: flex !important; gap: 2% !important; flex: 1 1 auto !important; min-height: 0 !important; height: 100% !important; margin-top: 16px !important; overflow: hidden !important; }
+.home-main { flex: 1 1 70% !important; max-width: 70% !important; height: 100% !important; min-width: 0 !important; overflow-y: auto !important; padding-right: 6px !important; padding-bottom: 40px !important; display: flex; flex-direction: column; gap: 16px; }
+.home-side { flex: 0 0 28% !important; max-width: 28% !important; height: 100% !important; min-width: 0 !important; display: flex !important; flex-direction: column !important; gap: 16px !important; overflow: hidden !important; }
+
 .clock-card { display: flex; flex-direction: column; flex: 0 0 auto; }
 .clock-time { font-size: 42px; font-weight: 700; letter-spacing: -.04em; font-variant-numeric: tabular-nums; line-height: 1.1; }
 .clock-date { margin-top: 4px; font-size: 14px; color: var(--fg-dim); }
@@ -250,7 +251,6 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
 .shortcut .arrow { margin-top: 10px; font-size: 12px; color: var(--fg-dim); transition: transform .25s var(--ease); }
 .shortcut:hover .arrow { transform: translateX(4px); }
 
-/* 最近的要事 & 書籤 */
 .countdown-card { padding: 16px; flex: 0 0 auto; }
 .countdown-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .countdown-head h3 { font-size: 14px; font-weight: 600; }
@@ -282,14 +282,14 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
 /* ══════════ 頁面佈局 ══════════ */
 /* 每週必做 */
 #view-todo.active { height: 100%; display: flex; flex-direction: column; overflow: hidden !important; }
-.today-layout { display: flex !important; gap: 16px !important; flex: 1 1 auto !important; min-height: 0 !important; margin-top: 20px !important; overflow: hidden !important; }
-.tomorrow-col { flex: 0 0 170px !important; min-width: 0 !important; display: flex !important; flex-direction: column !important; }
-.today-col { flex: 1 1 auto !important; min-width: 0 !important; display: flex !important; flex-direction: column !important; }
-.tomorrow-card { padding: 14px; flex: 0 0 auto; }
-.tomorrow-card h4 { font-size: 12px; font-weight: 600; letter-spacing: .04em; color: var(--fg-dim); margin-bottom: 10px; }
-.tomorrow-list { display: flex; flex-direction: column; gap: 4px; }
+.todo-container { display: flex !important; flex: 1 1 auto !important; min-height: 0 !important; height: 100% !important; gap: 16px !important; margin-top: 20px !important; overflow: hidden !important; }
+.tomorrow-col { flex: 0 0 20% !important; max-width: 220px !important; min-width: 0 !important; display: flex !important; flex-direction: column !important; height: 100% !important; }
+.today-col { flex: 1 1 auto !important; min-width: 0 !important; display: flex !important; flex-direction: column !important; height: 100% !important; }
+.tomorrow-card { padding: 14px; flex: 1 1 auto !important; display: flex; flex-direction: column; min-height: 0 !important; overflow: hidden !important; margin-bottom: 16px !important; }
+.tomorrow-card h4 { font-size: 12px; font-weight: 600; letter-spacing: .04em; color: var(--fg-dim); margin-bottom: 10px; flex: 0 0 auto; }
+.tomorrow-list { display: flex; flex-direction: column; gap: 4px; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
 .tomorrow-tag { font-size: 11px; color: var(--fg-dim); padding: 3px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.today-card { padding: 16px; display: flex !important; flex-direction: column !important; flex: 1 1 auto !important; min-height: 0 !important; overflow: hidden !important; }
+.today-card { padding: 16px; display: flex !important; flex-direction: column !important; flex: 1 1 auto !important; min-height: 0 !important; overflow: hidden !important; margin-bottom: 16px !important; }
 .today-head { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 10px; }
 .today-head h3 { font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
 .today-head .badge { font-size: 12px; color: var(--fg-dim); background: var(--hover); padding: 2px 10px; border-radius: 999px; font-variant-numeric: tabular-nums; }
@@ -304,18 +304,19 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
 
 /* 日曆 */
 #view-calendar.active { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden !important; }
-.cal-layout {display: flex !important;gap: 20px !important;flex: 1 1 auto !important;min-height: 0 !important;margin-top: 16px !important;width: 100%;overflow: hidden !important;}
-.cal-sidebar {flex: 0 0 260px !important;display: flex !important;flex-direction: column !important;padding: 16px !important;height: 100% !important;min-height: 0 !important;overflow: hidden !important;}
-.cal-sidebar-title {font-size: 15px;font-weight: 600;margin-bottom: 12px;color: var(--fg);flex: 0 0 auto;}
-.cal-sidebar-list {display: flex !important;flex-direction: column !important;gap: 8px !important;flex: 1 1 auto !important;min-height: 0 !important;overflow-y: auto !important;}
-.cal-sidebar-item {padding: 10px 12px;border-radius: 10px;background: var(--hover);display: flex;flex-direction: column;gap: 4px;transition: background .2s var(--ease);}
-.cal-sidebar-item:hover {background: var(--panel-border);}
-.cal-sidebar-date {font-size: 12px;color: var(--fg-dim);font-variant-numeric: tabular-nums;display: flex;gap: 6px;align-items: center;}
-.cal-sidebar-time {font-weight: 600;color: var(--fg);}
-.cal-sidebar-ev-title {font-size: 14px;font-weight: 500;color: var(--fg);line-height: 1.4;word-break: break-word;}
-.cal-main {flex: 1 1 auto !important;min-width: 0 !important;display: flex !important;flex-direction: column !important;overflow: hidden !important;}
-.cal-card {flex: 1 1 auto !important; display: flex !important; flex-direction: column !important; min-height: 0 !important; overflow: hidden !important; padding: 16px !important;}
-.cal-head {flex: 0 0 auto !important; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; flex-wrap: wrap;}
+.cal-container { display: flex !important; flex: 1 1 auto !important; min-height: 0 !important; height: 100% !important; margin-top: 16px !important; overflow: hidden !important; }
+.cal-layout { display: flex !important; width: 100% !important; height: 100% !important; gap: 20px !important; min-height: 0 !important; overflow: hidden !important; }
+.cal-sidebar { flex: 0 0 26% !important; max-width: 280px !important; display: flex !important; flex-direction: column !important; padding: 16px !important; height: 100% !important; min-height: 0 !important; overflow: hidden !important; margin-bottom: 16px !important; }
+.cal-sidebar-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; color: var(--fg); flex: 0 0 auto; }
+.cal-sidebar-list { display: flex !important; flex-direction: column !important; gap: 8px !important; flex: 1 1 auto !important; min-height: 0 !important; overflow-y: auto !important; }
+.cal-sidebar-item { padding: 10px 12px; border-radius: 10px; background: var(--hover); display: flex; flex-direction: column; gap: 4px; transition: background .2s var(--ease); }
+.cal-sidebar-item:hover { background: var(--panel-border); }
+.cal-sidebar-date { font-size: 12px; color: var(--fg-dim); font-variant-numeric: tabular-nums; display: flex; gap: 6px; align-items: center; }
+.cal-sidebar-time { font-weight: 600; color: var(--fg); }
+.cal-sidebar-ev-title { font-size: 14px; font-weight: 500; color: var(--fg); line-height: 1.4; word-break: break-word; }
+.cal-main { flex: 1 1 auto !important; min-width: 0 !important; display: flex !important; flex-direction: column !important; height: 100% !important; overflow: hidden !important; }
+.cal-card { flex: 1 1 auto !important; display: flex !important; flex-direction: column !important; min-height: 0 !important; overflow: hidden !important; padding: 16px !important; margin-bottom: 16px !important; }
+.cal-head { flex: 0 0 auto !important; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
 .cal-nav { display: flex; align-items: center; gap: 8px; }
 .cal-head .t { font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
 .cal-jump-wrap { display: flex !important; flex-wrap: wrap !important; width: 100% !important; gap: 8px !important; }
@@ -331,11 +332,11 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
 
 /* 日記：左右 4:3 佈局 */
 #view-diary.active { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden !important; }
-.diary-container { display: flex !important; flex: 1 1 auto !important; min-height: 0 !important; gap: 20px !important; margin-top: 16px !important; overflow: hidden !important; }
-.diary-left { flex: 4 !important; display: flex !important; flex-direction: column !important; min-width: 0 !important; overflow-y: auto !important; padding-right: 10px !important; }
+.diary-container { display: flex !important; flex: 1 1 auto !important; min-height: 0 !important; height: 100% !important; gap: 20px !important; margin-top: 16px !important; overflow: hidden !important; }
+.diary-left { flex: 4 !important; display: flex !important; flex-direction: column !important; min-width: 0 !important; overflow-y: auto !important; padding-right: 10px !important; margin-bottom: 16px !important; }
 .diary-compose { flex: 0 0 auto !important; display: flex; flex-direction: column; gap: 10px; }
 .diary-compose .row select { flex: 1 1 130px; width: auto; }
-.diary-right { flex: 3 !important; display: flex !important; flex-direction: column !important; min-width: 0 !important; overflow: hidden !important; }
+.diary-right { flex: 3 !important; display: flex !important; flex-direction: column !important; min-width: 0 !important; height: 100% !important; overflow: hidden !important; margin-bottom: 16px !important; }
 .diary-viewer { flex: 1 1 auto !important; min-height: 0 !important; display: flex !important; flex-direction: column !important; }
 .diary-toolbar { flex: 0 0 auto; display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
 .diary-toolbar input[type="date"] { flex: 1 1 180px; }
@@ -355,7 +356,8 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
 
 /* 筆記本：按鈕固定，卡片在框框內滾動 */
 #view-notes.active { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden !important; }
-.notes-scroll { flex: 1 1 auto !important; min-height: 0 !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; margin-top: 16px !important; }
+.notes-container { display: flex !important; flex-direction: column !important; flex: 1 1 auto !important; min-height: 0 !important; height: 100% !important; margin-top: 16px !important; overflow: hidden !important; }
+.notes-scroll { flex: 1 1 auto !important; min-height: 0 !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; margin-bottom: 16px !important; }
 #notesGrid { flex: 1 1 auto !important; min-height: 0 !important; overflow-y: auto !important; padding-bottom: 20px !important; }
 .note { text-align: left; font: inherit; cursor: pointer; display: flex; flex-direction: column; gap: 8px; overflow: hidden; transition: transform .25s var(--ease); }
 .note:hover { transform: translateY(-3px); }
@@ -373,8 +375,10 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
 
 /* 照片庫、記帳、關於本站：填滿高度，內部滾動 */
 #view-photos.active, #view-ledger.active, #view-about.active { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden !important; }
-.photos-scroll, .ledger-layout, .about-layout { flex: 1 1 auto !important; min-height: 0 !important; overflow-y: auto !important; padding-bottom: 40px !important; }
-.photos-toolbar { flex: 0 0 auto; display: flex; gap: 10px; align-items: center; margin-top: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+.photo-container, .ledger-container, .about-container { display: flex !important; flex-direction: column !important; flex: 1 1 auto !important; min-height: 0 !important; height: 100% !important; overflow: hidden !important; margin-top: 16px !important; }
+
+.photos-toolbar { flex: 0 0 auto; display: flex; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+.photos-scroll { flex: 1 1 auto !important; min-height: 0 !important; overflow-y: auto !important; padding-bottom: 20px !important; margin-bottom: 16px !important; }
 .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
 .photo { aspect-ratio: 1 / 1; border-radius: 16px; overflow: hidden; border: 2px solid transparent; padding: 0; cursor: pointer; background: var(--hover); transition: transform .3s var(--ease), border-color .3s var(--ease), box-shadow .3s var(--ease), filter .3s var(--ease); box-shadow: 0 4px 12px rgba(0,0,0,.1); position: relative; z-index: 1; }
 .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -382,17 +386,9 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
   .photo { filter: grayscale(100%) opacity(0.7); }
   .photo:hover { filter: grayscale(0%) opacity(1); transform: scale(1.06) translateY(-2px); border-color: var(--panel-border); box-shadow: 0 12px 30px rgba(0,0,0,.3); z-index: 2; }
 }
-.about-layout { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
-.about-card { display: flex; flex-direction: column; gap: 12px; }
-.about-card h3 { font-size: 16px; font-weight: 600; color: var(--fg); margin-bottom: 4px; }
-.about-card p { font-size: 14px; line-height: 1.7; color: var(--fg-dim); }
-.about-card ul { padding-left: 20px; font-size: 14px; line-height: 1.8; color: var(--fg-dim); }
-.about-card kbd { background: var(--hover); border: 1px solid var(--panel-border); border-radius: 4px; padding: 2px 6px; font-family: monospace; font-size: 12px; color: var(--fg); }
-.about-card .link { color: var(--fg); text-decoration: underline; text-underline-offset: 4px; transition: color 0.2s; }
-.about-card .link:hover { color: #6AA9FF; }
-.ledger-layout { display: flex !important; flex: 1 1 auto !important; min-height: 0 !important; gap: 20px !important; margin-top: 16px !important; overflow: hidden !important; }
-.ledger-form-card { flex: 0 0 320px !important; display: flex !important; flex-direction: column !important; gap: 12px !important; overflow-y: auto !important; padding-right: 10px !important; }
-.ledger-list-card { flex: 1 1 auto !important; display: flex !important; flex-direction: column !important; min-height: 0 !important; overflow: hidden !important; }
+.ledger-layout { display: flex !important; flex: 1 1 auto !important; min-height: 0 !important; height: 100% !important; gap: 20px !important; overflow: hidden !important; }
+.ledger-form-card { flex: 0 0 34% !important; max-width: 34% !important; display: flex !important; flex-direction: column !important; gap: 12px !important; overflow-y: auto !important; padding-right: 10px !important; margin-bottom: 16px !important; }
+.ledger-list-card { flex: 1 1 auto !important; display: flex !important; flex-direction: column !important; min-height: 0 !important; overflow: hidden !important; margin-bottom: 16px !important; }
 .ledger-items { flex: 1 1 auto !important; min-height: 0 !important; overflow-y: auto !important; }
 .ledger-form input[type="number"], .ledger-form input#ledgerAmount { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; padding: 12px; }
 .ledger-form .row { align-items: stretch; }
@@ -422,6 +418,15 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
 .tag-chip-ledger:hover { color: var(--fg); }
 .tag-del-btn { font: inherit; font-size: 14px; font-weight: bold; padding: 4px 8px 5px 6px; border: none; background: transparent; color: var(--fg-dim); cursor: pointer; line-height: 1; display: flex; align-items: center; transition: color .2s var(--ease), background .2s var(--ease); }
 .tag-del-btn:hover { color: #e5484d; background: rgba(229, 72, 77, 0.1); }
+
+.about-layout { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; flex: 1 1 auto !important; min-height: 0 !important; overflow-y: auto !important; padding-bottom: 20px !important; margin-bottom: 16px !important; }
+.about-card { display: flex; flex-direction: column; gap: 12px; }
+.about-card h3 { font-size: 16px; font-weight: 600; color: var(--fg); margin-bottom: 4px; }
+.about-card p { font-size: 14px; line-height: 1.7; color: var(--fg-dim); }
+.about-card ul { padding-left: 20px; font-size: 14px; line-height: 1.8; color: var(--fg-dim); }
+.about-card kbd { background: var(--hover); border: 1px solid var(--panel-border); border-radius: 4px; padding: 2px 6px; font-family: monospace; font-size: 12px; color: var(--fg); }
+.about-card .link { color: var(--fg); text-decoration: underline; text-underline-offset: 4px; transition: color 0.2s; }
+.about-card .link:hover { color: #6AA9FF; }
 
 /* ══════════ 彈窗 ══════════ */
 .modal { position: fixed; inset: 0; z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(10, 12, 16, .35); -webkit-backdrop-filter: blur(22px) saturate(140%); backdrop-filter: blur(22px) saturate(140%); }
@@ -702,30 +707,30 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
 
 /* ═══════════════ 平板區間（流式佈局 + 主內容內部滾動） ═══════════════ */
 @media (min-width: 769px) and (max-width: 1366px) {
-  .app { padding: 80px 3vw 0 !important; max-width: 100% !important; margin: 0 auto !important; display: flex !important; flex-direction: column !important; height: 100% !important; overflow: hidden !important; }
+  .app { padding: 80px 3vw 70px !important; max-width: 100% !important; margin: 0 auto !important; display: flex !important; flex-direction: column !important; height: 100vh !important; overflow: hidden !important; }
   .view.active { display: flex !important; flex-direction: column !important; flex: 1 1 auto !important; height: 100% !important; overflow: hidden !important; }
   .scroll-box { overflow-y: auto !important; height: auto !important; flex: 1 1 auto !important; min-height: 0 !important; }
-  .home-layout, .home-main, .home-side { height: auto !important; overflow: visible !important; flex: 0 0 auto !important; }
+  .home-layout, .home-main, .home-side { height: 100% !important; overflow: visible !important; flex: 0 0 auto !important; }
   .home-layout { gap: 2% !important; }
   .home-main { flex: 1 1 68% !important; max-width: 68% !important; min-width: 0 !important; }
   .home-side { flex: 0 0 30% !important; max-width: 30% !important; min-width: 0 !important; }
   .stats { grid-template-columns: repeat(4, 1fr) !important; }
   .shortcuts-grid { grid-template-columns: repeat(2, 1fr) !important; }
-  .today-layout { flex-direction: row !important; align-items: flex-start !important; justify-content: space-between !important; gap: 16px !important; height: auto !important; flex: 1 1 auto !important; min-height: 0 !important; }
-  .tomorrow-col { flex: 0 0 20% !important; max-width: 220px !important; min-width: 0 !important; }
-  .today-col { flex: 1 1 auto !important; min-width: 0 !important; }
+  .today-layout { flex-direction: row !important; align-items: flex-start !important; justify-content: space-between !important; gap: 16px !important; height: 100% !important; flex: 1 1 auto !important; min-height: 0 !important; }
+  .tomorrow-col { flex: 0 0 20% !important; max-width: 220px !important; min-width: 0 !important; height: 100% !important; }
+  .today-col { flex: 1 1 auto !important; min-width: 0 !important; height: 100% !important; }
   .today-card { height: 100% !important; min-height: 300px !important; max-width: none !important; margin: 0 !important; }
-  .cal-layout { flex-direction: row !important; gap: 2% !important; flex: 1 1 auto !important; min-height: 0 !important; padding-bottom: 20px !important; }
-  .cal-sidebar { flex: 0 0 26% !important; width: auto !important; max-width: 280px !important; min-width: 0 !important; height: auto !important; min-height: 0 !important; }
-  .cal-main { flex: 1 1 auto !important; width: auto !important; min-width: 0 !important; min-height: 0 !important; display: flex !important; flex-direction: column !important; }
-  .cal-card { flex: 1 1 auto !important; height: auto !important; min-height: 0 !important; }
+  .cal-layout { flex-direction: row !important; gap: 2% !important; flex: 1 1 auto !important; min-height: 0 !important; padding-bottom: 20px !important; height: 100% !important; }
+  .cal-sidebar { flex: 0 0 26% !important; width: auto !important; max-width: 280px !important; min-width: 0 !important; height: 100% !important; min-height: 0 !important; }
+  .cal-main { flex: 1 1 auto !important; width: auto !important; min-width: 0 !important; min-height: 0 !important; display: flex !important; flex-direction: column !important; height: 100% !important; }
+  .cal-card { flex: 1 1 auto !important; height: 100% !important; min-height: 0 !important; }
   .cal-container { max-width: 100% !important; width: 100% !important; height: 100% !important; margin: 16px 0 0 !important; align-self: stretch !important; }
   .cal-grid { grid-template-rows: repeat(7, minmax(0, 1fr)) !important; min-height: 0 !important; flex: 1 1 auto !important; }
   .cal-cell { aspect-ratio: auto !important; min-height: 0 !important; }
-  .ledger-layout { flex-direction: row !important; align-items: flex-start !important; justify-content: space-between !important; gap: 2% !important; height: auto !important; min-height: 0 !important; flex: 1 1 auto !important; }
-  .ledger-form-card { flex: 1 1 34% !important; max-width: 34% !important; min-width: 0 !important; align-self: flex-start !important; height: auto !important; }
-  .ledger-list-card { flex: 1 1 64% !important; max-width: 64% !important; min-width: 0 !important; align-self: flex-start !important; height: auto !important; min-height: 0 !important; }
-  .about-layout { justify-content: center !important; }
+  .ledger-layout { flex-direction: row !important; align-items: flex-start !important; justify-content: space-between !important; gap: 2% !important; height: 100% !important; min-height: 0 !important; flex: 1 1 auto !important; }
+  .ledger-form-card { flex: 1 1 34% !important; max-width: 34% !important; min-width: 0 !important; align-self: flex-start !important; height: 100% !important; }
+  .ledger-list-card { flex: 1 1 64% !important; max-width: 64% !important; min-width: 0 !important; align-self: flex-start !important; height: 100% !important; min-height: 0 !important; }
+  .about-layout { justify-content: center !important; height: 100% !important; }
   .site-footer { padding: 10px 24px !important; padding-bottom: calc(10px + env(safe-area-inset-bottom)) !important; }
   .nav { height: 64px !important; padding-top: 0 !important; }
 }
@@ -757,175 +762,3 @@ input[type="radio"] { width: 16px; height: 16px; accent-color: var(--fg); cursor
 input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"] { display: block !important; width: 100% !important; max-width: 100% !important; min-width: 0 !important; -webkit-appearance: none !important; appearance: none !important; box-sizing: border-box !important; padding: 10px 12px !important; margin: 0 !important; }
 input[type="date"]::-webkit-calendar-picker-indicator, input[type="time"]::-webkit-calendar-picker-indicator { margin-left: 0; padding: 0; cursor: pointer; }
 .cal-jump-wrap input[type="date"], .ledger-form .row input[type="date"], .diary-toolbar input[type="date"] { flex: 1 1 auto !important; width: 100% !important; max-width: 100% !important; }
-
-/* ═══════════════════════════════════════════════════════
-   桌面版霸權佈局（框框對比高度、只有該滾動的滾動）
-   ═══════════════════════════════════════════════════════ */
-
-/* 確保所有 View 都是滿版，且外層絕對不滾動 */
-.view.active {
-  display: flex !important;
-  flex-direction: column !important;
-  height: 100% !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
-}
-
-/* 1. 首頁：左邊滑動，右邊固定 */
-.home-layout {
-  display: flex !important;
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  gap: 22px !important;
-  margin-top: 16px !important;
-  overflow: hidden !important;
-}
-.home-main {
-  flex: 1 1 auto !important;
-  min-width: 0 !important;
-  overflow-y: auto !important; /* 左邊滑動 */
-  padding-right: 6px !important;
-  padding-bottom: 40px !important;
-}
-.home-side {
-  flex: 0 0 280px !important;
-  min-width: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 16px !important;
-  overflow: hidden !important; /* 右邊固定 */
-}
-
-/* 2. 每週必做：填滿高度，只讓清單滾動 */
-.today-layout {
-  display: flex !important;
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  gap: 16px !important;
-  margin-top: 20px !important;
-  overflow: hidden !important;
-}
-.today-col {
-  flex: 1 1 auto !important;
-  min-width: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-}
-.today-card {
-  flex: 1 1 auto !important;
-  display: flex !important;
-  flex-direction: column !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
-}
-.today-list {
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  overflow-y: auto !important; /* 只讓列表滾動 */
-  padding-bottom: 20px !important;
-}
-
-/* 3. 日曆：格子撐滿高度，不讓下面空空如也 */
-.cal-layout {
-  display: flex !important;
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  gap: 20px !important;
-  margin-top: 16px !important;
-  overflow: hidden !important;
-}
-.cal-card {
-  flex: 1 1 auto !important;
-  display: flex !important;
-  flex-direction: column !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
-}
-.cal-grid {
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  display: grid !important;
-  grid-template-rows: repeat(7, 1fr) !important; /* 格子填滿 */
-}
-
-/* 4. 日記：左 4 右 3，左邊輸入區自己滑動 */
-#view-diary.active { overflow: hidden !important; }
-.diary-container {
-  display: flex !important;
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  gap: 20px !important;
-  margin-top: 16px !important;
-  overflow: hidden !important;
-}
-.diary-left {
-  flex: 4 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  min-width: 0 !important;
-  overflow-y: auto !important; /* 左邊滑動 */
-  padding-right: 10px !important;
-}
-.diary-right {
-  flex: 3 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  min-width: 0 !important;
-  overflow: hidden !important;
-}
-.diary-right .diary-scroll {
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  overflow-y: auto !important; /* 右邊列表滑動 */
-}
-#diaryContent {
-  flex: 1 1 auto !important;
-  min-height: 250px !important;
-  resize: vertical !important;
-}
-
-/* 5. 筆記本：按鈕固定在底部，卡片在框框內滾動 */
-#view-notes.active { overflow: hidden !important; }
-.notes-scroll {
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  overflow: hidden !important;
-  margin-top: 16px !important;
-}
-#notesGrid {
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  overflow-y: auto !important; /* 卡片滑動 */
-  padding-bottom: 20px !important;
-}
-#noteAdd {
-  flex: 0 0 auto !important;
-  margin-top: 10px !important;
-}
-
-/* 6. 照片庫、記帳、關於本站：填滿高度，只讓內容滑動 */
-#view-photos.active,
-#view-ledger.active,
-#view-about.active {
-  overflow: hidden !important;
-}
-.photos-scroll,
-.ledger-layout,
-.about-layout {
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  overflow-y: auto !important; /* 內容滑動 */
-  padding-bottom: 40px !important;
-}
-
-/* 修復 Footer 貼底的問題 */
-.site-footer {
-  position: fixed !important;
-  bottom: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  z-index: 90 !important;
-  padding-bottom: calc(10px + env(safe-area-inset-bottom)) !important;
-}
