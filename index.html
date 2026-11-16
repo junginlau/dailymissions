@@ -25,7 +25,6 @@
     class="card"
     style="max-width: 600px; width: 100%; padding: 40px; display: flex; flex-direction: column; gap: 20px; background: var(--panel); border: 1px solid var(--panel-border); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); position: relative;"
   >
-    <!-- [NEW] Landing Page 語言切換按鈕 -->
     <button
       class="btn ghost"
       id="landingLangBtn"
@@ -102,6 +101,7 @@
         <button data-view="photos" data-i18n="navPhotos">照片庫</button>
         <button data-view="ledger" data-i18n="navLedger">記帳</button>
         <button data-view="about" data-i18n="navAbout">關於本站</button>
+        <button data-view="trash" data-i18n="navTrash">垃圾桶</button>
       </div>
     </div>
 
@@ -113,6 +113,7 @@
       <button class="nav-btn" data-view="photos" data-i18n="navPhotos">照片庫</button>
       <button class="nav-btn" data-view="ledger" data-i18n="navLedger">記帳</button>
       <button class="nav-btn" data-view="about" data-i18n="navAbout">關於本站</button>
+      <button class="nav-btn" data-view="trash" data-i18n="navTrash">垃圾桶</button>
     </nav>
   </div>
 
@@ -190,7 +191,6 @@
           <div class="quote-divider"></div>
           <div class="quote-widget" id="quoteText">慢慢來，比較快。</div>
         </div>
-        <!-- [NEW] 給 Google 爬蟲看的用途說明，避免被退件 -->
         <p style="font-size: 13px; color: var(--fg-dim); text-align: center; margin-top: -6px; margin-bottom: 8px;" data-i18n="landingPrivacy">
           「我的空間」是一個極簡的個人數位儀表板，提供待辦事項、日記、記帳與 Google Drive 雲端備份功能。本服務不使用 Google API 生成未經同意的親密影像 (NCI)。
         </p>
@@ -336,6 +336,9 @@
     <h1 data-i18n="viewNotesTitle">筆記本</h1>
     <p class="sub" data-i18n="viewNotesSub">想法很小的時候，就要先記下來。</p>
     <div class="notes-container">
+      <div class="notes-toolbar" style="display:flex; justify-content:flex-end; margin-bottom:12px; flex:0 0 auto;">
+        <button class="btn ghost" id="bulkDeleteNotesBtn" style="display:none; color:#e5484d; border-color:rgba(229,72,77,.3);">批次刪除 (<span id="selectedNotesCount">0</span>)</button>
+      </div>
       <div class="notes-scroll scroll-box">
         <div class="grid three" id="notesGrid"></div>
       </div>
@@ -410,7 +413,19 @@
     </div>
   </section>
 
-    <!-- 關於本站 -->
+  <!-- 垃圾桶 -->
+  <section class="view" id="view-trash">
+    <h1 data-i18n="trashBinTitle">垃圾桶</h1>
+    <p class="sub" data-i18n="trashBinSub">被刪除的項目會在這裡停留 14 天。</p>
+    <div class="trash-container">
+      <div class="trash-toolbar">
+        <button class="btn primary" id="emptyTrashBtn" data-i18n="emptyTrashBtn" style="background: #e5484d; border-color: transparent;">清空垃圾桶</button>
+      </div>
+      <div class="trash-list scroll-box" id="trashList"></div>
+    </div>
+  </section>
+
+  <!-- 關於本站 -->
   <section class="view" id="view-about">
     <h1 data-i18n="viewAboutTitle">關於本站</h1>
     <p class="sub" data-i18n="viewAboutSub">一個極簡、高效且充滿個人風格的數位生活儀表板。</p>
@@ -494,6 +509,7 @@
   <button data-view="photos" data-i18n="navPhotos">照片庫</button>
   <button data-view="ledger" data-i18n="navLedger">記帳</button>
   <button data-view="about" data-i18n="navAbout">關於本站</button>
+  <button data-view="trash" data-i18n="navTrash">垃圾桶</button>
 </div>
 
 <button class="pomo-fab" id="pomoFab" title="番茄鐘" style="display: none;">🍅</button>

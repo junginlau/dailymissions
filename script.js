@@ -101,6 +101,14 @@
     });
   }
 
+  // 全域 Enter 確認 (只在 confirmModal 開啟時有效)
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && $('#confirmModal').classList.contains('open')) {
+      e.preventDefault();
+      $('#confirmOk').click();
+    }
+  });
+
   // ==========================================
   // 2. 語言切換與初始化
   // ==========================================
@@ -110,7 +118,6 @@
     if (!window.I18N || !window.I18N[lang]) return;
     const dict = window.I18N[lang];
     
-    // 1. 替換所有帶有 data-i18n 的靜態元素
     document.querySelectorAll('[data-i18n]').forEach(function(el) {
       const key = el.dataset.i18n;
       if (dict[key]) {
@@ -122,24 +129,17 @@
       }
     });
 
-    // 2. 替換所有帶有 data-i18n-placeholder 的輸入框
     document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
       const key = el.dataset.i18nPlaceholder;
       if (dict[key]) el.placeholder = dict[key];
     });
 
-    // 3. 更新切換按鈕文字（動態顯示下一種語言）
     const nextLangMap = { 'zh-TW': 'EN', 'en': '日本語', 'ja': '中文' };
     const switchBtn = $('#langSwitchBtn');
-    if (switchBtn) {
-      switchBtn.textContent = nextLangMap[lang] || 'EN';
-    }
+    if (switchBtn) switchBtn.textContent = nextLangMap[lang] || 'EN';
     const landingLangBtn = $('#landingLangBtn');
-    if (landingLangBtn) {
-      landingLangBtn.textContent = nextLangMap[lang] || 'EN';
-    }
+    if (landingLangBtn) landingLangBtn.textContent = nextLangMap[lang] || 'EN';
 
-    // 4. 重新渲染動態內容（讓首頁卡片、清單立刻切換語言）
     updateClock();
     initWeather();
     updateQuote(); 
@@ -152,8 +152,8 @@
     if (typeof renderGoals === 'function') renderGoals();
     if (typeof renderBookmarks === 'function') renderBookmarks();
     if (typeof renderLedger === 'function') renderLedger();
+    if (typeof renderTrash === 'function') renderTrash();
 
-    // 5. 儲存語言設定
     LS.set('userLang', lang);
   }
 
@@ -161,7 +161,7 @@
   // 3. 主題與設定
   // ==========================================
   const root = document.documentElement; const bgLayer = $('#bgLayer'); const DEFAULT_LUM = 55; const state = { lum: DEFAULT_LUM, bg: null };
-  function getCookie(name) { const m = document.cookie.match('(?:^|; )' + name + '=([^;]*)'); return m ? decodeURIComponent(m[1]) : null; }
+  function getCookie(name) { const m = document.cookie.match('(^|; )' + name + '=([^;]*)'); return m ? decodeURIComponent(m[1]) : null; }
   function setCookie(name, value) { try { document.cookie = name + '=' + encodeURIComponent(value) + '; path=/; max-age=31536000; SameSite=Lax'; return getCookie(name) !== null; } catch (e) { return false; } }
   function delCookie(name) { document.cookie = name + '=; path=/; max-age=0; SameSite=Lax'; }
 
@@ -210,6 +210,7 @@
   let bookmarks = LS.get('bookmarks', []);
   let countdowns = LS.get('countdowns', []);
   let ledgerCategories = LS.get('ledgerCategories', ['飲食', '交通', '購物', '娛樂', '薪資', '投資', '其他']);
+  let trash = LS.get('trash', []); // 垃圾桶
 
   let photoMeta = LS.get('photoMeta', null);
   const legacyPhotos = LS.get('photos', null);
@@ -243,10 +244,11 @@
   if (!Array.isArray(bookmarks)) bookmarks = [];
   if (!Array.isArray(ledger)) ledger = [];
   if (!Array.isArray(countdowns)) countdowns = [];
+  if (!Array.isArray(trash)) trash = [];
 
   function save(key) {
     if (key === 'photoMeta') { const ok = LS.set('photoMeta', photoMeta); if (!ok) toast(window.I18N[currentLang].photoMetaFail); return ok; }
-    const map = { todos: todos, events: events, diaries: diaries, notes: notes, goals: goals, bookmarks: bookmarks, ledger: ledger, countdowns: countdowns, ledgerCategories: ledgerCategories };
+    const map = { todos: todos, events: events, diaries: diaries, notes: notes, goals: goals, bookmarks: bookmarks, ledger: ledger, countdowns: countdowns, ledgerCategories: ledgerCategories, trash: trash };
     const ok = LS.set(key, map[key]); if (!ok) toast(window.I18N[currentLang].storageFail); return ok;
   }
 
@@ -258,6 +260,16 @@
   function dayKeyOf(d) { return DAY_KEYS[d.getDay()]; }
   function dayLabelOf(key) { const map = window.I18N[currentLang].weekdaysFull || {}; return map[key] || key; }
   function pruneDone() { const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 60); const minKey = dateKey(cutoff); let changed = false; Object.keys(todos.done || {}).forEach(function (k) { if (k < minKey) { delete todos.done[k]; changed = true; } }); if (changed) save('todos'); }
+  function pruneTrash() {
+    const now = Date.now();
+    const fourteenDays = 14 * 24 * 60 * 60 * 1000;
+    const initialLength = trash.length;
+    trash = trash.filter(item => (now - item.deletedAt) < fourteenDays);
+    if (trash.length !== initialLength) {
+      save('trash');
+      if (currentView === 'trash') renderTrash();
+    }
+  }
 
   // ==========================================
   // 5. 視圖切換與導覽列
@@ -269,8 +281,8 @@
     currentView = name;
     views.forEach(function (v) { v.classList.toggle('active', v.id === 'view-' + name); });
     navBtns.forEach(function (b) { b.classList.toggle('active', b.dataset.view === name); });
-    mobileNavBtns.forEach(function (b) { if (name === 'notes' || name === 'photos' || name === 'ledger' || name === 'about') { b.classList.toggle('active', b.dataset.view === 'more'); } else { b.classList.toggle('active', b.dataset.view === name); } });
-    if (name !== 'notes' && name !== 'photos' && name !== 'ledger' && name !== 'about') mobileMoreMenu.classList.remove('open');
+    mobileNavBtns.forEach(function (b) { if (name === 'notes' || name === 'photos' || name === 'ledger' || name === 'about' || name === 'trash') { b.classList.toggle('active', b.dataset.view === 'more'); } else { b.classList.toggle('active', b.dataset.view === name); } });
+    if (name !== 'notes' && name !== 'photos' && name !== 'ledger' && name !== 'about' && name !== 'trash') mobileMoreMenu.classList.remove('open');
     if (name !== 'home' && cdInterval) { clearInterval(cdInterval); cdInterval = null; }
     if (name === 'todo') checkUnfinishedTasks();
     if (name === 'calendar') renderCalendar();
@@ -278,6 +290,7 @@
     if (name === 'diary') renderDiaries();
     if (name === 'ledger') renderLedger();
     if (name === 'photos') renderPhotos();
+    if (name === 'trash') renderTrash();
     if (window.innerWidth <= 768) window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -317,7 +330,6 @@
   document.addEventListener('keydown', function (e) {
     const tag = document.activeElement.tagName; if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
-    // 1. Esc 關閉所有彈窗與面板
     if (e.key === 'Escape') {
       e.preventDefault();
       closeSettings();
@@ -328,21 +340,18 @@
       return;
     }
 
-    // 2. / 快速聚焦搜尋欄
     if (e.key === '/') {
       e.preventDefault();
       $('#searchInput').focus();
       return;
     }
 
-    // 3. n 快速新增筆記
     if ((e.key === 'n' || e.key === 'N') && (currentView === 'home' || currentView === 'notes')) {
       e.preventDefault();
       openNoteModal(null);
       return;
     }
 
-    // 4. 數字鍵 1-6 切換分頁
     if (['1', '2', '3', '4', '5', '6'].includes(e.key)) {
       e.preventDefault();
       const views = { '1': 'home', '2': 'todo', '3': 'calendar', '4': 'diary', '5': 'notes', '6': 'ledger' };
@@ -884,16 +893,14 @@
     today.setHours(0, 0, 0, 0);
     const allEvents = [];
 
-    // 收集所有事件
     Object.keys(events).forEach(function (k) {
       const targetDate = keyToDate(k);
-      if (targetDate < today) return; // 只顯示今天與未來
+      if (targetDate < today) return;
       (events[k] || []).forEach(function (ev) {
         allEvents.push({ date: k, time: ev.time || '', title: ev.title, content: ev.content || '' });
       });
     });
 
-    // 根據日期與時間排序
     allEvents.sort(function (a, b) {
       if (a.date !== b.date) return a.date < b.date ? -1 : 1;
       if (!a.time && !b.time) return 0;
@@ -1095,29 +1102,95 @@
   $('#diaryClearFilter').addEventListener('click', function () { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; diaryFilterDate = ''; $('#diaryDatePickerBtn').textContent = dict.diaryFilterAll; $('#diaryClearFilter').hidden = true; renderDiaries(); });
 
   // ==========================================
-  // 12. 筆記本
+  // 12. 筆記本（含批次刪除）
   // ==========================================
+  let selectedNoteIds = new Set();
+  let bulkDeletePending = false;
+
   function renderNotes() {
     const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     const grid = $('#notesGrid'); 
-    if (!notes.length) { 
-      grid.innerHTML = ''; 
-      return; 
-    }
     
-    // [NEW] 將所有筆記卡片包在一個可以獨立滾動的容器裡
-    const cardsHtml = notes.map(function (n) { 
+    // 生成多選操作列
+    let bulkHtml = `
+      <div class="bulk-actions" id="notesBulkActions" style="display:${selectedNoteIds.size > 0 ? 'flex' : 'none'}">
+        <label style="display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" id="selectAllNotes" ${selectedNoteIds.size === notes.length && notes.length > 0 ? 'checked' : ''}>
+          <span>全選</span>
+        </label>
+        <span style="flex:1;"></span>
+      </div>
+    `;
+    
+    // 清除舊的 bulk-actions (如果有的話)
+    const container = grid.parentNode.parentNode; // .notes-container
+    const oldBulk = container.querySelector('.bulk-actions');
+    if (oldBulk) oldBulk.remove();
+    container.insertAdjacentHTML('afterbegin', bulkHtml);
+
+    if (!notes.length) { grid.innerHTML = ''; return; }
+    
+    grid.innerHTML = notes.map(function (n) { 
       const excerpt = (n.content || '').replace(/\s+/g, ' ').slice(0, 70); 
-      return '<button class="card note" data-id="' + n.id + '">' + 
-               (n.image ? '<div class="note-thumb" style="background-image:url(\'' + n.image + '\')"></div>' : '') + 
-               '<div class="note-h">' + escapeHtml(n.title || dict.noteUntitled) + '</div>' + 
-               '<div class="note-b">' + escapeHtml(excerpt) + '</div>' + 
-               '<div class="note-d">' + escapeHtml(n.date || '') + '</div>' + 
-             '</button>'; 
+      const isChecked = selectedNoteIds.has(n.id);
+      return `
+        <div class="note-wrapper" style="position:relative;">
+          <input type="checkbox" class="note-check" data-id="${n.id}" ${isChecked ? 'checked' : ''} style="position:absolute; top:10px; left:10px; z-index:10; width:20px; height:20px; accent-color:var(--fg); cursor:pointer;">
+          <button class="card note" data-id="${n.id}" style="width:100%;"> 
+            ${n.image ? `<div class="note-thumb" style="background-image:url('${n.image}')"></div>` : ''}
+            <div class="note-h">${escapeHtml(n.title || dict.noteUntitled)}</div>
+            <div class="note-b">${escapeHtml(excerpt)}</div>
+            <div class="note-d">${escapeHtml(n.date || '')}</div>
+          </button>
+        </div>
+      `; 
     }).join('');
-    
-    grid.innerHTML = '<div class="notes-inner-scroll">' + cardsHtml + '</div>';
+
+    // 綁定多選事件
+    container.querySelector('#selectAllNotes')?.addEventListener('change', function(e) {
+      if (e.target.checked) notes.forEach(n => selectedNoteIds.add(n.id));
+      else selectedNoteIds.clear();
+      renderNotes();
+    });
+
+    grid.querySelectorAll('.note-check').forEach(cb => {
+      cb.addEventListener('change', function(e) {
+        e.stopPropagation();
+        const id = this.dataset.id;
+        if (this.checked) selectedNoteIds.add(id);
+        else selectedNoteIds.delete(id);
+        
+        // 更新批次刪除按鈕的可見性與文字
+        const bulkBtn = $('#bulkDeleteNotesBtn');
+        if (selectedNoteIds.size > 0) {
+          bulkBtn.style.display = 'block';
+          bulkBtn.innerHTML = `${window.I18N[currentLang].bulkDeleteBtn} (${selectedNoteIds.size})`;
+        } else {
+          bulkBtn.style.display = 'none';
+        }
+      });
+    });
   }
+
+  // 批次刪除按鈕
+  $('#bulkDeleteNotesBtn').addEventListener('click', function() {
+    if (selectedNoteIds.size === 0) return;
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    customConfirm(dict.confirmBulkDeleteTitle, dict.confirmBulkDeleteMsg, dict.delete, dict.cancel, true).then(ok => {
+      if (!ok) return;
+      let count = 0;
+      notes = notes.filter(n => {
+        if (selectedNoteIds.has(n.id)) {
+          trash.push({ id: uid(), type: 'note', title: n.title, data: n, deletedAt: Date.now() });
+          count++;
+          return false; // 從 notes 移除
+        }
+        return true;
+      });
+      save('trash'); save('notes'); selectedNoteIds.clear(); renderNotes(); toast(dict.movedToTrash.replace('{n}', count));
+    });
+  });
+
   let editingNoteId = null; let noteImageData = null;
   function updateNoteImagePreview() { const wrap = $('#noteImgWrap'); if (noteImageData) { $('#noteImgPreview').src = noteImageData; wrap.hidden = false; } else { $('#noteImgPreview').removeAttribute('src'); wrap.hidden = true; } }
   function openNoteModal(id) {
@@ -1143,7 +1216,14 @@
     else { notes.unshift({ id: uid(), title: title, content: content, date: date, image: noteImageData }); }
     save('notes'); renderNotes(); closeModal('#noteModal'); toast(dict.noteSaved);
   });
-  $('#noteDelete').addEventListener('click', function () { const dict = window.I18N[currentLang] || window.I18N['zh-TW']; if (!editingNoteId) return; notes = notes.filter(function (x) { return x.id !== editingNoteId; }); save('notes'); renderNotes(); closeModal('#noteModal'); toast(dict.noteDeleted); });
+  $('#noteDelete').addEventListener('click', function () { 
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW']; 
+    if (!editingNoteId) return; 
+    const n = notes.find(x => x.id === editingNoteId);
+    if (n) trash.push({ id: uid(), type: 'note', title: n.title, data: n, deletedAt: Date.now() });
+    notes = notes.filter(function (x) { return x.id !== editingNoteId; }); 
+    save('trash'); save('notes'); renderNotes(); closeModal('#noteModal'); toast(dict.noteDeleted); 
+  });
 
   // ==========================================
   // 13. 照片庫
@@ -1361,7 +1441,6 @@
     
     clearInterval(pomoInterval);
     
-    // [NEW] 無論在哪個狀態，重置都應回到初始設定的時間，而不是歸零
     pomoState = 'idle';
     pomoRemaining = pomoTotalSet; 
     updatePomoUI();
@@ -1422,7 +1501,7 @@
     const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
     const exportPhotos = photoMeta.map(function (m) { return loadPhotoSrc(m.id).then(function (src) { return { id: m.id, title: m.title || '', src: src || '' }; }); });
     Promise.all(exportPhotos).then(function (photosData) {
-      const data = { version: BACKUP_VERSION, exportedAt: new Date().toISOString(), todos: todos, events: events, diaries: diaries, notes: notes, photos: photosData, goals: goals, bookmarks: bookmarks, ledger: ledger, countdowns: countdowns, ledgerCategories: ledgerCategories, prefs: { lum: state.lum, bg: state.bg }, pomoSoundType: soundType };
+      const data = { version: BACKUP_VERSION, exportedAt: new Date().toISOString(), todos: todos, events: events, diaries: diaries, notes: notes, photos: photosData, goals: goals, bookmarks: bookmarks, ledger: ledger, countdowns: countdowns, ledgerCategories: ledgerCategories, trash: trash, prefs: { lum: state.lum, bg: state.bg }, pomoSoundType: soundType };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a');
       a.href = url; a.download = 'my_space_backup_' + todayKey() + '.json'; a.click(); URL.revokeObjectURL(url); toast(dict.exporting);
     });
@@ -1448,7 +1527,7 @@
   function validateBackup(data) {
     if (!data || typeof data !== 'object') return 'Invalid format';
     if (data.version != null && typeof data.version !== 'number') return 'Invalid version';
-    const checks = [['todos', function (v) { return v && typeof v === 'object' && !Array.isArray(v); }], ['events', function (v) { return v && typeof v === 'object' && !Array.isArray(v); }], ['diaries', isArray], ['notes', isArray], ['photos', isArray], ['goals', isArray], ['bookmarks', isArray], ['ledger', isArray], ['countdowns', isArray]];
+    const checks = [['todos', function (v) { return v && typeof v === 'object' && !Array.isArray(v); }], ['events', function (v) { return v && typeof v === 'object' && !Array.isArray(v); }], ['diaries', isArray], ['notes', isArray], ['photos', isArray], ['goals', isArray], ['bookmarks', isArray], ['ledger', isArray], ['countdowns', isArray], ['trash', isArray]];
     for (let i = 0; i < checks.length; i++) { const key = checks[i][0]; const fn = checks[i][1]; if (data[key] !== undefined && !fn(data[key])) return 'Invalid ' + key; }
     if (data.photos) { for (let i = 0; i < data.photos.length; i++) { const p = data.photos[i]; if (!p || !isNonEmptyString(p.id) || typeof p.src !== 'string') return 'Invalid photo data'; } }
     return null;
@@ -1464,7 +1543,7 @@
       const err = validateBackup(data); if (err) { toast(dict.importInvalid.replace('{e}', err)); return; }
       customConfirm(dict.confirmImportTitle, dict.confirmImportMsg, dict.confirmImportOk, dict.cancel, true).then(function (ok) {
         if (!ok) return;
-        if (data.todos) todos = migrateTodos(data.todos); if (data.events) events = data.events; if (data.diaries) diaries = data.diaries; if (data.notes) notes = data.notes; if (data.goals) goals = data.goals; if (data.bookmarks) bookmarks = data.bookmarks; if (data.countdowns) countdowns = data.countdowns;
+        if (data.todos) todos = migrateTodos(data.todos); if (data.events) events = data.events; if (data.diaries) diaries = data.diaries; if (data.notes) notes = data.notes; if (data.goals) goals = data.goals; if (data.bookmarks) bookmarks = data.bookmarks; if (data.countdowns) countdowns = data.countdowns; if (data.trash) trash = data.trash;
         if (data.ledgerCategories) ledgerCategories = data.ledgerCategories;
         if (data.ledger) ledger = data.ledger; else if (data.expenses) ledger = data.expenses.map(function (x) { return Object.assign({}, x, { type: 'expense' }); });
         photoMeta = [];
@@ -1472,8 +1551,8 @@
         if (data.prefs) { if (typeof data.prefs.lum === 'number') state.lum = Math.min(100, Math.max(0, data.prefs.lum)); if (typeof data.prefs.bg === 'string') state.bg = data.prefs.bg || null; applyTheme(); savePrefs(); }
         if (data.pomoSoundType === 'synth' || data.pomoSoundType === 'custom') { soundType = data.pomoSoundType; LS.set('pomoSoundType', soundType); }
         Promise.all(photoWrites).then(function () {
-          ['todos', 'events', 'diaries', 'notes', 'goals', 'bookmarks', 'ledger', 'countdowns', 'ledgerCategories'].forEach(save); save('photoMeta'); pruneEvents(); pruneDone();
-          renderTodos(); renderCalendar(); renderDiaries(); renderNotes(); renderPhotos(); renderGoals(); renderBookmarks(); renderLedger(); renderHome();
+          ['todos', 'events', 'diaries', 'notes', 'goals', 'bookmarks', 'ledger', 'countdowns', 'ledgerCategories', 'trash'].forEach(save); save('photoMeta'); pruneEvents(); pruneDone(); pruneTrash();
+          renderTodos(); renderCalendar(); renderDiaries(); renderNotes(); renderPhotos(); renderGoals(); renderBookmarks(); renderLedger(); renderHome(); renderTrash();
           toast(dict.importing); closeSettings();
         });
       });
@@ -1488,7 +1567,6 @@
   const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
   let tokenClient = null;
   let accessToken = null;
-  // [NEW] 啟動時還原 Token（含過期檢查）
   try {
     const savedTok = LS.get('googleToken', null);
     const savedExp = LS.get('googleTokenExp', 0);
@@ -1500,7 +1578,6 @@
     }
   } catch (e) { accessToken = null; }
 
-  // [NEW] 統一清除 Token 並更新 UI
   function clearGoogleToken() {
     accessToken = null;
     try { LS.remove('googleToken'); LS.remove('googleTokenExp'); } catch (e) {}
@@ -1541,7 +1618,6 @@
         const d = window.I18N[currentLang] || window.I18N['zh-TW'];
         if (tokenResponse && tokenResponse.access_token) {
           accessToken = tokenResponse.access_token;
-          // [NEW] 持久化 Token 與到期時間（預設 3600 秒，扣 60 秒緩衝）
           const expiresIn = (tokenResponse.expires_in || 3600) * 1000;
           try {
             LS.set('googleToken', accessToken);
@@ -1570,7 +1646,7 @@
     try {
       const exportPhotos = photoMeta.map(function (m) { return loadPhotoSrc(m.id).then(function (src) { return { id: m.id, title: m.title || '', src: src || '' }; }); });
       const photosData = await Promise.all(exportPhotos);
-      const data = { version: BACKUP_VERSION, exportedAt: new Date().toISOString(), todos: todos, events: events, diaries: diaries, notes: notes, photos: photosData, goals: goals, bookmarks: bookmarks, ledger: ledger, countdowns: countdowns, ledgerCategories: ledgerCategories, prefs: { lum: state.lum, bg: state.bg }, pomoSoundType: soundType };
+      const data = { version: BACKUP_VERSION, exportedAt: new Date().toISOString(), todos: todos, events: events, diaries: diaries, notes: notes, photos: photosData, goals: goals, bookmarks: bookmarks, ledger: ledger, countdowns: countdowns, ledgerCategories: ledgerCategories, trash: trash, prefs: { lum: state.lum, bg: state.bg }, pomoSoundType: soundType };
       const jsonString = JSON.stringify(data);
 
       const searchRes = await fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder', {
@@ -1652,6 +1728,7 @@
       if (data.goals) goals = data.goals; 
       if (data.bookmarks) bookmarks = data.bookmarks; 
       if (data.countdowns) countdowns = data.countdowns;
+      if (data.trash) trash = data.trash;
       if (data.ledgerCategories) ledgerCategories = data.ledgerCategories;
       if (data.ledger) ledger = data.ledger; else if (data.expenses) ledger = data.expenses.map(x => Object.assign({}, x, { type: 'expense' }));
       
@@ -1666,8 +1743,8 @@
       if (data.pomoSoundType === 'synth' || data.pomoSoundType === 'custom') { soundType = data.pomoSoundType; LS.set('pomoSoundType', soundType); }
 
       await Promise.all(photoWrites);
-      ['todos', 'events', 'diaries', 'notes', 'goals', 'bookmarks', 'ledger', 'countdowns', 'ledgerCategories'].forEach(save); save('photoMeta'); pruneEvents(); pruneDone();
-      renderTodos(); renderCalendar(); renderDiaries(); renderNotes(); renderPhotos(); renderGoals(); renderBookmarks(); renderLedger(); renderHome();
+      ['todos', 'events', 'diaries', 'notes', 'goals', 'bookmarks', 'ledger', 'countdowns', 'ledgerCategories', 'trash'].forEach(save); save('photoMeta'); pruneEvents(); pruneDone(); pruneTrash();
+      renderTodos(); renderCalendar(); renderDiaries(); renderNotes(); renderPhotos(); renderGoals(); renderBookmarks(); renderLedger(); renderHome(); renderTrash();
       toast(dict.gRestoreOk);
     } catch (err) {
       console.error(err);
@@ -1678,19 +1755,84 @@
   updateGoogleUI();
 
   // ==========================================
-  // 17. 初始化與 Landing Page 切換
+  // 17. 垃圾桶邏輯
+  // ==========================================
+  function renderTrash() {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    const list = $('#trashList');
+    if (!trash.length) { list.innerHTML = '<div class="empty">' + dict.trashBinEmpty + '</div>'; return; }
+    
+    trash.sort((a, b) => b.deletedAt - a.deletedAt);
+    
+    list.innerHTML = trash.map(item => {
+      const daysLeft = Math.ceil((14 * 24 * 60 * 60 * 1000 - (Date.now() - item.deletedAt)) / (1000 * 60 * 60 * 24));
+      let typeName = '未知';
+      if (item.type === 'note') typeName = dict.navNotes;
+      if (item.type === 'diary') typeName = dict.navDiary;
+      if (item.type === 'ledger') typeName = dict.navLedger;
+      
+      return `
+        <div class="trash-item" data-id="${item.id}">
+          <div class="trash-info">
+            <span class="trash-title">${escapeHtml(item.title || '無標題')}</span>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <span class="trash-type">${typeName}</span>
+              <span class="trash-meta">${dict.trashBinDaysLeft.replace('{n}', daysLeft)}</span>
+            </div>
+          </div>
+          <div class="trash-acts">
+            <button class="btn ghost" data-act="restore" data-id="${item.id}">${dict.trashBinRestore}</button>
+            <button class="btn danger" data-act="perm-del" data-id="${item.id}">${dict.trashBinDelete}</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  $('#trashList').addEventListener('click', function(e) {
+    const btn = e.target.closest('[data-act]');
+    if (!btn) return;
+    const id = btn.dataset.id;
+    const act = btn.dataset.act;
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    const itemIndex = trash.findIndex(x => x.id === id);
+    if (itemIndex < 0) return;
+    const item = trash[itemIndex];
+
+    if (act === 'restore') {
+      if (item.type === 'note') { notes.unshift(item.data); save('notes'); renderNotes(); }
+      if (item.type === 'diary') { diaries.push(item.data); save('diaries'); renderDiaries(); }
+      if (item.type === 'ledger') { ledger.push(item.data); save('ledger'); renderLedger(); }
+      trash.splice(itemIndex, 1); save('trash'); renderTrash(); toast(dict.restoredFromTrash);
+    } else if (act === 'perm-del') {
+      customConfirm(dict.trashBinDelete, '此操作無法復原！', dict.delete, dict.cancel, true).then(ok => {
+        if (!ok) return;
+        trash.splice(itemIndex, 1); save('trash'); renderTrash(); toast(dict.permanentlyDeleted);
+      });
+    }
+  });
+
+  $('#emptyTrashBtn').addEventListener('click', function() {
+    if (!trash.length) return;
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    customConfirm('清空垃圾桶', '所有項目將被永久刪除！', dict.delete, dict.cancel, true).then(ok => {
+      if (!ok) return;
+      trash = []; save('trash'); renderTrash(); toast(dict.permanentlyDeleted);
+    });
+  });
+
+  // ==========================================
+  // 18. 初始化與 Landing Page 切換
   // ==========================================
   $$('[data-close]').forEach(function (btn) { btn.addEventListener('click', function () { closeModal(btn.dataset.close); }); });
   $$('.modal').forEach(function (m) { m.addEventListener('click', function (e) { if (e.target === m) closeModal('#' + m.id); }); });
 
   if (!STORAGE_OK) { setTimeout(function () { toast((window.I18N[currentLang] || window.I18N['zh-TW']).storageNo); }, 900); }
-  loadPrefs(); applyTheme(); pruneEvents(); pruneDone();
+  loadPrefs(); applyTheme(); pruneEvents(); pruneDone(); pruneTrash();
 
-  // [NEW] 初始化語言與切換按鈕
   currentLang = LS.get('userLang', 'zh-TW'); 
   applyLanguage(currentLang);
 
-  // [NEW] 多語系輪替函式
   const LANG_CYCLE = ['zh-TW', 'en', 'ja'];
   function cycleLanguage() {
     const currentIndex = LANG_CYCLE.indexOf(currentLang);
@@ -1699,14 +1841,12 @@
     toast(window.I18N[currentLang].welcomeLangSwitched);
   }
 
-  // [NEW] 主程式語系切換
   const langSwitchBtn = $('#langSwitchBtn');
   if (langSwitchBtn && !langSwitchBtn.dataset.bound) {
     langSwitchBtn.dataset.bound = '1';
     langSwitchBtn.addEventListener('click', cycleLanguage);
   }
 
-  // [NEW] Landing Page 語系切換
   const landingLangBtn = $('#landingLangBtn');
   if (landingLangBtn && !landingLangBtn.dataset.bound) {
     landingLangBtn.dataset.bound = '1';
@@ -1725,6 +1865,7 @@
   safeRender('goals', renderGoals);
   safeRender('bookmarks', renderBookmarks);
   safeRender('ledger', renderLedger);
+  safeRender('trash', renderTrash);
 
   Promise.all([loadCustomAudio(), migrateLegacyPhotos()]).then(function () {
     if (typeof updateSoundUI === 'function') updateSoundUI();

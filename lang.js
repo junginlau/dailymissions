@@ -326,6 +326,20 @@ const I18N = {
     footerDesc: '提供待辦、日記、記帳與 Google Drive 備份。不使用 Google API 生成未經同意的親密影像 (NCI)。',
     footerPrivacy: '隱私權政策',
     footerTerms: '服務條款',
+    // 垃圾桶
+    trashBinTitle: '垃圾桶',
+    trashBinSub: '被刪除的項目會在這裡停留 14 天。',
+    trashBinEmpty: '垃圾桶是空的喵～',
+    trashBinRestore: '復原',
+    trashBinDelete: '永久刪除',
+    trashBinDaysLeft: '剩餘 {n} 天銷毀',
+    emptyTrashBtn: '清空垃圾桶',
+    bulkDeleteBtn: '批次刪除',
+    confirmBulkDeleteTitle: '確定要刪除選取的項目嗎？',
+    confirmBulkDeleteMsg: '這些項目將被移至垃圾桶，14 天後會自動永久刪除。',
+    movedToTrash: '已將 {n} 個項目移至垃圾桶',
+    restoredFromTrash: '已復原',
+    permanentlyDeleted: '已永久刪除',
     
     // 關於本站
     aboutIntroTitle: '📝 專案簡介',
@@ -714,6 +728,20 @@ const I18N = {
     aboutFeat7: 'Pomodoro Timer (Custom time, animations)',
     aboutFeat8: 'Data backup export / import',
     calSidebarTitle: 'Upcoming Events',
+// Trash
+    trashBinTitle: 'Trash',
+    trashBinSub: 'Deleted items will remain here for 14 days.',
+    trashBinEmpty: 'The trash is empty! Meow~',
+    trashBinRestore: 'Restore',
+    trashBinDelete: 'Permanently Delete',
+    trashBinDaysLeft: '{n} days remaining before permanent deletion',
+    emptyTrashBtn: 'Empty Trash',
+    bulkDeleteBtn: 'Bulk Delete',
+    verifyBulkDeleteTitle: 'Are you sure you want to delete these items?',
+    verifyBulkDeleteMsg: 'These items will be moved to the Trash and automatically deleted permanently after 14 days.',
+    movingToTrash: 'Moved {n} item(s) to the Trash',
+    restoredFromTrash: 'Restored',
+    permanentDeleted: 'Permanently deleted',
   },
   'ja': {
     // Landing Page
@@ -1072,6 +1100,20 @@ const I18N = {
     aboutFeat7: 'ポモドーロタイマー（カスタム時間、アニメーション）',
     aboutFeat8: 'データバックアップのエクスポート / インポート',
     calSidebarTitle: '今後の予定',
+    // アイテム
+    trashBinTitle: 'ゴミ箱',
+    trashBinSub: '削除されたアイテムは、ここに14日間保存されます。',
+    trashBinEmpty: 'ゴミ箱は空です～',
+    trashBinRestore: '復元',
+    trashBinDelete: '完全に削除',
+    trashBinDaysLeft: '削除まで残り{n}日',
+    emptyTrashBtn: 'ゴミ箱を空にする',
+    bulkDeleteBtn: '一括削除',
+    verifyBulkDeleteTitle: 'アイテムを一括削除しますか？',
+    verifyBulkDeleteMsg: 'これらのアイテムはゴミ箱に移動され、14日後に完全に削除されます。',
+    movingToTrash: '{n}個のアイテムをゴミ箱に移動しました',
+    restoreFromTrash: '復元しました',
+    permanentDeleted: '完全に削除されました',
   }
 };
 
