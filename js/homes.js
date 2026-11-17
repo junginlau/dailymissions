@@ -1,16 +1,19 @@
 // js/homes.js
 
 // ==========================================
-// 首頁 (時鐘、天氣、名言、統計、目標、書籤)
+// 1. 首頁基礎資訊（時鐘、天氣、名言）
 // ==========================================
 function updateClock() {
   const now = new Date();
   let timeStr = pad(now.getHours()) + ':' + pad(now.getMinutes());
-  if (window.innerWidth > 768) timeStr += ':' + pad(now.getSeconds());
+  if (window.innerWidth > 768) {
+    timeStr += ':' + pad(now.getSeconds());
+  }
 
   const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
   const days = dict.weekdays || ['日', '一', '二', '三', '四', '五', '六'];
-  let dateStr;
+  let dateStr = '';
+
   if (currentLang === 'en') {
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     dateStr = monthNames[now.getMonth()] + ' ' + now.getDate() + ', ' + now.getFullYear() + ' · ' + days[now.getDay()];
@@ -20,14 +23,26 @@ function updateClock() {
   } else {
     dateStr = now.getFullYear() + ' 年 ' + (now.getMonth() + 1) + ' 月 ' + now.getDate() + ' 日 · 星期' + days[now.getDay()];
   }
-  $('#clockTime').textContent = timeStr;
-  $('#clockDate').textContent = dateStr;
+
+  const timeEl = $('#clockTime');
+  const dateEl = $('#clockDate');
+  if (timeEl) timeEl.textContent = timeStr;
+  if (dateEl) dateEl.textContent = dateStr;
 }
 
 function initWeather() {
   const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
   const weatherInfo = $('#weatherInfo');
   if (!weatherInfo) return;
+
+  function renderWeatherText(icon, text) {
+    weatherInfo.textContent = '';
+    const sp = document.createElement('span');
+    sp.className = 'weather-icon';
+    sp.textContent = icon;
+    weatherInfo.appendChild(sp);
+    weatherInfo.appendChild(document.createTextNode(' ' + text));
+  }
 
   function fetchWeather(lat, lon) {
     const weatherApiUrl =
@@ -55,11 +70,10 @@ function initWeather() {
         else if (code >= 71 && code <= 77) icon = '❄️';
         else if (code >= 80 && code <= 82) icon = '🌦️';
         else if (code >= 95) icon = '⛈️';
-        weatherInfo.innerHTML =
-          '<span class="weather-icon">' + icon + '</span> ' + w.temperature + '°C · ' + dict.weatherWind + ' ' + w.windspeed + ' km/h';
+        renderWeatherText(icon, w.temperature + '°C · ' + dict.weatherWind + ' ' + w.windspeed + ' km/h');
       })
       .catch(function () {
-        weatherInfo.innerHTML = '⛅ ' + dict.weatherFail;
+        weatherInfo.textContent = '⛅ ' + dict.weatherFail;
       });
   }
 
@@ -74,11 +88,11 @@ function initWeather() {
         if (data && data.latitude && data.longitude) {
           fetchWeather(data.latitude, data.longitude);
         } else {
-          weatherInfo.innerHTML = '⛅ ' + dict.weatherNoGeo;
+          weatherInfo.textContent = '⛅ ' + dict.weatherNoGeo;
         }
       })
       .catch(function () {
-        weatherInfo.innerHTML = '⛅ ' + dict.weatherFail;
+        weatherInfo.textContent = '⛅ ' + dict.weatherFail;
       });
   }
 
@@ -86,6 +100,7 @@ function initWeather() {
     fallbackIP();
     return;
   }
+
   navigator.geolocation.getCurrentPosition(
     function (pos) {
       fetchWeather(pos.coords.latitude, pos.coords.longitude);
@@ -130,9 +145,14 @@ const QUOTES = {
 function updateQuote() {
   const list = QUOTES[currentLang] || QUOTES['zh-TW'];
   const qEl = $('#quoteText');
-  if (qEl) qEl.textContent = list[Math.floor(Math.random() * list.length)];
+  if (qEl) {
+    qEl.textContent = list[Math.floor(Math.random() * list.length)];
+  }
 }
 
+// ==========================================
+// 2. 倒數日與近期要事輪播
+// ==========================================
 let cdInterval = null;
 let cdIndex = 0;
 let cdListData = [];
@@ -141,6 +161,7 @@ function collectUpcomingEvents() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const list = [];
+
   Object.keys(events).forEach(function (k) {
     const target = new Date(k);
     target.setHours(0, 0, 0, 0);
@@ -155,6 +176,7 @@ function collectUpcomingEvents() {
       });
     });
   });
+
   (countdowns || []).forEach(function (cd) {
     if (!cd || !cd.date) return;
     const target = new Date(cd.date);
@@ -168,6 +190,7 @@ function collectUpcomingEvents() {
       title: cd.title
     });
   });
+
   list.sort(function (a, b) {
     if (a.date !== b.date) return a.date < b.date ? -1 : 1;
     if (!a.time && !b.time) return 0;
@@ -175,6 +198,7 @@ function collectUpcomingEvents() {
     if (!b.time) return 1;
     return a.time < b.time ? -1 : a.time > b.time ? 1 : 0;
   });
+
   return list.slice(0, 3);
 }
 
@@ -185,79 +209,93 @@ function renderCountdowns() {
     clearInterval(cdInterval);
     cdInterval = null;
   }
+
   const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
   cdListData = collectUpcomingEvents();
+  list.textContent = '';
+
   if (!cdListData.length) {
-    list.innerHTML = '<div class="empty small" style="padding:6px 0;">' + dict.upcomingEmpty + '</div>';
+    const emptyEl = document.createElement('div');
+    emptyEl.className = 'empty small';
+    emptyEl.style.padding = '6px 0';
+    emptyEl.textContent = dict.upcomingEmpty;
+    list.appendChild(emptyEl);
     return;
   }
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  function buildItem(cd) {
+  function createCdNode(cd) {
     const target = new Date(cd.date);
     target.setHours(0, 0, 0, 0);
     const diff = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
-    let text = diff === 0 ? dict.countdownToday : dict.countdownDays.replace('{n}', diff);
-    const urgentClass = diff >= 0 && diff <= 3 ? ' urgent' : '';
+    const text = diff === 0 ? dict.countdownToday : dict.countdownDays.replace('{n}', diff);
     const d = keyToDate(cd.date);
-    const dateLabel = d.getMonth() + 1 + '/' + d.getDate();
-    const timeStr = cd.time ? ' ' + cd.time : '';
-    const delBtn =
-      cd.kind === 'countdown'
-        ? '<button class="cd-del mini del" data-cd-id="' +
-          cd.id +
-          '" title="' +
-          dict.countdownDelete +
-          '" aria-label="' +
-          dict.countdownDelete +
-          '" style="width:20px;height:20px;font-size:11px;margin-left:6px;">×</button>'
-        : '';
-    return (
-      '<div class="cd-item"><span class="cd-title">' +
-      escapeHtml(cd.title) +
-      ' <span class="cd-date">' +
-      dateLabel +
-      timeStr +
-      '</span></span><span class="cd-days' +
-      urgentClass +
-      '">' +
-      text +
-      '</span>' +
-      delBtn +
-      '</div>'
-    );
+    const dateLabel = d.getMonth() + 1 + '/' + d.getDate() + (cd.time ? ' ' + cd.time : '');
+
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'cd-item';
+
+    const titleSpan = document.createElement('span');
+    titleSpan.className = 'cd-title';
+    titleSpan.textContent = cd.title + ' ';
+
+    const dateSpan = document.createElement('span');
+    dateSpan.className = 'cd-date';
+    dateSpan.textContent = dateLabel;
+    titleSpan.appendChild(dateSpan);
+
+    const daysSpan = document.createElement('span');
+    daysSpan.className = 'cd-days' + (diff >= 0 && diff <= 3 ? ' urgent' : '');
+    daysSpan.textContent = text;
+
+    itemDiv.appendChild(titleSpan);
+    itemDiv.appendChild(daysSpan);
+
+    if (cd.kind === 'countdown') {
+      const delBtn = document.createElement('button');
+      delBtn.className = 'cd-del mini del';
+      delBtn.dataset.cdId = cd.id;
+      delBtn.title = dict.countdownDelete;
+      delBtn.setAttribute('aria-label', dict.countdownDelete);
+      delBtn.style.cssText = 'width:20px;height:20px;font-size:11px;margin-left:6px;';
+      delBtn.textContent = '×';
+      itemDiv.appendChild(delBtn);
+    }
+
+    return itemDiv;
   }
 
-  if (cdListData.length === 1) {
-    list.innerHTML = buildItem(cdListData.at(0));
-    return;
-  }
+  list.appendChild(createCdNode(cdListData.at(0)));
+  if (cdListData.length === 1) return;
+
   cdIndex = 0;
-  list.innerHTML = buildItem(cdListData.at(0));
   cdInterval = setInterval(function () {
     cdIndex = (cdIndex + 1) % cdListData.length;
-    const item = list.querySelector('.cd-item');
-    if (item) {
-      item.style.transition = 'opacity .5s, transform .5s';
-      item.style.opacity = '0';
-      item.style.transform = 'translateY(5px)';
+    const oldItem = list.querySelector('.cd-item');
+    if (oldItem) {
+      oldItem.style.transition = 'opacity .5s, transform .5s';
+      oldItem.style.opacity = '0';
+      oldItem.style.transform = 'translateY(5px)';
     }
     setTimeout(function () {
-      list.innerHTML = buildItem(cdListData.at(cdIndex));
-      const newItem = list.querySelector('.cd-item');
-      if (newItem) {
-        newItem.style.transition = 'opacity .5s, transform .5s';
-        newItem.style.opacity = '0';
-        newItem.style.transform = 'translateY(-5px)';
-        void newItem.offsetWidth;
-        newItem.style.opacity = '1';
-        newItem.style.transform = 'translateY(0)';
-      }
+      list.textContent = '';
+      const newItem = createCdNode(cdListData.at(cdIndex));
+      newItem.style.transition = 'opacity .5s, transform .5s';
+      newItem.style.opacity = '0';
+      newItem.style.transform = 'translateY(-5px)';
+      list.appendChild(newItem);
+      void newItem.offsetWidth;
+      newItem.style.opacity = '1';
+      newItem.style.transform = 'translateY(0)';
     }, 500);
   }, 4000);
 }
 
+// ==========================================
+// 3. 首頁統計與整體渲染
+// ==========================================
 function countTodayTags() {
   const tk = dayKeyOf(new Date());
   return (todos.schedule[tk] || []).length;
@@ -278,7 +316,9 @@ function getTodayExpense() {
   const tk = todayKey();
   let totalTWD = 0;
   ledger.forEach(function (item) {
-    if (item.date === tk && item.type === 'expense') totalTWD += item.amount;
+    if (item.date === tk && item.type === 'expense') {
+      totalTWD += item.amount;
+    }
   });
   const rate = exchangeRates[mainCurrency] || 1;
   return Math.round(totalTWD / rate);
@@ -289,37 +329,33 @@ function renderHome() {
 
   if (!LS.get('onboarded', false)) {
     const homeMain = document.querySelector('.home-main');
-    const existingCard = document.getElementById('welcomeCard');
-    if (homeMain && !existingCard) {
-      const card = document.createElement('div');
-      card.id = 'welcomeCard';
-      card.className = 'card welcome-card';
-      card.innerHTML =
-        '<div style="font-weight:600; margin-bottom:6px;">' +
-        dict.welcomeTitle +
-        '</div><div style="font-size:13px; line-height:1.6; color:var(--fg-dim); margin-bottom:10px;">' +
-        dict.welcomeDesc +
-        '</div><button class="btn primary" id="welcomeCloseBtn" style="font-size:12px; padding:6px 12px;">' +
-        dict.welcomeBtn +
-        '</button>';
-      homeMain.prepend(card);
-      document.getElementById('welcomeCloseBtn').addEventListener('click', function () {
-        LS.set('onboarded', true);
-        card.remove();
-      });
-    } else if (existingCard) {
-      existingCard.innerHTML =
-        '<div style="font-weight:600; margin-bottom:6px;">' +
-        dict.welcomeTitle +
-        '</div><div style="font-size:13px; line-height:1.6; color:var(--fg-dim); margin-bottom:10px;">' +
-        dict.welcomeDesc +
-        '</div><button class="btn primary" id="welcomeCloseBtn" style="font-size:12px; padding:6px 12px;">' +
-        dict.welcomeBtn +
-'';
-document.getElementById('welcomeCloseBtn').addEventListener('click', function () {
+    let card = document.getElementById('welcomeCard');
+    if (homeMain) {
+      if (!card) {
+        card = document.createElement('div');
+        card.id = 'welcomeCard';
+        card.className = 'card welcome-card';
+        homeMain.prepend(card);
+      }
+card.textContent = '';
+const titleDiv = document.createElement('div');
+titleDiv.style.cssText = 'font-weight:600; margin-bottom:6px;';
+titleDiv.textContent = dict.welcomeTitle;
+const descDiv = document.createElement('div');
+descDiv.style.cssText = 'font-size:13px; line-height:1.6; color:var(--fg-dim); margin-bottom:10px;';
+descDiv.textContent = dict.welcomeDesc;
+const closeBtn = document.createElement('button');
+closeBtn.id = 'welcomeCloseBtn';
+closeBtn.className = 'btn primary';
+closeBtn.style.cssText = 'font-size:12px; padding:6px 12px;';
+closeBtn.textContent = dict.welcomeBtn;
+closeBtn.addEventListener('click', function () {
 LS.set('onboarded', true);
-existingCard.remove();
+card.remove();
 });
+card.appendChild(titleDiv);
+card.appendChild(descDiv);
+card.appendChild(closeBtn);
 }
 }
 if ($('#statTodo')) $('#statTodo').textContent = countTodayTags();
@@ -331,7 +367,7 @@ renderGoals();
 renderBookmarks();
 }
 // ==========================================
-// 目標 (Goals)
+// 4. 目標 (Goals)
 // ==========================================
 let editingGoalId = null;
 let confirmGoalId = null;
@@ -354,8 +390,12 @@ const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
 const wrap = $('#goalList');
 const badge = $('#goalBadge');
 if (!wrap || !badge) return;
+wrap.textContent = '';
 if (!goals.length) {
-wrap.innerHTML = '' + dict.goalEmpty + '';
+const emptyEl = document.createElement('div');
+emptyEl.className = 'empty small';
+emptyEl.textContent = dict.goalEmpty;
+wrap.appendChild(emptyEl);
 badge.textContent = '0 / 0';
 return;
 }
@@ -363,18 +403,53 @@ const doneCount = goals.filter(function (g) {
 return g.done;
 }).length;
 badge.textContent = doneCount + ' / ' + goals.length;
-wrap.innerHTML = goals
-.map(function (g) {
+goals.forEach(function (g) {
 const prog = g.progress || 0;
-return (
-'' +
-escapeHtml(g.title) +
-'' +
-(g.note ? '' + escapeHtml(g.note) + '' : '') +
-'✎×'
-);
-})
-.join('');
+const item = document.createElement('div');
+item.className = 'goal-item' + (g.done ? ' done' : '');
+item.dataset.id = g.id;
+const chk = document.createElement('button');
+chk.className = 'goal-chk';
+chk.dataset.act = 'toggle';
+chk.setAttribute('aria-label', '標記完成');
+const main = document.createElement('div');
+main.className = 'goal-main';
+const title = document.createElement('div');
+title.className = 'goal-title';
+title.textContent = g.title;
+main.appendChild(title);
+if (g.note) {
+const note = document.createElement('div');
+note.className = 'goal-note';
+note.textContent = g.note;
+main.appendChild(note);
+}
+const bar = document.createElement('div');
+bar.className = 'goal-progress-bar';
+const fill = document.createElement('div');
+fill.className = 'goal-progress-fill';
+fill.style.width = prog + '%';
+bar.appendChild(fill);
+main.appendChild(bar);
+const acts = document.createElement('div');
+acts.className = 'goal-acts';
+const editBtn = document.createElement('button');
+editBtn.className = 'mini';
+editBtn.dataset.act = 'edit';
+editBtn.setAttribute('aria-label', dict.goalEdit);
+editBtn.textContent = '✎';
+const delBtn = document.createElement('button');
+delBtn.className = 'mini del';
+delBtn.dataset.act = 'del';
+delBtn.setAttribute('aria-label', dict.goalDelete);
+delBtn.textContent = '×';
+acts.appendChild(editBtn);
+acts.appendChild(delBtn);
+item.appendChild(chk);
+item.appendChild(main);
+item.appendChild(acts);
+wrap.appendChild(item);
+});
 }
 function openGoalConfirm(id) {
 confirmGoalId = id;
@@ -406,7 +481,7 @@ $('#goalTitle').focus();
 }, 80);
 }
 // ==========================================
-// 書籤 (Bookmarks)
+// 5. 書籤 (Bookmarks)
 // ==========================================
 let editingBmId = null;
 function faviconUrl(url) {
@@ -422,62 +497,70 @@ function renderBookmarks() {
 const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
 const list = $('#bmList');
 if (!list) return;
+list.textContent = '';
 if (!bookmarks.length) {
-list.innerHTML = '' + dict.bmEmpty + '';
+const emptyEl = document.createElement('div');
+emptyEl.className = 'empty small';
+emptyEl.textContent = dict.bmEmpty;
+list.appendChild(emptyEl);
 return;
 }
-list.innerHTML = bookmarks
-.map(function (b) {
+bookmarks.forEach(function (b) {
 let host = '';
 try {
 host = new URL(b.url).hostname;
 } catch (e) {
 host = '';
 }
-      const name = b.name || host || b.url;
-      return (
-        '<div class="bm-item" data-id="' +
-        b.id +
-        '" title="' +
-        escapeHtml(name) +
-        '">' +
-        '<span class="bm-drag-handle">⠿</span>' +
-        '<img class="bm-fav" src="' +
-        faviconUrl(b.url) +
-        '" alt="" onerror="this.style.display=\'none\'">' +
-        '<span class="bm-name">' +
-        escapeHtml(name) +
-        '</span>' +
-        '<div class="bm-acts">' +
-        '<button class="bm-act" data-act="edit" title="' +
-        dict.bmEdit +
-        '" aria-label="' +
-        dict.bmEdit +
-        '">✎</button>' +
-        '<button class="bm-act del" data-act="del" title="' +
-        dict.bmDelete +
-        '" aria-label="' +
-        dict.bmDelete +
-        '">×</button>' +
-        '</div>' +
-        '</div>'
-      );
-
-})
-.join('');
+const name = b.name || host || b.url;
+const item = document.createElement('div');
+item.className = 'bm-item';
+item.dataset.id = b.id;
+item.title = name;
+const handle = document.createElement('span');
+handle.className = 'bm-drag-handle';
+handle.textContent = '⠿';
+const fav = document.createElement('img');
+fav.className = 'bm-fav';
+fav.src = faviconUrl(b.url);
+fav.alt = '';
+fav.onerror = function () {
+fav.style.display = 'none';
+};
+const nameSpan = document.createElement('span');
+nameSpan.className = 'bm-name';
+nameSpan.textContent = name;
+const acts = document.createElement('div');
+acts.className = 'bm-acts';
+const editBtn = document.createElement('button');
+editBtn.className = 'bm-act';
+editBtn.dataset.act = 'edit';
+editBtn.title = dict.bmEdit;
+editBtn.setAttribute('aria-label', dict.bmEdit);
+editBtn.textContent = '✎';
+const delBtn = document.createElement('button');
+delBtn.className = 'bm-act del';
+delBtn.dataset.act = 'del';
+delBtn.title = dict.bmDelete;
+delBtn.setAttribute('aria-label', dict.bmDelete);
+delBtn.textContent = '×';
+acts.appendChild(editBtn);
+acts.appendChild(delBtn);
+item.appendChild(handle);
+item.appendChild(fav);
+item.appendChild(nameSpan);
+item.appendChild(acts);
+list.appendChild(item);
+});
 }
 function normalizeUrl(raw) {
 let u = String(raw || '').trim();
 if (!u) return '';
-function normalizeUrl(raw) {
-  let u = String(raw || '').trim();
-  if (!u) return '';
-  if (!/^https?:\/\//i.test(u)) {
-    u = 'http' + 's://' + u;
-  }
-  return u;
+const lower = u.toLowerCase();
+if (!lower.startsWith('http://') && !lower.startsWith('https://')) {
+u = 'http' + 's://' + u;
 }
-
+return u;
 }
 function openBmModal(id) {
 const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
@@ -497,7 +580,7 @@ $('#bmName').focus();
 }, 80);
 }
 // ==========================================
-// 綁定首頁相關的所有事件
+// 6. 綁定首頁相關的所有事件
 // ==========================================
 function initHomeEvents() {
 $('#cdAddBtn').addEventListener('click', function () {
@@ -588,8 +671,9 @@ return x.id === id;
 if (!g) return;
 const act = btn.dataset.act;
 if (act === 'toggle') {
-if (!g.done) openGoalConfirm(id);
-else {
+if (!g.done) {
+openGoalConfirm(id);
+} else {
 g.done = false;
 g.progress = 0;
 save('goals');
@@ -722,7 +806,7 @@ renderBookmarks();
 closeModal('#bmModal');
 toast(dict.bookmarkDeleted);
 });
-// 書籤拖拽 (Pointer Events)
+// 書籤拖拽排序 (Pointer Events)
 (function initBookmarkDrag() {
 const listEl = $('#bmList');
 let dragging = null;
@@ -735,8 +819,9 @@ const items = $$('.bm-item', listEl).filter(function (el) {
 return el !== dragging;
 });
 for (let i = 0; i < items.length; i++) {
-const r = items[i].getBoundingClientRect();
-if (clientY < r.top + r.height / 2) return items[i];
+const el = items.at(i);
+const r = el.getBoundingClientRect();
+if (clientY < r.top + r.height / 2) return el;
 }
 return null;
 }
