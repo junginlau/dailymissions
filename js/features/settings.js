@@ -246,12 +246,144 @@ function initGoogleAuth() {
         } catch (e) {}
         updateGoogleUI();
         toast(d.gLoginOk);
-        setTimeout(checkCloudNewerOnLogin, 1500); // 登入後檢查雲端版本
+        setTimeout(checkCloudNewerOnLogin, 1500);
       } else {
         toast(d.gLoginFail);
       }
     }
   });
+}
+
+// ==========================================
+// 4. 自動同步與衝突檢查
+// ==========================================
+let autoSyncTimer = null;
+
+function getFormattedTime(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+}
+
+window.scheduleAutoSync = function() {
+  const isEnabled = LS.get('autoSyncEnabled', false);
+  if (!isEnabled || !accessToken) return;
+  
+  clearTimeout(autoSyncTimer);
+  const gSyncTimeText = $('#gSyncTimeText');
+  const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+  if (gSyncTimeText) gSyncTimeText.textContent = dict.gSyncingBg || '同步中...';
+
+  autoSyncTimer = setTimeout(async function() {
+    try {
+      const exportPhotos = photoMeta.map(function (m) {
+        return loadPhotoSrc(m.id).then(function (src) {
+          return { id: m.id, title: m.title || '', src: src || '' };
+        });
+      });
+      const photosData = await Promise.all(exportPhotos);
+      const data = {
+        version: BACKUP_VERSION,
+        exportedAt: new Date().toISOString(),
+        todos: todos,
+        events: events,
+        diaries: diaries,
+        notes: notes,
+        photos: photosData,
+        goals: goals,
+        bookmarks: bookmarks,
+        ledger: ledger,
+        countdowns: countdowns,
+        ledgerCategories: ledgerCategories,
+        trash: trash,
+        prefs: { lum: state.lum, bg: state.bg },
+        pomoSoundType: soundType
+      };
+      const jsonString = JSON.stringify(data);
+
+      const searchRes = await fetch(DRIVE_FILES_API + '?spaces=appDataFolder', {
+        headers: { 'Authorization': 'Bearer ' + accessToken }
+      });
+      if (searchRes.status === 401) {
+        clearGoogleToken();
+        return;
+      }
+      const searchData = await searchRes.json();
+      let fileId = searchData.files && searchData.files.length > 0 ? searchData.files[0].id : null;
+
+      const boundary = '-------314159265358979323846';
+      const delimiter = '\r\n--' + boundary + '\r\n';
+      const close_delim = '\r\n--' + boundary + '--';
+      let metadata = { name: 'my_space_backup.json', mimeType: 'application/json' };
+      if (!fileId) metadata.parents = ['appDataFolder'];
+
+      const multipartRequestBody =
+        delimiter + 'Content-Type: application/json\r\n\r\n' + JSON.stringify(metadata) +
+        delimiter + 'Content-Type: application/json\r\n\r\n' + jsonString +
+        close_delim;
+
+      let url = DRIVE_UPLOAD_API;
+      let method = 'POST';
+      if (fileId) {
+        url += '/' + fileId;
+        method = 'PATCH';
+      }
+      url += '?uploadType=multipart';
+
+      const res = await fetch(url, {
+        method: method,
+        headers: {
+          'Authorization': 'Bearer ' + accessToken,
+          'Content-Type': 'multipart/related; boundary="' + boundary + '"'
+        },
+        body: multipartRequestBody
+      });
+
+      if (res.ok) {
+        const now = Date.now();
+        LS.set('lastCloudSyncTime', now);
+        LS.set('lastSyncedDataTime', now);
+        if (gSyncTimeText) gSyncTimeText.textContent = (dict.gSyncSyncedAt || '已同步：') + getFormattedTime(now);
+      } else if (res.status === 401) {
+        clearGoogleToken();
+      }
+    } catch (err) {
+      console.error('Auto sync failed', err);
+      if ($('#gSyncTimeText')) $('#gSyncTimeText').textContent = '同步失敗';
+    }
+  }, 5000);
+};
+
+async function checkCloudNewerOnLogin() {
+  if (!accessToken) return;
+  try {
+    const searchRes = await fetch(DRIVE_FILES_API + '?spaces=appDataFolder&fields=files(id,name,modifiedTime)', {
+      headers: { 'Authorization': 'Bearer ' + accessToken }
+    });
+    if (searchRes.status === 401) { clearGoogleToken(); return; }
+    const searchData = await searchRes.json();
+    
+    if (searchData.files && searchData.files.length > 0) {
+      const cloudModified = new Date(searchData.files[0].modifiedTime).getTime();
+      const localUpdated = LS.get('localDataUpdatedAt', 0);
+      
+      if (cloudModified > localUpdated + 5000) {
+        const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+        const ok = await customConfirm(
+          dict.gConflictTitle || '偵測到雲端有較新的資料',
+          (dict.gConflictMsg || '雲端備份時間（{t}）比本機資料更新，是否要下載並覆蓋目前裝置的資料？').replace('{t}', getFormattedTime(cloudModified)),
+          dict.gConflictOk || '確認覆蓋本機',
+          dict.cancel,
+          true
+        );
+        if (ok) {
+          $('#gRestoreBtn').click();
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('Check cloud failed', e);
+  }
 }
 
 function initSettingsEvents() {
@@ -497,10 +629,7 @@ function initSettingsEvents() {
           return;
         }
         const searchData = await searchRes.json();
-        let fileId = null;
-        if (searchData.files && searchData.files.length > 0) {
-          fileId = searchData.files[0].id;
-        }
+        let fileId = searchData.files && searchData.files.length > 0 ? searchData.files[0].id : null;
 
         const boundary = '-------314159265358979323846';
         const delimiter = '\r\n--' + boundary + '\r\n';
@@ -643,7 +772,6 @@ function initSettingsEvents() {
   const gSyncTimeText = $('#gSyncTimeText');
   
   if (gAutoSyncToggle) {
-    // 載入上次的設定 (預設關閉)
     const isAutoSyncOn = LS.get('autoSyncEnabled', false);
     gAutoSyncToggle.checked = isAutoSyncOn;
     if (gSyncTimeText) {
@@ -659,7 +787,7 @@ function initSettingsEvents() {
       toast(this.checked ? (dict.gAutoSyncOn || '已開啟自動同步') : (dict.gAutoSyncOff || '已關閉自動同步'));
       
       if (this.checked) {
-        window.scheduleAutoSync(); // 開啟時立刻備份一次
+        window.scheduleAutoSync();
       }
     });
   }
