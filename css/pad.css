@@ -202,3 +202,66 @@
     grid-template-columns: repeat(4, 1fr);
   }
 }
+
+/* [NEW] 日曆彈窗：日期與時間並排在同一行 */
+.ev-datetime-row {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 10px !important;
+  width: 100% !important;
+}
+
+.ev-datetime-row input[type="date"],
+.ev-datetime-row input[type="time"] {
+  flex: 1 1 50% !important;
+  width: 50% !important;
+  min-width: 0 !important;
+}
+
+/* [NEW] 強制更多選單永遠置頂不被遮擋 */
+.nav-more-menu,
+.mobile-more-menu {
+  z-index: 2147483647 !important;
+}
+
+/* [NEW] 歡迎畫面 (Landing Page) 功能格子：全裝置橫豎等比例正方形 */
+#public-landing .landing-features,
+#public-landing .landing-grid,
+#public-landing [class*="feature"][class*="grid"],
+#public-landing [class*="features"] {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  width: 100% !important;
+  max-width: 920px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+#public-landing .landing-features > *,
+#public-landing .landing-grid > *,
+#public-landing [class*="feature"][class*="grid"] > *,
+#public-landing [class*="features"] > * {
+  aspect-ratio: 1 / 1 !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  padding: 16px !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 960px) {
+  #public-landing .landing-features,
+  #public-landing .landing-grid,
+  #public-landing [class*="feature"][class*="grid"],
+  #public-landing [class*="features"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    max-width: 480px !important;
+    gap: 14px !important;
+  }
+}

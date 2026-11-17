@@ -678,9 +678,19 @@
       <button class="x-btn" data-close="#eventModal" aria-label="關閉">×</button>
     </div>
     <div class="event-list" id="eventList"></div>
-    <form class="form-block" id="eventForm" autocomplete="off">
+      <form
+        id="eventForm"
+        class="form-block"
+        novalidate
+      >
+        <input
+          type="text"
+          id="evTitle"
+          data-i18n-placeholder="evTitlePlaceholder"
+          placeholder="要事標題"
+        />
         <div
-          class="row"
+          class="row ev-datetime-row"
         >
           <input
             type="date"
@@ -691,6 +701,12 @@
             id="evTime"
           />
         </div>
+        <textarea
+          id="evContent"
+          rows="2"
+          data-i18n-placeholder="evContentPlaceholder"
+          placeholder="詳細備註（選填）"
+        ></textarea>
         <div
           class="row"
         >
@@ -708,8 +724,7 @@
             hidden
           >取消</button>
         </div>
-
-    </form>
+      </form>
   </div>
 </div>
 

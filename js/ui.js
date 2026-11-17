@@ -3,7 +3,7 @@ let currentLang = LS.get('userLang', 'zh-TW');
 let currentView = 'home';
 
 // ==========================================
-// 語言切換與初始化
+// 1. 語言切換與初始化
 // ==========================================
 function applyLanguage(lang) {
   if (!window.I18N || !window.I18N[lang]) return;
@@ -25,7 +25,7 @@ function applyLanguage(lang) {
     if (dict[key]) el.placeholder = dict[key];
   });
 
-  const nextLangMap = { 'zh-TW': 'EN', 'en': '日本語', 'ja': '中文' };
+  const nextLangMap = { 'zh-TW': 'EN', en: '日本語', ja: '中文' };
   const switchBtn = $('#langSwitchBtn');
   if (switchBtn) switchBtn.textContent = nextLangMap[lang] || 'EN';
   const landingLangBtn = $('#landingLangBtn');
@@ -60,7 +60,7 @@ function cycleLanguage() {
 }
 
 // ==========================================
-// 視圖切換與導覽列
+// 2. 視圖切換與導覽列
 // ==========================================
 const views = $$('.view');
 const navBtns = $$('.nav-btn');
@@ -87,7 +87,7 @@ function showView(name) {
     }
   });
   if (name !== 'notes' && name !== 'photos' && name !== 'ledger' && name !== 'about' && name !== 'trash') {
-    mobileMoreMenu.classList.remove('open');
+    if (mobileMoreMenu) mobileMoreMenu.classList.remove('open');
   }
 
   if (name !== 'home' && typeof cdInterval !== 'undefined' && cdInterval) {
@@ -109,192 +109,265 @@ function showView(name) {
 }
 
 // ==========================================
-// 搜尋列與快捷鍵（完整搜尋網址）
+// 3. 搜尋列（防截斷拼接版）
 // ==========================================
 function doSearch(raw) {
   const q = String(raw || '').trim();
   if (!q) return;
-  if (/^https?:\/\//i.test(q)) {
+  const lower = q.toLowerCase();
+  if (lower.startsWith('http://') || lower.startsWith('https://')) {
     window.open(q, '_blank', 'noopener');
     return;
   }
   if (/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(q) && !/\s/.test(q)) {
-    window.open('https://' + q, '_blank', 'noopener');
+    window.open('http' + 's://' + q, '_blank', 'noopener');
     return;
   }
   const engine = $('#searchEngine').value;
   let url = '';
   if (engine === 'google') {
-    url = 'https://google.com' + encodeURIComponent(q);
+    url = 'https://' + 'www.' + 'google' + '.com/search?q=' + encodeURIComponent(q);
   } else if (engine === 'youtube') {
-    url = 'https://youtube.com' + encodeURIComponent(q);
+    url = 'https://' + 'www.' + 'youtube' + '.com/results?search_query=' + encodeURIComponent(q);
   }
   window.open(url, '_blank', 'noopener');
 }
 
 // ==========================================
-// 設定面板
+// 4. 設定面板
 // ==========================================
 const settings = $('#settings');
 const gearBtn = $('#gearBtn');
+
 function openSettings() {
-  settings.classList.add('open');
-  gearBtn.classList.add('open');
+  if (settings) settings.classList.add('open');
+  if (gearBtn) gearBtn.classList.add('open');
 }
+
 function closeSettings() {
-  settings.classList.remove('open');
-  gearBtn.classList.remove('open');
+  if (settings) settings.classList.remove('open');
+  if (gearBtn) gearBtn.classList.remove('open');
 }
 
 // ==========================================
-// 初始化所有 UI 事件綁定
+// 5. 初始化所有 UI 事件綁定
 // ==========================================
 function initUI() {
-  $('#navLinks').addEventListener('click', function (e) {
-    const btn = e.target.closest('.nav-btn');
-    if (btn) showView(btn.dataset.view);
-  });
+  // 導覽列連結
+  const navLinks = $('#navLinks');
+  if (navLinks && !navLinks.dataset.bound) {
+    navLinks.dataset.bound = '1';
+    navLinks.addEventListener('click', function (e) {
+      const btn = e.target.closest('.nav-btn');
+      if (btn) showView(btn.dataset.view);
+    });
+  }
 
+  // 選單 (更多) - 掛載至 document.body 最頂層避免被 .nav 遮擋
   const navMoreBtn = $('#navMoreBtn');
   const navMoreMenu = $('#navMoreMenu');
-  if (navMoreBtn && navMoreMenu) {
-    navMoreBtn.addEventListener('pointerdown', function (e) {
+  if (navMoreBtn && navMoreMenu && !navMoreBtn.dataset.bound) {
+    navMoreBtn.dataset.bound = '1';
+    document.body.appendChild(navMoreMenu);
+
+    function closeNavMore() {
+      navMoreMenu.classList.remove('open');
+      navMoreMenu.style.display = 'none';
+    }
+
+    function openNavMore() {
+      const rect = navMoreBtn.getBoundingClientRect();
+      navMoreMenu.style.position = 'fixed';
+      navMoreMenu.style.top = rect.bottom + 8 + 'px';
+      navMoreMenu.style.left = Math.max(12, Math.min(rect.left, window.innerWidth - 160)) + 'px';
+      navMoreMenu.style.zIndex = '2147483647';
+      navMoreMenu.style.display = 'flex';
+      navMoreMenu.classList.add('open');
+    }
+
+    navMoreBtn.addEventListener('click', function (e) {
       e.preventDefault();
       e.stopPropagation();
-      navMoreMenu.classList.toggle('open');
+      if (navMoreMenu.classList.contains('open')) {
+        closeNavMore();
+      } else {
+        openNavMore();
+      }
     });
+
     navMoreMenu.addEventListener('click', function (e) {
       const btn = e.target.closest('button');
       if (btn) {
         e.stopPropagation();
-        showView(btn.dataset.view);
-        navMoreMenu.classList.remove('open');
+        const targetView = btn.dataset.view;
+        closeNavMore();
+        if (targetView) showView(targetView);
       }
     });
+
     document.addEventListener('click', function (e) {
-      if (navMoreMenu.classList.contains('open') && !navMoreMenu.contains(e.target) && e.target !== navMoreBtn) {
-        navMoreMenu.classList.remove('open');
+      if (
+        navMoreMenu.classList.contains('open') &&
+        !navMoreMenu.contains(e.target) &&
+        !navMoreBtn.contains(e.target)
+      ) {
+        closeNavMore();
       }
     });
+
+    window.addEventListener('resize', closeNavMore);
   }
 
+  // 手機版底部導覽列
   mobileNavBtns.forEach(function (btn) {
+    if (btn.dataset.bound) return;
+    btn.dataset.bound = '1';
     btn.addEventListener('click', function () {
       const view = this.dataset.view;
       if (view === 'more') {
-        mobileMoreMenu.classList.toggle('open');
+        if (mobileMoreMenu) mobileMoreMenu.classList.toggle('open');
       } else {
         showView(view);
       }
     });
   });
-  mobileMoreMenu.addEventListener('click', function (e) {
-    const btn = e.target.closest('button');
-    if (btn) {
-      showView(btn.dataset.view);
-      mobileMoreMenu.classList.remove('open');
-    }
-  });
+
+  if (mobileMoreMenu && !mobileMoreMenu.dataset.bound) {
+    mobileMoreMenu.dataset.bound = '1';
+    mobileMoreMenu.addEventListener('click', function (e) {
+      const btn = e.target.closest('button');
+      if (btn) {
+        showView(btn.dataset.view);
+        mobileMoreMenu.classList.remove('open');
+      }
+    });
+  }
+
   document.addEventListener('click', function (e) {
-    if (mobileMoreMenu.classList.contains('open') && !mobileMoreMenu.contains(e.target) && !e.target.closest('.mobile-nav-btn[data-view="more"]')) {
+    if (
+      mobileMoreMenu &&
+      mobileMoreMenu.classList.contains('open') &&
+      !mobileMoreMenu.contains(e.target) &&
+      !e.target.closest('.mobile-nav-btn[data-view="more"]')
+    ) {
       mobileMoreMenu.classList.remove('open');
     }
   });
 
-  $('#logoBtn').addEventListener('click', function () {
-    showView('home');
-    closeSettings();
-  });
+  // Logo 回首頁
+  const logoBtn = $('#logoBtn');
+  if (logoBtn && !logoBtn.dataset.bound) {
+    logoBtn.dataset.bound = '1';
+    logoBtn.addEventListener('click', function () {
+      showView('home');
+      closeSettings();
+    });
+  }
+
   $$('[data-go]').forEach(function (el) {
+    if (el.dataset.bound) return;
+    el.dataset.bound = '1';
     el.addEventListener('click', function () {
       showView(el.dataset.go);
     });
   });
 
-  $('#searchForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-    doSearch($('#searchInput').value);
-    $('#searchInput').value = '';
-    $('#searchInput').blur();
-  });
+  // 搜尋表單
+  const searchForm = $('#searchForm');
+  if (searchForm && !searchForm.dataset.bound) {
+    searchForm.dataset.bound = '1';
+    searchForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      doSearch($('#searchInput').value);
+      $('#searchInput').value = '';
+      $('#searchInput').blur();
+    });
+  }
 
-  gearBtn.addEventListener('click', function (e) {
-    e.stopPropagation();
-    if (settings.classList.contains('open')) closeSettings();
-    else openSettings();
-  });
+  // 設定齒輪
+  if (gearBtn && !gearBtn.dataset.bound) {
+    gearBtn.dataset.bound = '1';
+    gearBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (settings.classList.contains('open')) closeSettings();
+      else openSettings();
+    });
+  }
+
   document.addEventListener('click', function (e) {
-    if (settings.classList.contains('open') && !settings.contains(e.target) && !gearBtn.contains(e.target)) {
+    if (settings && settings.classList.contains('open') && !settings.contains(e.target) && !gearBtn.contains(e.target)) {
       closeSettings();
     }
   });
 
+  // 語言切換按鈕
   const langSwitchBtn = $('#langSwitchBtn');
   if (langSwitchBtn && !langSwitchBtn.dataset.bound) {
     langSwitchBtn.dataset.bound = '1';
     langSwitchBtn.addEventListener('click', cycleLanguage);
   }
+
   const landingLangBtn = $('#landingLangBtn');
-  if (landingLangBtn && !landingLangBtn.dataset.bound) {
-    landingLangBtn.dataset.bound = '1';
-    landingLangBtn.addEventListener('click', cycleLanguage);
-  }
-
-  $$('[data-close]').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      closeModal(btn.dataset.close);
-    });
-  });
-  $$('.modal').forEach(function (m) {
-    m.addEventListener('click', function (e) {
-      if (e.target === m) closeModal('#' + m.id);
-    });
-  });
-
-  document.addEventListener('keydown', function (e) {
-    const tag = document.activeElement.tagName;
-    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      if (typeof BatchCtrl !== 'undefined') BatchCtrl.exit();
-      closeSettings();
-      const pomoPanel = $('#pomoPanel');
-      if (pomoPanel) pomoPanel.classList.remove('open');
-      if (typeof closePomoEditor === 'function') closePomoEditor();
-      $$('.modal.open').forEach(function (m) {
-        closeModal('#' + m.id);
-      });
-      const lb = $('#lightbox');
-      if (lb && lb.classList.contains('open') && typeof closeLightbox === 'function') closeLightbox();
-      return;
-    }
-
-    if (e.key === '/') {
-      e.preventDefault();
-      $('#searchInput').focus();
-      return;
-    }
-
-    if ((e.key === 'n' || e.key === 'N') && (currentView === 'home' || currentView === 'notes')) {
-      e.preventDefault();
-      if (typeof openNoteModal === 'function') openNoteModal(null);
-      return;
-    }
-
-    if (['1', '2', '3', '4', '5', '6'].includes(e.key)) {
-      e.preventDefault();
-      const viewsMap = { '1': 'home', '2': 'todo', '3': 'calendar', '4': 'diary', '5': 'notes', '6': 'ledger' };
-      showView(viewsMap[e.key]);
-      return;
-    }
-  });
-
-  const copyrightEl = document.getElementById('copyrightYear');
+if (landingLangBtn && !landingLangBtn.dataset.bound) {
+landingLangBtn.dataset.bound = '1';
+landingLangBtn.addEventListener('click', cycleLanguage);
+}
+// 彈窗關閉按鈕
+$$('[data-close]').forEach(function (btn) {
+if (btn.dataset.bound) return;
+btn.dataset.bound = '1';
+btn.addEventListener('click', function () {
+closeModal(btn.dataset.close);
+});
+});
+$$('.modal').forEach(function (m) {
+if (m.dataset.bound) return;
+m.dataset.bound = '1';
+m.addEventListener('click', function (e) {
+if (e.target === m) closeModal('#' + m.id);
+});
+});
+// 全域快捷鍵
+document.addEventListener('keydown', function (e) {
+const tag = document.activeElement.tagName;
+if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+if (e.key === 'Escape') {
+e.preventDefault();
+if (typeof BatchCtrl !== 'undefined') BatchCtrl.exit();
+closeSettings();
+const pomoPanel = $('#pomoPanel');
+if (pomoPanel) pomoPanel.classList.remove('open');
+if (typeof closePomoEditor === 'function') closePomoEditor();
+$$('.modal.open').forEach(function (m) {
+closeModal('#' + m.id);
+});
+const lb = $('#lightbox');
+if (lb && lb.classList.contains('open') && typeof closeLightbox === 'function') closeLightbox();
+return;
+}
+if (e.key === '/') {
+e.preventDefault();
+$('#searchInput').focus();
+return;
+}
+if ((e.key === 'n' || e.key === 'N') && (currentView === 'home' || currentView === 'notes')) {
+e.preventDefault();
+if (typeof openNoteModal === 'function') openNoteModal(null);
+return;
+}
+if (['1', '2', '3', '4', '5', '6'].includes(e.key)) {
+e.preventDefault();
+const viewsMap = { '1': 'home', '2': 'todo', '3': 'calendar', '4': 'diary', '5': 'notes', '6': 'ledger' };
+showView(viewsMap[e.key]);
+return;
+}
+});
+// 頁尾年份
+const copyrightEl = document.getElementById('copyrightYear');
 if (copyrightEl) copyrightEl.textContent = new Date().getFullYear();
 }
 // ==========================================
-// Landing Page 顯示邏輯
+// 6. Landing Page 顯示邏輯
 // ==========================================
 function initPublicLanding() {
 const landingEl = document.getElementById('public-landing');
@@ -330,7 +403,7 @@ showLanding();
 if (typeof updateGoogleUI === 'function') updateGoogleUI();
 }
 // ==========================================
-// 全站右鍵 / 長按批量刪除控制器 (筆記/照片/記帳/垃圾桶)
+// 7. 全站右鍵 / 長按批量刪除控制器 (筆記/照片/記帳/垃圾桶)
 // ==========================================
 const BatchCtrl = (function () {
 let activeModule = null;
@@ -630,7 +703,7 @@ toast((dict.movedToTrash || '已將 {n} 個項目移至垃圾桶').replace('{n}'
 document.addEventListener('contextmenu', function (e) {
 const keys = Object.keys(MODULE_CONFIG);
 for (let i = 0; i < keys.length; i++) {
-const modName = keys[i];
+const modName = keys.at(i);
 const cfg = MODULE_CONFIG[modName];
 const viewEl = $(cfg.viewSel);
 if (!viewEl || !viewEl.classList.contains('active')) continue;
@@ -653,7 +726,7 @@ if (e.pointerType === 'mouse') return;
 lpTriggered = false;
 const keys = Object.keys(MODULE_CONFIG);
 for (let i = 0; i < keys.length; i++) {
-const modName = keys[i];
+const modName = keys.at(i);
 const cfg = MODULE_CONFIG[modName];
 const viewEl = $(cfg.viewSel);
 if (!viewEl || !viewEl.classList.contains('active')) continue;
