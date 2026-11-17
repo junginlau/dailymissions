@@ -11,34 +11,40 @@
   - 核心與法務：`index.html`、`sw.js` (PWA)、`manifest.json`、`lang.js`、`privacy.html`、`terms.html`、`about.html`
   - 樣式：`css/pc.css`、`css/pad.css`、`css/phone.css`
   - 核心腳本：`js/core.js`、`js/ui.js`、`js/main.js`
-  - 功能模組：`js/homes.js`、`js/ledger.js`、`js/features/*.js`（todo、calender、diary、notes、photos、pomo、trash、settings 等）
+  - 功能模組：`js/homes.js`、`js/features/*.js`（todo、calendar、diary、notes、photos、pomo、ledger、trash、settings）
 
 ---
 
 ## 📌 版本命名與推進規則（雙軌制）
+- **版本進位原則**：遵循語意化版本（SemVer），`X`、`Y`、`Z` 各段皆為獨立整數，**滿 9 之後直接遞增為 10**（例如 `v1.0.9` → `v1.0.10`），不可進位至上一位。
 - **底層版本（X=0）**：代表資料、邏輯與 API 等底層功能。大功能推進使 `Y` 遞增、`Z` 歸零（無 beta）；子功能使 `Z` 遞增；僅在除錯時加上 `beta-n`，修完後移除。
 - **全域版本（X=1）**：代表 UI/UX 介面更新，`Y` 代表裝置（0=全域、1=PC、2=手機、3=平板），`Z` 代表小功能更新次數。除錯時使用 `beta-n`。
-- **Service Worker 快取**：`sw.js` 的 `CACHE_NAME`（例如 `my-space-cache-v1.0.8` 或帶有 `-beta-n` 後綴）對應全域版本。
+- **Service Worker 快取**：`sw.js` 的 `CACHE_NAME`（例如 `my-space-cache-v1.0.10` 或帶有 `-beta-n` 後綴）對應全域版本。
 
 ---
 
 ## ⚙️ 程式碼撰寫與協作規範
 1. **封裝與綁定**：所有事件監聽須包在 IIFE 中並透過 `main.js` 初始化，使用 `dataset.bound` 防止重複綁定。
-2. **UI 互動與存取**：禁用原生彈窗，統一使用 `customConfirm()` 與 `toast()`；DOM 查詢封裝為 `$` 與 `$$`；資料透過 `LS` 物件與 IndexedDB（圖片/音效）管理；使用 Google Identity Services 處理登入。
+2. **UI 互動與存取**：禁用原生彈窗，統一使用 `customConfirm()` 與 `toast()`；DOM 查詢封裝為 `$` 與 `$$`；動態列表優先使用原生 DOM API 建立節點；資料透過 `LS` 物件與 IndexedDB（圖片/音效）管理；使用 Google Identity Services 處理登入。
 3. **多語系 (i18n)**：禁止硬編碼文字，靜態文字使用 `data-i18n`，placeholder 使用 `data-i18n-placeholder`，於 `lang.js` 管理 `zh-TW`、`en`、`ja` 三語，透過 `js/ui.js` 的 `applyLanguage()` 輪替切換並重新渲染。
-4. **回覆與排版格式**：每次回答需包含版本判定、新舊版本與快取對照、程式碼（嚴格遵守「一個元素/屬性一行」排版原則）、文檔同步與測試清單。在保持專業與嚴謹的前提下，可適度加入可愛語氣與表情符號 🐰✨。
+4. **回覆與排版格式**：每次回答需包含版本判定、新舊版本與快取對照、程式碼（嚴格遵守「一個元素/屬性一行」排版原則）、文檔同步與測試清單。
 
 ---
 
 ## 🧠 當前專案狀態摘要
 
 ### ✅ 已完成的主要任務
-Google OAuth 驗證合規與 Landing Page 建立、版面與 Footer 固定修復、全站 i18n 多語系與日文擴充、Token 生命週期管理、快捷鍵系統、UI 小按鈕圖示化、平板與手機響應式調整（相冊、日曆側邊要事列表等）、以及全站 CSS 與 JS 模組化拆分重構。
+- Google OAuth 驗證合規與 Landing Page 建立、Token 生命週期管理與雲端備份端點修復。
+- 全站版面與 Footer 固定修復、全站 i18n 多語系與日文擴充、快捷鍵系統、UI 小按鈕圖示化。
+- 平板與手機響應式佈局調整（相冊、日曆側邊要事列表等）。
+- 全站 CSS 與 JS 模組化拆分重構（`css/` 與 `js/`、`js/features/` 架構）。
+- 統一右鍵／長按批量刪除與全模組垃圾桶流轉系統（筆記本 `1:1` 等高等寬網格、日記唯讀保護、重複確認流程）。
+- 日曆要事新增跨日期修改功能。
 
 ### 🚧 當前版本狀態
-- **底層版本**：`v0.6.3`（模組化架構拆分完成）
-- **全域版本**：`v1.0.8-beta-b16`（UI 調整除錯中）
-- **SW 快取**：`my-space-cache-v1.0.8-beta-b16`
+- **底層版本**：`v0.6.5`
+- **全域版本**：`v1.0.10`
+- **SW 快取**：`my-space-cache-v1.0.10`
 
 ### ⏳ 接下來預期待辦任務
 1. 行動裝置整頁滑動範圍修正。

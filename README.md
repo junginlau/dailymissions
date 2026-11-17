@@ -77,10 +77,12 @@
 
 ### 📂 檔案結構
 - **`index.html`**：網頁結構、彈窗、視圖定義。
-- **`style.css`**：視覺樣式、毛玻璃效果、滾動條美化、跨裝置響應式佈局。
-- **`script.js`**：資料 CRUD、LocalStorage / IndexedDB 持久化、日曆演算法、圖片壓縮、Pointer Events、Web Audio API、匯率計算。
+- **`css/`**：響應式樣式拆分（`pc.css` 電腦端、`pad.css` 平板端、`phone.css` 手機端）。
+- **`js/`**：核心架構與功能模組（`core.js`、`ui.js`、`homes.js`、`main.js` 及 `features/` 下的獨立功能模組）。
+- **`lang.js`**：多語系字典（繁體中文、English、日本語）。
 - **`manifest.json`**：PWA 應用程式設定檔。
 - **`sw.js`**：Service Worker，負責 PWA 快取、離線載入與版本更新提示。
+- **`readme/`**：專案開發工作流（`AIworkflow.md`）與更新日誌（`changelog.md`）。
 - **`images/`**：本地端存放的 Logo 與 App 圖示（`logo.png`、`icon.png`）。
 
 ---
