@@ -258,8 +258,14 @@ try {
     ];
 
     for (let i = 0; i < checks.length; i++) {
-      const key = checks[i];
-      const fn = checks[i];
+      for (let i = 0; i < checks.length; i++) {
+  const key = checks[i][0];
+  const fn = checks[i][1];
+  if (data[key] !== undefined && !fn(data[key])) {
+    return 'Invalid ' + key;
+  }
+}
+
       if (data[key] !== undefined && !fn(data[key])) {
         return 'Invalid ' + key;
       }
@@ -475,7 +481,8 @@ bgFileInput.click();
 });
 bgFileInput.addEventListener('change', function (e) {
 const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-const file = e.target.files && e.target.files;
+const file = e.target.files && e.target.files[0];
+
 e.target.value = '';
 if (!file) return;
 toast(dict.imgProcessing);
@@ -535,7 +542,8 @@ importFileInput.click();
 });
 importFileInput.addEventListener('change', function (e) {
 const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-const file = e.target.files && e.target.files;
+const file = e.target.files && e.target.files[0];
+
 e.target.value = '';
 if (!file) return;
 if (file.size > 60 * 1024 * 1024) {
@@ -657,7 +665,10 @@ return;
 const searchData = await searchRes.json();
 let fileId = null;
 if (searchData.files && searchData.files.length > 0) {
-fileId = searchData.files.id;
+if (searchData.files && searchData.files.length > 0) {
+  fileId = searchData.files[0].id;
+}
+
 }
 const boundary = '-------314159265358979323846';
 const delimiter = '\r\n--' + boundary + '\r\n';
@@ -740,7 +751,8 @@ if (!searchData.files || searchData.files.length === 0) {
 toast(dict.gRestoreEmpty);
 return;
 }
-const fileId = searchData.files.id;
+const fileId = searchData.files[0].id;
+
 const fileRes = await fetch(
 DRIVE_FILES_API + '/' + fileId + '?alt=media',
 {
