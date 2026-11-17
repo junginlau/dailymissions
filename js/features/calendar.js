@@ -6,12 +6,14 @@ const TIMEZONE = (function () {
     return '本地時區';
   }
 })();
+
 let calCursor = new Date();
 calCursor.setDate(1);
 
 function monthIndex(y, m) {
   return y * 12 + m;
 }
+
 let eventDateKey = null;
 let editingEventId = null;
 
@@ -28,7 +30,9 @@ function renderCalendar() {
   $('#calPrev').disabled = curIdx <= minIdx;
   $('#calNext').disabled = curIdx >= maxIdx;
   $('#calTz').textContent = dict.calTz.replace('{tz}', TIMEZONE);
-  if (!$('#calJumpDate').value) $('#calJumpDate').value = y + '-' + pad(m + 1) + '-01';
+  if (!$('#calJumpDate').value) {
+    $('#calJumpDate').value = y + '-' + pad(m + 1) + '-01';
+  }
 
   const firstDow = new Date(y, m, 1).getDay();
   const daysInMonth = new Date(y, m + 1, 0).getDate();
@@ -36,35 +40,44 @@ function renderCalendar() {
   const totalCells = Math.ceil((firstDow + daysInMonth) / 7) * 7;
   const tk = todayKey();
 
-  let html = dict.weekdays
-    .map(function (d) {
-      return '<div class="cal-dow">' + d + '</div>';
-    })
-    .join('');
+  const gridEl = $('#calGrid');
+  if (!gridEl) return;
+  gridEl.textContent = '';
+
+  dict.weekdays.forEach(function (d) {
+    const dow = document.createElement('div');
+    dow.className = 'cal-dow';
+    dow.textContent = d;
+    gridEl.appendChild(dow);
+  });
 
   for (let i = 0; i < totalCells; i++) {
     const dn = i - firstDow + 1;
     if (dn < 1) {
-      html += '<div class="cal-cell muted">' + (daysInPrev + dn) + '</div>';
+      const cell = document.createElement('div');
+      cell.className = 'cal-cell muted';
+      cell.textContent = daysInPrev + dn;
+      gridEl.appendChild(cell);
     } else if (dn > daysInMonth) {
-      html += '<div class="cal-cell muted">' + (dn - daysInMonth) + '</div>';
+      const cell = document.createElement('div');
+      cell.className = 'cal-cell muted';
+      cell.textContent = dn - daysInMonth;
+      gridEl.appendChild(cell);
     } else {
       const key = y + '-' + pad(m + 1) + '-' + pad(dn);
       const list = events[key] || [];
       const isToday = key === tk;
       const star = list.length > 0 ? ' ⭐' : '';
-      html +=
-        '<button class="cal-cell' +
-        (isToday ? ' today' : '') +
-        '" data-date="' +
-        key +
-        '">' +
-        dn +
-        star +
-        '</button>';
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cal-cell' + (isToday ? ' today' : '');
+      btn.dataset.date = key;
+      btn.textContent = dn + star;
+      gridEl.appendChild(btn);
     }
   }
-  $('#calGrid').innerHTML = html;
+
   renderCalSidebar();
 }
 
@@ -72,6 +85,8 @@ function renderCalSidebar() {
   const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
   const listEl = $('#calSidebarList');
   if (!listEl) return;
+
+  listEl.textContent = '';
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -99,165 +114,226 @@ function renderCalSidebar() {
   });
 
   if (!allEvents.length) {
-    listEl.innerHTML =
-      '<div class="empty small" style="padding:6px 0;">' + (dict.upcomingEmpty || '近期沒有要事。') + '</div>';
+    const emptyEl = document.createElement('div');
+    emptyEl.className = 'empty small';
+    emptyEl.style.padding = '6px 0';
+    emptyEl.textContent = dict.upcomingEmpty || '近期沒有要事。';
+    listEl.appendChild(emptyEl);
     return;
   }
 
-  listEl.innerHTML = allEvents
-    .map(function (ev) {
-      const d = keyToDate(ev.date);
-      const dateLabel = d.getFullYear() + '/' + pad(d.getMonth() + 1) + '/' + pad(d.getDate());
-      const timeLabel = ev.time ? '<span class="cal-sidebar-time">' + escapeHtml(ev.time) + '</span>' : '';
-      return (
-        '<div class="cal-sidebar-item">' +
-        '<div class="cal-sidebar-date">' +
-        dateLabel +
-        ' ' +
-        timeLabel +
-        '</div>' +
-        '<div class="cal-sidebar-ev-title">' +
-        escapeHtml(ev.title) +
-        '</div>' +
-        '</div>'
-      );
-    })
-    .join('');
+  allEvents.forEach(function (ev) {
+    const d = keyToDate(ev.date);
+    const dateLabel = d.getFullYear() + '/' + pad(d.getMonth() + 1) + '/' + pad(d.getDate());
+
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'cal-sidebar-item';
+
+    const dateDiv = document.createElement('div');
+    dateDiv.className = 'cal-sidebar-date';
+    dateDiv.textContent = dateLabel + ' ';
+
+    if (ev.time) {
+      const timeSpan = document.createElement('span');
+      timeSpan.className = 'cal-sidebar-time';
+      timeSpan.textContent = ev.time;
+      dateDiv.appendChild(timeSpan);
+    }
+
+    const titleDiv = document.createElement('div');
+    titleDiv.className = 'cal-sidebar-ev-title';
+    titleDiv.textContent = ev.title;
+
+    itemDiv.appendChild(dateDiv);
+    itemDiv.appendChild(titleDiv);
+    listEl.appendChild(itemDiv);
+  });
 }
 
 function inCalendarRange(date) {
-const now = new Date();
-const minIdx = monthIndex(now.getFullYear(), now.getMonth()) - 6;
-const maxIdx = monthIndex(now.getFullYear(), now.getMonth()) + 12;
-const idx = monthIndex(date.getFullYear(), date.getMonth());
-return idx >= minIdx && idx <= maxIdx;
+  const now = new Date();
+  const minIdx = monthIndex(now.getFullYear(), now.getMonth()) - 6;
+  const maxIdx = monthIndex(now.getFullYear(), now.getMonth()) + 12;
+  const idx = monthIndex(date.getFullYear(), date.getMonth());
+  return idx >= minIdx && idx <= maxIdx;
 }
+
 function shiftMonth(delta) {
-const now = new Date();
-const minIdx = monthIndex(now.getFullYear(), now.getMonth()) - 6;
-const maxIdx = monthIndex(now.getFullYear(), now.getMonth()) + 12;
-const cur = monthIndex(calCursor.getFullYear(), calCursor.getMonth());
-const next = cur + delta;
-if (next < minIdx || next > maxIdx) return;
-calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() + delta, 1);
-renderCalendar();
+  const now = new Date();
+  const minIdx = monthIndex(now.getFullYear(), now.getMonth()) - 6;
+  const maxIdx = monthIndex(now.getFullYear(), now.getMonth()) + 12;
+  const cur = monthIndex(calCursor.getFullYear(), calCursor.getMonth());
+  const next = cur + delta;
+  if (next < minIdx || next > maxIdx) return;
+  calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() + delta, 1);
+  renderCalendar();
 }
+
 function openEventModal(key) {
-const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-eventDateKey = key;
-editingEventId = null;
-const d = keyToDate(key);
-const week = dict.weekdays[d.getDay()];
-$('#eventDateTitle').textContent =
-dict.evMonthYear.replace('{y}', d.getFullYear()).replace('{m}', d.getMonth() + 1) +
-' ' +
-d.getDate() +
-' · ' +
-dict.evWeek.replace('{w}', week);
-$('#eventForm').reset();
-$('#eventSubmit').textContent = dict.evSave;
-$('#eventCancelEdit').hidden = true;
-renderEventList();
-openModal('#eventModal');
-setTimeout(function () {
-$('#evTitle').focus();
-}, 80);
+  const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+  eventDateKey = key;
+  editingEventId = null;
+  const d = keyToDate(key);
+  const week = dict.weekdays.at(d.getDay());
+
+  $('#eventDateTitle').textContent =
+    dict.evMonthYear.replace('{y}', d.getFullYear()).replace('{m}', d.getMonth() + 1) +
+    ' ' +
+    d.getDate() +
+    ' · ' +
+    dict.evWeek.replace('{w}', week);
+
+  $('#eventForm').reset();
+  $('#eventSubmit').textContent = dict.evSave;
+  $('#eventCancelEdit').hidden = true;
+  renderEventList();
+  openModal('#eventModal');
+  setTimeout(function () {
+    $('#evTitle').focus();
+  }, 80);
 }
+
 function renderEventList() {
-const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-const wrap = $('#eventList');
-const list = events[eventDateKey] || [];
-if (!list.length) {
-wrap.innerHTML = '' + dict.calEventEmpty + '';
-return;
+  const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+  const wrap = $('#eventList');
+  if (!wrap) return;
+
+  wrap.textContent = '';
+  const list = events[eventDateKey] || [];
+
+  if (!list.length) {
+    const emptyEl = document.createElement('div');
+    emptyEl.className = 'empty small';
+    emptyEl.textContent = dict.calEventEmpty;
+    wrap.appendChild(emptyEl);
+    return;
+  }
+
+  list.forEach(function (ev) {
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'event-item';
+    itemDiv.dataset.id = ev.id;
+
+    if (ev.time) {
+      const timeDiv = document.createElement('div');
+      timeDiv.className = 'ev-time';
+      timeDiv.textContent = ev.time;
+      itemDiv.appendChild(timeDiv);
+    }
+
+    const mainDiv = document.createElement('div');
+    mainDiv.className = 'ev-main';
+
+    const titleDiv = document.createElement('div');
+    titleDiv.className = 'ev-title';
+    titleDiv.textContent = ev.title;
+    mainDiv.appendChild(titleDiv);
+
+    if (ev.content) {
+      const contentDiv = document.createElement('div');
+      contentDiv.className = 'ev-content';
+      contentDiv.textContent = ev.content;
+      mainDiv.appendChild(contentDiv);
+    }
+
+    const actsDiv = document.createElement('div');
+    actsDiv.className = 'ev-acts';
+
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'mini';
+    editBtn.dataset.act = 'edit';
+    editBtn.title = dict.edit;
+    editBtn.textContent = '✎';
+
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'mini del';
+    delBtn.dataset.act = 'del';
+    delBtn.title = dict.delete;
+    delBtn.textContent = '×';
+
+    actsDiv.appendChild(editBtn);
+    actsDiv.appendChild(delBtn);
+
+    itemDiv.appendChild(mainDiv);
+    itemDiv.appendChild(actsDiv);
+    wrap.appendChild(itemDiv);
+  });
 }
-wrap.innerHTML = list
-.map(function (ev) {
-return (
-'' +
-(ev.time ? '' + escapeHtml(ev.time) + '' : '') +
-'' +
-'' +
-escapeHtml(ev.title) +
-'' +
-(ev.content ? '' + escapeHtml(ev.content) + '' : '') +
-'' +
-'' +
-'✎' +
-'×' +
-'' +
-''
-);
-})
-.join('');
-}
+
 function initCalendarEvents() {
-const calPrev = $('#calPrev');
-if (calPrev && !calPrev.dataset.bound) {
-calPrev.dataset.bound = '1';
-calPrev.addEventListener('click', function () {
-shiftMonth(-1);
-});
-}
-const calNext = $('#calNext');
-if (calNext && !calNext.dataset.bound) {
-calNext.dataset.bound = '1';
-calNext.addEventListener('click', function () {
-shiftMonth(1);
-});
-}
-const calToday = $('#calToday');
-if (calToday && !calToday.dataset.bound) {
-calToday.dataset.bound = '1';
-calToday.addEventListener('click', function () {
-calCursor = new Date();
-calCursor.setDate(1);
-$('#calJumpDate').value = todayKey();
-renderCalendar();
-});
-}
-const calJumpDate = $('#calJumpDate');
-if (calJumpDate && !calJumpDate.dataset.bound) {
-calJumpDate.dataset.bound = '1';
-calJumpDate.addEventListener('change', function () {
-const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-const val = this.value;
-if (!val) return;
-const p = val.split('-').map(Number);
-const target = new Date(p[0], p[1] - 1, 1);
-if (!inCalendarRange(target)) {
-toast(dict.calRangeLimit);
-this.value = todayKey();
-return;
-}
-calCursor = target;
-renderCalendar();
-openEventModal(val);
-});
-}
-const calGrid = $('#calGrid');
-if (calGrid && !calGrid.dataset.bound) {
-calGrid.dataset.bound = '1';
-calGrid.addEventListener('click', function (e) {
-const cell = e.target.closest('.cal-cell[data-date]');
-if (cell) openEventModal(cell.dataset.date);
-});
-}
-const eventForm = $('#eventForm');
-if (eventForm && !eventForm.dataset.bound) {
-eventForm.dataset.bound = '1';
-eventForm.addEventListener('submit', function (e) {
-const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-e.preventDefault();
-const title = $('#evTitle').value.trim();
-if (!title) {
-$('#evTitle').focus();
-return;
-}
-const time = $('#evTime').value;
-const content = $('#evContent').value.trim();
-if (!events[eventDateKey]) events[eventDateKey] = [];
-if (editingEventId) {
+  const calPrev = $('#calPrev');
+  if (calPrev && !calPrev.dataset.bound) {
+    calPrev.dataset.bound = '1';
+    calPrev.addEventListener('click', function () {
+      shiftMonth(-1);
+    });
+  }
+
+  const calNext = $('#calNext');
+  if (calNext && !calNext.dataset.bound) {
+    calNext.dataset.bound = '1';
+    calNext.addEventListener('click', function () {
+      shiftMonth(1);
+    });
+  }
+
+  const calToday = $('#calToday');
+  if (calToday && !calToday.dataset.bound) {
+    calToday.dataset.bound = '1';
+    calToday.addEventListener('click', function () {
+      calCursor = new Date();
+      calCursor.setDate(1);
+      $('#calJumpDate').value = todayKey();
+      renderCalendar();
+    });
+  }
+
+  const calJumpDate = $('#calJumpDate');
+  if (calJumpDate && !calJumpDate.dataset.bound) {
+    calJumpDate.dataset.bound = '1';
+    calJumpDate.addEventListener('change', function () {
+      const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+      const val = this.value;
+      if (!val) return;
+      const p = val.split('-').map(Number);
+      const target = new Date(p.at(0), p.at(1) - 1, 1);
+      if (!inCalendarRange(target)) {
+        toast(dict.calRangeLimit);
+        this.value = todayKey();
+        return;
+      }
+      calCursor = target;
+      renderCalendar();
+      openEventModal(val);
+    });
+  }
+
+  const calGrid = $('#calGrid');
+  if (calGrid && !calGrid.dataset.bound) {
+    calGrid.dataset.bound = '1';
+    calGrid.addEventListener('click', function (e) {
+      const cell = e.target.closest('.cal-cell[data-date]');
+      if (cell) openEventModal(cell.dataset.date);
+    });
+  }
+
+  const eventForm = $('#eventForm');
+  if (eventForm && !eventForm.dataset.bound) {
+    eventForm.dataset.bound = '1';
+    eventForm.addEventListener('submit', function (e) {
+      const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+      e.preventDefault();
+      const title = $('#evTitle').value.trim();
+      if (!title) {
+        $('#evTitle').focus();
+        return;
+      }
+      const time = $('#evTime').value;
+      const content = $('#evContent').value.trim();
+      if (!events[eventDateKey]) events[eventDateKey] = [];
+      if (editingEventId) {
 const ev = events[eventDateKey].find(function (x) {
 return x.id === editingEventId;
 });
