@@ -1,7 +1,5 @@
-// sw.js
-// [NEW] 對應全域版本 v1.0.8-beta-b16
-const CACHE_NAME = '• my-space-cache-v1.0.9';
-
+// CORE_VERSION: v0.6.5
+const CACHE_NAME = 'my-space-cache-v1.0.10';
 
 const ASSETS = [
   './',
