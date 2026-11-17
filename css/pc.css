@@ -340,8 +340,70 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
 .diary-viewer { flex: 1 1 auto !important; min-height: 0 !important; display: flex !important; flex-direction: column !important; }
 .diary-toolbar { flex: 0 0 auto; display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
 .diary-toolbar input[type="date"] { flex: 1 1 180px; }
-.diary-scroll { flex: 1 1 auto !important; min-height: 0 !important; overflow-y: auto !important; }
-.diary-card { padding: 12px 10px; border-bottom: 1px solid var(--panel-border); cursor: pointer; border-radius: 10px; transition: background .2s var(--ease); }
+/* [NEW] 日記列表改為等高毛玻璃網格 */
+.diary-scroll {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)) !important;
+  gap: 12px !important;
+  align-content: start !important;
+  padding-right: 4px;
+}
+
+.diary-scroll .empty {
+  grid-column: 1 / -1;
+}
+
+.diary-card {
+  position: relative;
+  height: 156px;
+  padding: 16px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  transition: transform .22s var(--ease), background .2s var(--ease), border-color .2s var(--ease);
+}
+
+.diary-card:hover {
+  background: var(--hover);
+  transform: translateY(-2px);
+}
+
+.diary-title {
+  margin-top: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.diary-preview {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--fg-dim);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* [NEW] 隱藏舊版常駐批次刪除按鈕，改由右鍵/長按呼出 */
+#bulkDeleteNotesBtn {
+  display: none !important;
+}
+
 .diary-card:last-child { border-bottom: none; }
 .diary-card:hover { background: var(--hover); }
 .diary-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 12px; color: var(--fg-dim); }
