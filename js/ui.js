@@ -343,308 +343,356 @@ showLanding();
 }
 if (typeof updateGoogleUI === 'function') updateGoogleUI();
 }
+
 // ==========================================
 // [NEW] 全站右鍵 / 長按批量刪除控制器 (筆記/照片/記帳/垃圾桶)
 // ==========================================
 const BatchCtrl = (function () {
-let activeModule = null;
-let selectedIds = new Set();
-let menuEl = null;
-let targetModule = null;
-let targetItemId = null;
-const MODULE_CONFIG = {
-notes: {
-viewSel: '#view-notes',
-itemSel: '.note[data-id]',
-getAllIds: function () {
-return notes.map(function (n) {
-return n.id;
-});
-},
-render: function () {
-if (typeof renderNotes === 'function') renderNotes();
-},
-onDelete: function (ids) {
-let count = 0;
-notes = notes.filter(function (n) {
-if (ids.has(n.id)) {
-trash.push({
-id: uid(),
-type: 'note',
-title: n.title || '無標題',
-data: n,
-deletedAt: Date.now()
-});
-count++;
-return false;
-}
-return true;
-});
-save('trash');
-save('notes');
-return count;
-}
-},
-photos: {
-viewSel: '#view-photos',
-itemSel: '.photo[data-id]',
-getAllIds: function () {
-return photoMeta.map(function (p) {
-return p.id;
-});
-},
-render: function () {
-if (typeof renderPhotos === 'function') renderPhotos();
-},
-onDelete: function (ids) {
-let count = 0;
-photoMeta = photoMeta.filter(function (p) {
-if (ids.has(p.id)) {
-trash.push({
-id: uid(),
-type: 'photo',
-title: p.title || '照片',
-data: p,
-deletedAt: Date.now()
-});
-count++;
-return false;
-}
-return true;
-});
-save('trash');
-save('photoMeta');
-return count;
-}
-},
-ledger: {
-viewSel: '#view-ledger',
-itemSel: '.ledger-item[data-id]',
-getAllIds: function () {
-const now = new Date();
-const thisMonth = now.getFullYear() + '-' + pad(now.getMonth() + 1);
-return ledger
-.filter(function (item) {
-return item.date.startsWith(thisMonth);
-})
-.map(function (item) {
-return item.id;
-});
-},
-render: function () {
-if (typeof renderLedger === 'function') renderLedger();
-if (typeof renderHome === 'function') renderHome();
-},
-onDelete: function (ids) {
-let count = 0;
-ledger = ledger.filter(function (item) {
-if (ids.has(item.id)) {
-const label = item.category + (item.note ? ' · ' + item.note : '');
-trash.push({
-id: uid(),
-type: 'ledger',
-title: label,
-data: item,
-deletedAt: Date.now()
-});
-count++;
-return false;
-}
-return true;
-});
-save('trash');
-save('ledger');
-return count;
-}
-},
-trash: {
-viewSel: '#view-trash',
-itemSel: '.trash-item[data-id]',
-isPermanent: true,
-getAllIds: function () {
-return trash.map(function (t) {
-return t.id;
-});
-},
-render: function () {
-if (typeof renderTrash === 'function') renderTrash();
-},
-onDelete: function (ids) {
-let count = 0;
-trash = trash.filter(function (item) {
-if (ids.has(item.id)) {
-if (item.type === 'photo' && item.data && item.data.id) {
-delete photoCache[item.data.id];
-if (IDB.available()) {
-IDB.del('photos', item.data.id).catch(function () {});
-}
-}
-count++;
-return false;
-}
-return true;
-});
-save('trash');
-return count;
-}
-}
-};
-function ensureMenu() {
-if (menuEl) return menuEl;
-menuEl = document.createElement('div');
-menuEl.className = 'ctx-menu';
-menuEl.id = 'globalCtxMenu';
-menuEl.innerHTML =
-'' +
-'🗑️ 批量刪除' +
-'';
-document.body.appendChild(menuEl);
-menuEl.querySelector('#ctxBatchDelBtn').addEventListener('click', function () {
-const mod = targetModule;
-const firstId = targetItemId;
-hideMenu();
-if (mod) {
-enter(mod, firstId);
-}
-});
-document.addEventListener('click', function (e) {
-if (menuEl && menuEl.classList.contains('open') && !menuEl.contains(e.target)) {
-hideMenu();
-}
-});
-document.addEventListener('scroll', hideMenu, true);
-return menuEl;
-}
-function showMenu(x, y, modName, itemId) {
-const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-const m = ensureMenu();
-targetModule = modName;
-targetItemId = itemId;
-m.querySelector('span').textContent = dict.ctxBatchDelete || '批量刪除';
-m.classList.add('open');
-const rect = m.getBoundingClientRect();
-const left = Math.min(x, window.innerWidth - rect.width - 12);
-const top = Math.min(y, window.innerHeight - rect.height - 12);
-m.style.left = Math.max(8, left) + 'px';
-m.style.top = Math.max(8, top) + 'px';
-}
-function hideMenu() {
-if (menuEl) {
-menuEl.classList.remove('open');
-}
-}
-function enter(modName, initialId) {
-activeModule = modName;
-selectedIds.clear();
-if (initialId) {
-selectedIds.add(initialId);
-}
-const cfg = MODULE_CONFIG[modName];
-if (cfg && cfg.render) cfg.render();
-}
-function exit() {
-hideMenu();
-if (!activeModule) return;
-const prev = activeModule;
-activeModule = null;
-selectedIds.clear();
-const cfg = MODULE_CONFIG[prev];
-if (cfg && cfg.render) cfg.render();
-}
-function toggle(id) {
-if (!activeModule) return;
-if (selectedIds.has(id)) {
-selectedIds.delete(id);
-} else {
-selectedIds.add(id);
-}
-const cfg = MODULE_CONFIG[activeModule];
-if (cfg && cfg.render) cfg.render();
-}
-function renderToolbar(containerEl, modName) {
-if (!containerEl) return;
-const oldBar = containerEl.querySelector('.batch-bar');
-if (oldBar) oldBar.remove();
-if (activeModule !== modName) return;
-const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-const cfg = MODULE_CONFIG[modName];
-const allIds = cfg.getAllIds();
-const isAllChecked = allIds.length > 0 && selectedIds.size === allIds.length;
-const bar = document.createElement('div');
-bar.className = 'batch-bar';
-bar.innerHTML =
-'' +
-'<input type="checkbox" id="batchSelectAllChk" ' + (isAllChecked ? 'checked' : '') + '>' +
-'' + (dict.batchSelectAll || '全選') + '' +
-'' +
-'' +
-(dict.batchSelectedCount || '已選取 {n} 項').replace('{n}', selectedIds.size) +
-'' +
-'<button type="button" class="btn danger" id="batchExecDelBtn" ' + (selectedIds.size === 0 ? 'disabled' : '') + '>' +
-(dict.delete || '刪除') +
-'' +
-'' +
-(dict.batchCancel || '取消') +
-'';
-containerEl.prepend(bar);
-bar.querySelector('#batchSelectAllChk').addEventListener('change', function (e) {
-if (e.target.checked) {
-allIds.forEach(function (id) {
-selectedIds.add(id);
-});
-} else {
-selectedIds.clear();
-}
-cfg.render();
-});
-bar.querySelector('#batchCancelBtn').addEventListener('click', exit);
-bar.querySelector('#batchExecDelBtn').addEventListener('click', async function () {
-const count = selectedIds.size;
-if (count === 0) return;
-const t1 = cfg.isPermanent
-? (dict.confirmPerm1Title || '⚠️ 確定要永久刪除嗎？')
-: (dict.confirmBatch1Title || '確定要刪除選取的 {n} 個項目嗎？').replace('{n}', count);
-const m1 = cfg.isPermanent
-? (dict.confirmPerm1Msg || '選取的 {n} 個項目將被徹底刪除，無法復原！').replace('{n}', count)
-: (dict.confirmBatch1Msg || '這些項目將會先移至垃圾桶（保留 14 天）。');
-const ok1 = await customConfirm(t1, m1, dict.delete, dict.cancel, true);
-if (!ok1) return;
-const t2 = cfg.isPermanent
-? (dict.confirmPerm2Title || '最後重複確認')
-: (dict.confirmBatch2Title || '再次確認刪除');
-const m2 = cfg.isPermanent
-? (dict.confirmPerm2Msg || '刪除後資料與檔案將永遠消失，確定執行？')
-: (dict.confirmBatch2Msg || '請再次確認是否要將這些項目移至垃圾桶？');
-const ok2 = await customConfirm(t2, m2, dict.delete, dict.cancel, true);
-if (!ok2) return;
-const deletedCount = cfg.onDelete(new Set(selectedIds));
-activeModule = null;
-selectedIds.clear();
-cfg.render();
-if (cfg.isPermanent) {
-toast(dict.permanentlyDeleted || '已永久刪除');
-} else {
-toast((dict.movedToTrash || '已將 {n} 個項目移至垃圾桶').replace('{n}', deletedCount));
-}
-});
-}
-// 電腦版右鍵監聽（僅在允許批量刪除的 4 個模組生效，日記完全排除）
-document.addEventListener('contextmenu', function (e) {
-const keys = Object.keys(MODULE_CONFIG);
-for (let i = 0; i < keys.length; i++) {
-const modName = keys[i];
-const cfg = MODULE_CONFIG[modName];
-const viewEl = $(cfg.viewSel);
-if (!viewEl || !viewEl.classList.contains('active')) continue;
-const itemEl = e.target.closest(cfg.itemSel);
-if (itemEl && viewEl.contains(itemEl)) {
-e.preventDefault();
+  let activeModule = null;
+  let selectedIds = new Set();
+  let menuEl = null;
+  let targetModule = null;
+  let targetItemId = null;
+
+  const MODULE_CONFIG = {
+    notes: {
+      viewSel: '#view-notes',
+      itemSel: '.note[data-id]',
+      getAllIds: function () {
+        return notes.map(function (n) {
+          return n.id;
+        });
+      },
+      render: function () {
+        if (typeof renderNotes === 'function') renderNotes();
+      },
+      onDelete: function (ids) {
+        let count = 0;
+        notes = notes.filter(function (n) {
+          if (ids.has(n.id)) {
+            trash.push({
+              id: uid(),
+              type: 'note',
+              title: n.title || '無標題',
+              data: n,
+              deletedAt: Date.now()
+            });
+            count++;
+            return false;
+          }
+          return true;
+        });
+        save('trash');
+        save('notes');
+        return count;
+      }
+    },
+    photos: {
+      viewSel: '#view-photos',
+      itemSel: '.photo[data-id]',
+      getAllIds: function () {
+        return photoMeta.map(function (p) {
+          return p.id;
+        });
+      },
+      render: function () {
+        if (typeof renderPhotos === 'function') renderPhotos();
+      },
+      onDelete: function (ids) {
+        let count = 0;
+        photoMeta = photoMeta.filter(function (p) {
+          if (ids.has(p.id)) {
+            trash.push({
+              id: uid(),
+              type: 'photo',
+              title: p.title || '照片',
+              data: p,
+              deletedAt: Date.now()
+            });
+            count++;
+            return false;
+          }
+          return true;
+        });
+        save('trash');
+        save('photoMeta');
+        return count;
+      }
+    },
+    ledger: {
+      viewSel: '#view-ledger',
+      itemSel: '.ledger-item[data-id]',
+      getAllIds: function () {
+        const now = new Date();
+        const thisMonth = now.getFullYear() + '-' + pad(now.getMonth() + 1);
+        return ledger
+          .filter(function (item) {
+            return item.date.startsWith(thisMonth);
+          })
+          .map(function (item) {
+            return item.id;
+          });
+      },
+      render: function () {
+        if (typeof renderLedger === 'function') renderLedger();
+        if (typeof renderHome === 'function') renderHome();
+      },
+      onDelete: function (ids) {
+        let count = 0;
+        ledger = ledger.filter(function (item) {
+          if (ids.has(item.id)) {
+            const label = item.category + (item.note ? ' · ' + item.note : '');
+            trash.push({
+              id: uid(),
+              type: 'ledger',
+              title: label,
+              data: item,
+              deletedAt: Date.now()
+            });
+            count++;
+            return false;
+          }
+          return true;
+        });
+        save('trash');
+        save('ledger');
+        return count;
+      }
+    },
+    trash: {
+      viewSel: '#view-trash',
+      itemSel: '.trash-item[data-id]',
+      isPermanent: true,
+      getAllIds: function () {
+        return trash.map(function (t) {
+          return t.id;
+        });
+      },
+      render: function () {
+        if (typeof renderTrash === 'function') renderTrash();
+      },
+      onDelete: function (ids) {
+        let count = 0;
+        trash = trash.filter(function (item) {
+          if (ids.has(item.id)) {
+            if (item.type === 'photo' && item.data && item.data.id) {
+              delete photoCache[item.data.id];
+              if (IDB.available()) {
+                IDB.del('photos', item.data.id).catch(function () {});
+              }
+            }
+            count++;
+            return false;
+          }
+          return true;
+        });
+        save('trash');
+        return count;
+      }
+    }
+  };
+
+  function ensureMenu() {
+    if (menuEl) return menuEl;
+    menuEl = document.createElement('div');
+    menuEl.className = 'ctx-menu';
+    menuEl.id = 'globalCtxMenu';
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'ctx-menu-item';
+    btn.id = 'ctxBatchDelBtn';
+    btn.textContent = '🗑️ 批量刪除';
+    menuEl.appendChild(btn);
+
+    document.body.appendChild(menuEl);
+
+    btn.addEventListener('click', function () {
+      const mod = targetModule;
+      const firstId = targetItemId;
+      hideMenu();
+      if (mod) {
+        enter(mod, firstId);
+      }
+    });
+
+    document.addEventListener('click', function (e) {
+      if (menuEl && menuEl.classList.contains('open') && !menuEl.contains(e.target)) {
+        hideMenu();
+      }
+    });
+
+    document.addEventListener('scroll', hideMenu, true);
+    return menuEl;
+  }
+
+  function showMenu(x, y, modName, itemId) {
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    const m = ensureMenu();
+    targetModule = modName;
+    targetItemId = itemId;
+    m.querySelector('#ctxBatchDelBtn').textContent = '🗑️ ' + (dict.ctxBatchDelete || '批量刪除');
+
+    m.classList.add('open');
+    const rect = m.getBoundingClientRect();
+    const left = Math.min(x, window.innerWidth - rect.width - 12);
+    const top = Math.min(y, window.innerHeight - rect.height - 12);
+    m.style.left = Math.max(8, left) + 'px';
+    m.style.top = Math.max(8, top) + 'px';
+  }
+
+  function hideMenu() {
+    if (menuEl) {
+      menuEl.classList.remove('open');
+    }
+  }
+
+  function enter(modName, initialId) {
+    activeModule = modName;
+    selectedIds.clear();
+    if (initialId) {
+      selectedIds.add(initialId);
+    }
+    const cfg = MODULE_CONFIG[modName];
+    if (cfg && cfg.render) cfg.render();
+  }
+
+  function exit() {
+    hideMenu();
+    if (!activeModule) return;
+    const prev = activeModule;
+    activeModule = null;
+    selectedIds.clear();
+    const cfg = MODULE_CONFIG[prev];
+    if (cfg && cfg.render) cfg.render();
+  }
+
+  function toggle(id) {
+    if (!activeModule) return;
+    if (selectedIds.has(id)) {
+      selectedIds.delete(id);
+    } else {
+      selectedIds.add(id);
+    }
+    const cfg = MODULE_CONFIG[activeModule];
+    if (cfg && cfg.render) cfg.render();
+  }
+
+  function renderToolbar(containerEl, modName) {
+    if (!containerEl) return;
+    const oldBar = containerEl.querySelector('.batch-bar');
+    if (oldBar) oldBar.remove();
+    if (activeModule !== modName) return;
+
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    const cfg = MODULE_CONFIG[modName];
+    const allIds = cfg.getAllIds();
+    const isAllChecked = allIds.length > 0 && selectedIds.size === allIds.length;
+
+    const bar = document.createElement('div');
+    bar.className = 'batch-bar';
+
+    const label = document.createElement('label');
+    label.className = 'batch-bar-label';
+
+    const chk = document.createElement('input');
+    chk.type = 'checkbox';
+    chk.checked = isAllChecked;
+
+    const labelSpan = document.createElement('span');
+    labelSpan.textContent = dict.batchSelectAll || '全選';
+
+    label.appendChild(chk);
+    label.appendChild(labelSpan);
+
+    const countSpan = document.createElement('span');
+    countSpan.className = 'batch-bar-count';
+    countSpan.textContent = (dict.batchSelectedCount || '已選取 {n} 項').replace('{n}', selectedIds.size);
+
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'btn danger';
+    delBtn.disabled = selectedIds.size === 0;
+    delBtn.textContent = dict.delete || '刪除';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn ghost';
+    cancelBtn.textContent = dict.batchCancel || '取消';
+
+    bar.appendChild(label);
+    bar.appendChild(countSpan);
+    bar.appendChild(delBtn);
+    bar.appendChild(cancelBtn);
+
+    containerEl.prepend(bar);
+
+    chk.addEventListener('change', function (e) {
+      if (e.target.checked) {
+        allIds.forEach(function (id) {
+          selectedIds.add(id);
+        });
+      } else {
+        selectedIds.clear();
+      }
+      cfg.render();
+    });
+
+    cancelBtn.addEventListener('click', exit);
+
+    delBtn.addEventListener('click', async function () {
+      const count = selectedIds.size;
+      if (count === 0) return;
+
+      const t1 = cfg.isPermanent
+        ? (dict.confirmPerm1Title || '⚠️ 確定要永久刪除嗎？')
+        : (dict.confirmBatch1Title || '確定要刪除選取的 {n} 個項目嗎？').replace('{n}', count);
+      const m1 = cfg.isPermanent
+        ? (dict.confirmPerm1Msg || '選取的 {n} 個項目將被徹底刪除，無法復原！').replace('{n}', count)
+        : (dict.confirmBatch1Msg || '這些項目將會先移至垃圾桶（保留 14 天）。');
+
+      const ok1 = await customConfirm(t1, m1, dict.delete, dict.cancel, true);
+      if (!ok1) return;
+
+      const t2 = cfg.isPermanent
+        ? (dict.confirmPerm2Title || '最後重複確認')
+        : (dict.confirmBatch2Title || '再次確認刪除');
+      const m2 = cfg.isPermanent
+        ? (dict.confirmPerm2Msg || '刪除後資料與檔案將永遠消失，確定執行？')
+        : (dict.confirmBatch2Msg || '請再次確認是否要將這些項目移至垃圾桶？');
+
+      const ok2 = await customConfirm(t2, m2, dict.delete, dict.cancel, true);
+      if (!ok2) return;
+
+      const deletedCount = cfg.onDelete(new Set(selectedIds));
+      activeModule = null;
+      selectedIds.clear();
+      cfg.render();
+
+      if (cfg.isPermanent) {
+        toast(dict.permanentlyDeleted || '已永久刪除');
+      } else {
+        toast((dict.movedToTrash || '已將 {n} 個項目移至垃圾桶').replace('{n}', deletedCount));
+      }
+    });
+  }
+
+  document.addEventListener('contextmenu', function (e) {
+    const keys = Object.keys(MODULE_CONFIG);
+    for (let i = 0; i < keys.length; i++) {
+      const modName = keys[i];
+      const cfg = MODULE_CONFIG[modName];
+      const viewEl = $(cfg.viewSel);
+      if (!viewEl || !viewEl.classList.contains('active')) continue;
+
+      const itemEl = e.target.closest(cfg.itemSel);
+      if (itemEl && viewEl.contains(itemEl)) {
+        e.preventDefault();
 showMenu(e.clientX, e.clientY, modName, itemEl.dataset.id);
 return;
 }
 }
 });
-// 手機與平板長按 (Long Press 500ms) 監聽
 let lpTimer = null;
 let lpStartX = 0;
 let lpStartY = 0;
@@ -696,7 +744,6 @@ lpTimer = null;
 }
 document.addEventListener('pointerup', cancelLongPress, { passive: true });
 document.addEventListener('pointercancel', cancelLongPress, { passive: true });
-// 長按觸發選單後，攔截緊隨其後的 click 避免誤開卡片
 document.addEventListener(
 'click',
 function (e) {

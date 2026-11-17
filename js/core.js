@@ -179,14 +179,28 @@ function pruneDone() { const cutoff = new Date(); cutoff.setDate(cutoff.getDate(
 function pruneTrash() {
   const now = Date.now();
   const fourteenDays = 14 * 24 * 60 * 60 * 1000;
-  const initialLength = trash.length;
-  trash = trash.filter(item => (now - item.deletedAt) < fourteenDays);
-  if (trash.length !== initialLength) {
+  const kept = [];
+  let changed = false;
+
+  trash.forEach(function (item) {
+    if (now - item.deletedAt < fourteenDays) {
+      kept.push(item);
+    } else {
+      changed = true;
+      if (item.type === 'photo' && item.data && item.data.id) {
+        delete photoCache[item.data.id];
+        if (IDB.available()) {
+          IDB.del('photos', item.data.id).catch(function () {});
+        }
+      }
+    }
+  });
+
+  if (changed) {
+    trash = kept;
     save('trash');
-    if (typeof currentView !== 'undefined' && currentView === 'trash' && typeof renderTrash === 'function') renderTrash();
+    if (typeof currentView !== 'undefined' && currentView === 'trash' && typeof renderTrash === 'function') {
+      renderTrash();
+    }
   }
-}
-function pruneEvents() {
-  const now = new Date(); const minKey = dateKey(new Date(now.getFullYear(), now.getMonth() - 6, 1)); const maxKey = dateKey(new Date(now.getFullYear(), now.getMonth() + 13, 0)); let changed = false;
-  Object.keys(events).forEach(function (k) { if (k < minKey || k > maxKey) { delete events[k]; changed = true; } }); if (changed) save('events');
 }
