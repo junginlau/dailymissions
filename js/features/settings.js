@@ -34,7 +34,7 @@ try {
 
   function getCookie(name) {
     const m = document.cookie.match('(^|; )' + name + '=([^;]*)');
-    return m ? decodeURIComponent(m[2]) : null;
+    return m ? decodeURIComponent(m) : null;
   }
 
   function setCookie(name, value) {
@@ -258,8 +258,8 @@ try {
     ];
 
     for (let i = 0; i < checks.length; i++) {
-      const key = checks[i][0];
-      const fn = checks[i][1];
+      const key = checks[i];
+      const fn = checks[i];
       if (data[key] !== undefined && !fn(data[key])) {
         return 'Invalid ' + key;
       }
@@ -365,10 +365,20 @@ if (typeof renderTrash === 'function') renderTrash();
 });
 }
 // ==========================================
-// 4. Google Drive 雲端備份邏輯（完整端點）
+// 4. Google Drive 雲端備份邏輯（分段防截斷）
 // ==========================================
-const CLIENT_ID = 'googleusercontent.com';
-const SCOPES = 'googleapis.com';
+const CLIENT_ID = [
+'355931371376-sdu9qo95t0ghojgsb6eicqgc5nd6i31o',
+'apps',
+'googleusercontent',
+'com'
+].join('.');
+const SCOPES =
+'https://' + 'www.' + 'googleapis' + '.com/auth/drive.appdata';
+const DRIVE_FILES_API =
+'https://' + 'www.' + 'googleapis' + '.com/drive/v3/files';
+const DRIVE_UPLOAD_API =
+'https://' + 'www.' + 'googleapis' + '.com/upload/drive/v3/files';
 let tokenClient = null;
 function clearGoogleToken() {
 accessToken = null;
@@ -465,7 +475,7 @@ bgFileInput.click();
 });
 bgFileInput.addEventListener('change', function (e) {
 const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-const file = e.target.files && e.target.files[0];
+const file = e.target.files && e.target.files;
 e.target.value = '';
 if (!file) return;
 toast(dict.imgProcessing);
@@ -525,7 +535,7 @@ importFileInput.click();
 });
 importFileInput.addEventListener('change', function (e) {
 const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-const file = e.target.files && e.target.files[0];
+const file = e.target.files && e.target.files;
 e.target.value = '';
 if (!file) return;
 if (file.size > 60 * 1024 * 1024) {
@@ -632,7 +642,7 @@ try {
 const data = await buildBackupPayload();
 const jsonString = JSON.stringify(data);
 const searchRes = await fetch(
-'googleapis.com',
+DRIVE_FILES_API + '?spaces=appDataFolder',
 {
 headers: {
 Authorization: 'Bearer ' + accessToken
@@ -647,7 +657,7 @@ return;
 const searchData = await searchRes.json();
 let fileId = null;
 if (searchData.files && searchData.files.length > 0) {
-fileId = searchData.files[0].id;
+fileId = searchData.files.id;
 }
 const boundary = '-------314159265358979323846';
 const delimiter = '\r\n--' + boundary + '\r\n';
@@ -667,7 +677,7 @@ delimiter +
 'Content-Type: application/json\r\n\r\n' +
 jsonString +
 close_delim;
-let url = 'googleapis.com';
+let url = DRIVE_UPLOAD_API;
 let method = 'POST';
 if (fileId) {
 url += '/' + fileId;
@@ -713,7 +723,7 @@ if (!ok) return;
 toast(dict.gRestoreDownloading);
 try {
 const searchRes = await fetch(
-'googleapis.com',
+DRIVE_FILES_API + '?spaces=appDataFolder',
 {
 headers: {
 Authorization: 'Bearer ' + accessToken
@@ -730,9 +740,9 @@ if (!searchData.files || searchData.files.length === 0) {
 toast(dict.gRestoreEmpty);
 return;
 }
-const fileId = searchData.files[0].id;
+const fileId = searchData.files.id;
 const fileRes = await fetch(
-'googleapis.com' + fileId + '?alt=media',
+DRIVE_FILES_API + '/' + fileId + '?alt=media',
 {
 headers: {
 Authorization: 'Bearer ' + accessToken

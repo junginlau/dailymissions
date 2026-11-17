@@ -16,7 +16,10 @@ function fetchExchangeRates() {
     renderRateFreshness();
     return;
   }
-  fetch('https://er-api.com')
+
+  const rateApiUrl = 'https://' + 'open.' + 'er-api' + '.com/v6/latest/TWD';
+
+  fetch(rateApiUrl)
     .then(function (res) {
       return res.json();
     })
@@ -304,16 +307,16 @@ function initLedgerEvents() {
           const label = target.category + (target.note ? ' · ' + target.note : '');
           trash.push({
             id: uid(),
-            type: 'ledger',
-            title: label,
-            data: target,
-            deletedAt: Date.now()
-          });
-        }
-        ledger = ledger.filter(function (x) {
-          return x.id !== id;
-        });
-        save('trash');
+type: 'ledger',
+title: label,
+data: target,
+deletedAt: Date.now()
+});
+}
+ledger = ledger.filter(function (x) {
+return x.id !== id;
+});
+save('trash');
 save('ledger');
 renderLedger();
 renderHome();
