@@ -357,9 +357,37 @@ input[type="date"], input[type="time"] { font-variant-numeric: tabular-nums; }
 /* 筆記本：按鈕固定，卡片在框框內滾動 */
 #view-notes.active { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden !important; }
 .notes-container { display: flex !important; flex-direction: column !important; flex: 1 1 auto !important; min-height: 0 !important; height: 100% !important; margin-top: 16px !important; overflow: hidden !important; }
-.notes-scroll { flex: 1 1 auto !important; min-height: 0 !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; margin-bottom: 16px !important; }
+.notes-scroll {
+  flex: 0 1 auto !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  margin-bottom: 16px !important;
+}
 #notesGrid { flex: 1 1 auto !important; min-height: 0 !important; overflow-y: auto !important; padding-bottom: 20px !important; display: grid !important; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important; gap: 14px !important; }
-.note { text-align: left; font: inherit; cursor: pointer; display: flex; flex-direction: column; gap: 8px; overflow: hidden; transition: transform .25s var(--ease); }
+.note {
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+  transition: transform .25s var(--ease);
+}
+
+/* [NEW] 避開左上角多選勾選框 */
+.note-h {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg);
+  padding-left: 26px;
+  min-height: 20px;
+  display: flex;
+  align-items: center;
+}
 .note:hover { transform: translateY(-3px); }
 .note-thumb { height: 96px; border-radius: 12px; margin: -2px -2px 2px; background-size: cover; background-position: center; }
 .note-h { font-size: 14px; font-weight: 600; color: var(--fg); }
