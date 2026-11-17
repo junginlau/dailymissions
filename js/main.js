@@ -21,24 +21,17 @@
       applyLanguage(currentLang);
     });
 
-    // 2. 初始化語言與靜態文字
-    currentLang = LS.get('userLang', 'zh-TW');
-    safeRun('applyLanguage', function () {
-      applyLanguage(currentLang);
-    });
-
     // 3. 綁定全域 UI 與所有功能模組事件
     safeRun('initUI', window.initUI);
     safeRun('initHomeEvents', window.initHomeEvents);
     safeRun('initTodoEvents', window.initTodoEvents);
     safeRun('initCalendarEvents', window.initCalendarEvents);
     safeRun('initDiaryEvents', window.initDiaryEvents);
-    safeRun('initNotesEvents', window.initNotesEvents); // [NEW] 補上
+    safeRun('initNotesEvents', window.initNotesEvents);
     safeRun('initPhotosEvents', window.initPhotosEvents);
     safeRun('initPomoEvents', window.initPomoEvents);
-    safeRun('initLedgerEvents', window.initLedgerEvents); // [NEW] 補上
+    safeRun('initLedgerEvents', window.initLedgerEvents);
     safeRun('initTrashEvents', window.initTrashEvents);
-    safeRun('initSettingsEvents', window.initSettingsEvents); // [NEW] 補上
 
     // 4. 啟動時鐘與天氣定時器
     if (typeof updateClock === 'function') {

@@ -246,6 +246,7 @@ function initGoogleAuth() {
         } catch (e) {}
         updateGoogleUI();
         toast(d.gLoginOk);
+        setTimeout(checkCloudNewerOnLogin, 1500); // 登入後檢查雲端版本
       } else {
         toast(d.gLoginFail);
       }
@@ -656,11 +657,14 @@ function initSettingsEvents() {
         gSyncTimeText.textContent = this.checked ? (dict.gAutoSyncOn || '已開啟') : (dict.gAutoSyncOff || '已關閉');
       }
       toast(this.checked ? (dict.gAutoSyncOn || '已開啟自動同步') : (dict.gAutoSyncOff || '已關閉自動同步'));
+      
+      if (this.checked) {
+        window.scheduleAutoSync(); // 開啟時立刻備份一次
+      }
     });
   }
 
   updateGoogleUI();
-  window.addEventListener('load', function () {
-    setTimeout(initGoogleAuth, 1000);
-  });
+  // [NEW] 直接在 initSettingsEvents 裡面延遲初始化 Google Auth
+  setTimeout(initGoogleAuth, 1000);
 }

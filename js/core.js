@@ -305,6 +305,142 @@ document.addEventListener('keydown', function (e) {
 });
 // 確保在 main.js 載入前，initSettingsEvents 是存在的 (由 settings.js 定義)
 window.initSettingsEvents = window.initSettingsEvents || function() {};
+  // ==========================================
+  // [NEW] 自動同步核心邏輯
+  // ==========================================
+  let autoSyncTimer = null;
+
+  function getFormattedTime(ts) {
+    if (!ts) return '';
+    const d = new Date(ts);
+    return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+  }
+
+  window.scheduleAutoSync = function() {
+    const isEnabled = LS.get('autoSyncEnabled', false);
+    if (!isEnabled || !accessToken) return;
+    
+    clearTimeout(autoSyncTimer);
+    const gSyncTimeText = $('#gSyncTimeText');
+    if (gSyncTimeText) gSyncTimeText.textContent = window.I18N[currentLang].gSyncingBg || '同步中...';
+
+    autoSyncTimer = setTimeout(async function() {
+      try {
+        // 這裡直接呼叫上傳邏輯 (借用你原本的上傳按鈕邏輯，但簡化為背景執行)
+        const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+        
+        // [簡化版] 直接把資料打包上傳
+        const exportPhotos = photoMeta.map(function (m) {
+          return loadPhotoSrc(m.id).then(function (src) {
+            return { id: m.id, title: m.title || '', src: src || '' };
+          });
+        });
+        const photosData = await Promise.all(exportPhotos);
+        const data = {
+          version: BACKUP_VERSION,
+          exportedAt: new Date().toISOString(),
+          todos: todos,
+          events: events,
+          diaries: diaries,
+          notes: notes,
+          photos: photosData,
+          goals: goals,
+          bookmarks: bookmarks,
+          ledger: ledger,
+          countdowns: countdowns,
+          ledgerCategories: ledgerCategories,
+          trash: trash,
+          prefs: { lum: state.lum, bg: state.bg },
+          pomoSoundType: soundType
+        };
+        const jsonString = JSON.stringify(data);
+
+        const searchRes = await fetch(DRIVE_FILES_API + '?spaces=appDataFolder', {
+          headers: { 'Authorization': 'Bearer ' + accessToken }
+        });
+        if (searchRes.status === 401) {
+          clearGoogleToken();
+          return;
+        }
+        const searchData = await searchRes.json();
+        let fileId = searchData.files && searchData.files.length > 0 ? searchData.files[0].id : null;
+
+        const boundary = '-------314159265358979323846';
+        const delimiter = '\r\n--' + boundary + '\r\n';
+        const close_delim = '\r\n--' + boundary + '--';
+        let metadata = { name: 'my_space_backup.json', mimeType: 'application/json' };
+        if (!fileId) metadata.parents = ['appDataFolder'];
+
+        const multipartRequestBody =
+          delimiter + 'Content-Type: application/json\r\n\r\n' + JSON.stringify(metadata) +
+          delimiter + 'Content-Type: application/json\r\n\r\n' + jsonString +
+          close_delim;
+
+        let url = DRIVE_UPLOAD_API;
+        let method = 'POST';
+        if (fileId) {
+          url += '/' + fileId;
+          method = 'PATCH';
+        }
+        url += '?uploadType=multipart';
+
+        const res = await fetch(url, {
+          method: method,
+          headers: {
+            'Authorization': 'Bearer ' + accessToken,
+            'Content-Type': 'multipart/related; boundary="' + boundary + '"'
+          },
+          body: multipartRequestBody
+        });
+
+        if (res.ok) {
+          const now = Date.now();
+          LS.set('lastCloudSyncTime', now);
+          LS.set('lastSyncedDataTime', now);
+          if (gSyncTimeText) gSyncTimeText.textContent = (dict.gSyncSyncedAt || '已同步：') + getFormattedTime(now);
+        } else if (res.status === 401) {
+          clearGoogleToken();
+        }
+      } catch (err) {
+        console.error('Auto sync failed', err);
+        if ($('#gSyncTimeText')) $('#gSyncTimeText').textContent = '同步失敗';
+      }
+    }, 5000); // 5 秒防抖
+  };
+
+  // 登入後檢查雲端是否有較新的版本
+  async function checkCloudNewerOnLogin() {
+    if (!accessToken) return;
+    try {
+      const searchRes = await fetch(DRIVE_FILES_API + '?spaces=appDataFolder&fields=files(id,name,modifiedTime)', {
+        headers: { 'Authorization': 'Bearer ' + accessToken }
+      });
+      if (searchRes.status === 401) { clearGoogleToken(); return; }
+      const searchData = await searchRes.json();
+      
+      if (searchData.files && searchData.files.length > 0) {
+        const cloudModified = new Date(searchData.files[0].modifiedTime).getTime();
+        const localUpdated = LS.get('localDataUpdatedAt', 0);
+        
+        if (cloudModified > localUpdated + 5000) { // 如果雲端比本機新超過 5 秒
+          const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+          const ok = await customConfirm(
+            dict.gConflictTitle || '偵測到雲端有較新的資料',
+            (dict.gConflictMsg || '雲端備份時間（{t}）比本機資料更新，是否要下載並覆蓋目前裝置的資料？').replace('{t}', getFormattedTime(cloudModified)),
+            dict.gConflictOk || '確認覆蓋本機',
+            dict.cancel,
+            true
+          );
+          if (ok) {
+            // 觸發還原
+            $('#gRestoreBtn').click();
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Check cloud failed', e);
+    }
+  }
 
 // ==========================================
 // 資料初始化（100% 保留原本的 localStorage 鍵名）
@@ -416,17 +552,18 @@ countdowns: ['countdowns', countdowns],
 ledgerCategories: ['ledgerCategories', ledgerCategories],
 trash: ['trash', trash]
 };
-if (map[key]) {
-const entry = map[key];
-LS.set(entry.at(0), entry.at(1));
-// [NEW] 記錄本機最新資料異動時間並觸發自動同步排程
-if (!window.__isRestoringBackup) {
-LS.set('localDataUpdatedAt', Date.now());
-if (typeof window.scheduleAutoSync === 'function') {
-window.scheduleAutoSync();
-}
-}
-}
+  if (map[key]) {
+    const entry = map[key];
+    LS.set(entry.at(0), entry.at(1));
+    
+    // [NEW] 如果自動同步有開啟，就觸發排程
+    if (!window.__isRestoringBackup) {
+      LS.set('localDataUpdatedAt', Date.now());
+      if (typeof window.scheduleAutoSync === 'function') {
+        window.scheduleAutoSync();
+      }
+    }
+  }
 }
 function migrateLegacyPhotos() {
 if (!needsLegacyPhotoMigration || !IDB.available()) {

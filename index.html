@@ -171,41 +171,19 @@
     <div class="set-title" style="margin-top: 16px;"><span data-i18n="setGTitle">Google 雲端備份</span></div>
     <div class="set-actions" style="flex-direction: column; gap: 8px;">
       <button class="set-btn ghost" id="gLoginBtn" data-i18n="gLoginBtn">登入 Google 帳號</button>
-      <div id="gStatus" data-i18n="gStatusNone" style="font-size: 11px; color: var(--fg-dim); margin-top: 4px;">尚未登入</div>
-      <div
-      id="gActionWrap"
-      style="display:none; flex-direction:column; gap:10px; margin-top:8px;"
-    >
-      <div
-        class="set-actions"
-        style="margin-bottom:0;"
-      >
-      </div>
-      <div
-        style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 10px; border-radius:12px; background:var(--hover);"
-      >
-        <div
-          style="display:flex; flex-direction:column; gap:2px; min-width:0;"
-        >
-          <span
-            style="font-size:13px; font-weight:600; color:var(--fg);"
-            data-i18n="gAutoSyncLabel"
-          >自動雲端同步</span>
-          <span
-            id="gSyncTimeText"
-            style="font-size:11px; color:var(--fg-dim); line-height:1.4;"
-            data-i18n="gAutoSyncDesc"
-          >開啟後，修改資料 5 秒後自動備份；偵測到雲端較新時會先詢問再覆蓋。</span>
+      <div id="gActionWrap" style="display:none; flex-direction:column; gap:10px; margin-top:4px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 10px; border-radius:12px; background:var(--hover);">
+          <div style="display:flex; flex-direction:column; gap:2px; min-width:0;">
+            <span style="font-size:13px; font-weight:600; color:var(--fg);" data-i18n="gAutoSyncLabel">自動雲端同步</span>
+            <span id="gSyncTimeText" style="font-size:11px; color:var(--fg-dim); line-height:1.4;" data-i18n="gAutoSyncDesc">開啟後，修改資料 5 秒後自動備份；偵測到雲端較新時會先詢問再覆蓋。</span>
+          </div>
+          <input type="checkbox" id="gAutoSyncToggle" style="width:18px; height:18px; flex:0 0 auto; cursor:pointer; accent-color:var(--fg);" />
         </div>
-        <input
-          type="checkbox"
-          id="gAutoSyncToggle"
-          style="width:18px; height:18px; flex:0 0 auto; cursor:pointer; accent-color:var(--fg);"
-        />
-      </div>
-    </div>
-        <button class="set-btn" id="gBackupBtn" style="flex: 1;" data-i18n="setGBackup">上傳備份</button>
-        <button class="set-btn ghost" id="gRestoreBtn" style="flex: 1;" data-i18n="setGRestore">從雲端還原</button>
+        
+        <div class="set-actions" style="margin-bottom:0; gap:8px;">
+          <button class="set-btn" id="gBackupBtn" style="flex: 1;" data-i18n="setGBackup">上傳備份</button>
+          <button class="set-btn ghost" id="gRestoreBtn" style="flex: 1;" data-i18n="setGRestore">從雲端還原</button>
+        </div>
       </div>
     </div>
     <div class="set-actions" style="margin-top: 16px;">
