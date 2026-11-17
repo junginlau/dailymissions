@@ -368,7 +368,7 @@ if (typeof renderTrash === 'function') renderTrash();
 // 4. Google Drive 雲端備份邏輯
 // ==========================================
 const CLIENT_ID = '355931371376-sdu9qo95t0ghojgsb6eicqgc5nd6i31o.apps.googleusercontent.com';
-const SCOPES = 'googleapis.com';
+const SCOPES = 'https://googleapis.com';
 let tokenClient = null;
 function clearGoogleToken() {
 accessToken = null;
@@ -638,7 +638,7 @@ try {
 const data = await buildBackupPayload();
 const jsonString = JSON.stringify(data);
 const searchRes = await fetch(
-'googleapis.com',
+  'https://googleapis.com',
 {
 headers: {
 Authorization: 'Bearer ' + accessToken
@@ -673,7 +673,7 @@ delimiter +
 'Content-Type: application/json\r\n\r\n' +
 jsonString +
 close_delim;
-let url = 'googleapis.com';
+let url = 'https://googleapis.com';
 let method = 'POST';
 if (fileId) {
 url += '/' + fileId;
@@ -719,7 +719,7 @@ if (!ok) return;
 toast(dict.gRestoreDownloading);
 try {
 const searchRes = await fetch(
-'googleapis.com',
+  'https://googleapis.com',
 {
 headers: {
 Authorization: 'Bearer ' + accessToken
@@ -738,7 +738,7 @@ return;
 }
 const fileId = searchData.files[0].id;
 const fileRes = await fetch(
-'googleapis.com' + fileId + '?alt=media',
+  'https://googleapis.com' + fileId + '?alt=media',
 {
 headers: {
 Authorization: 'Bearer ' + accessToken
