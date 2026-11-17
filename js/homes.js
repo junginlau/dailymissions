@@ -1,4 +1,4 @@
-// js/features/home.js
+// js/homes.js
 
 // ==========================================
 // 首頁 (時鐘、天氣、名言、統計、目標、書籤)
@@ -230,11 +230,11 @@ function renderCountdowns() {
   }
 
   if (cdListData.length === 1) {
-    list.innerHTML = buildItem(cdListData[0]);
+    list.innerHTML = buildItem(cdListData.at(0));
     return;
   }
   cdIndex = 0;
-  list.innerHTML = buildItem(cdListData[0]);
+  list.innerHTML = buildItem(cdListData.at(0));
   cdInterval = setInterval(function () {
     cdIndex = (cdIndex + 1) % cdListData.length;
     const item = list.querySelector('.cd-item');
@@ -244,7 +244,7 @@ function renderCountdowns() {
       item.style.transform = 'translateY(5px)';
     }
     setTimeout(function () {
-      list.innerHTML = buildItem(cdListData[cdIndex]);
+      list.innerHTML = buildItem(cdListData.at(cdIndex));
       const newItem = list.querySelector('.cd-item');
       if (newItem) {
         newItem.style.transition = 'opacity .5s, transform .5s';
@@ -313,8 +313,8 @@ function renderHome() {
         dict.welcomeTitle +
         '</div><div style="font-size:13px; line-height:1.6; color:var(--fg-dim); margin-bottom:10px;">' +
         dict.welcomeDesc +
-        '' +
-dict.welcomeBtn +
+        '</div><button class="btn primary" id="welcomeCloseBtn" style="font-size:12px; padding:6px 12px;">' +
+        dict.welcomeBtn +
 '';
 document.getElementById('welcomeCloseBtn').addEventListener('click', function () {
 LS.set('onboarded', true);
@@ -434,20 +434,50 @@ host = new URL(b.url).hostname;
 } catch (e) {
 host = '';
 }
-const name = b.name || host || b.url;
-return (
-'⠿' +
-escapeHtml(name) +
-'✎×'
-);
+      const name = b.name || host || b.url;
+      return (
+        '<div class="bm-item" data-id="' +
+        b.id +
+        '" title="' +
+        escapeHtml(name) +
+        '">' +
+        '<span class="bm-drag-handle">⠿</span>' +
+        '<img class="bm-fav" src="' +
+        faviconUrl(b.url) +
+        '" alt="" onerror="this.style.display=\'none\'">' +
+        '<span class="bm-name">' +
+        escapeHtml(name) +
+        '</span>' +
+        '<div class="bm-acts">' +
+        '<button class="bm-act" data-act="edit" title="' +
+        dict.bmEdit +
+        '" aria-label="' +
+        dict.bmEdit +
+        '">✎</button>' +
+        '<button class="bm-act del" data-act="del" title="' +
+        dict.bmDelete +
+        '" aria-label="' +
+        dict.bmDelete +
+        '">×</button>' +
+        '</div>' +
+        '</div>'
+      );
+
 })
 .join('');
 }
 function normalizeUrl(raw) {
 let u = String(raw || '').trim();
 if (!u) return '';
-if (!/^https?:///i.test(u)) u = 'https://' + u;
-return u;
+function normalizeUrl(raw) {
+  let u = String(raw || '').trim();
+  if (!u) return '';
+  if (!/^https?:\/\//i.test(u)) {
+    u = 'http' + 's://' + u;
+  }
+  return u;
+}
+
 }
 function openBmModal(id) {
 const dict = window.I18N[currentLang] || window.I18N['zh-TW'];

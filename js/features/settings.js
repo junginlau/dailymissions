@@ -34,7 +34,7 @@ try {
 
   function getCookie(name) {
     const m = document.cookie.match('(^|; )' + name + '=([^;]*)');
-    return m ? decodeURIComponent(m) : null;
+    return m ? decodeURIComponent(m.at(2)) : null;
   }
 
   function setCookie(name, value) {
@@ -235,39 +235,32 @@ try {
     }
 
     const checks = [
-      [
-        'todos',
-        function (v) {
+      {
+        key: 'todos',
+        fn: function (v) {
           return v && typeof v === 'object' && !Array.isArray(v);
         }
-      ],
-      [
-        'events',
-        function (v) {
+      },
+      {
+        key: 'events',
+        fn: function (v) {
           return v && typeof v === 'object' && !Array.isArray(v);
         }
-      ],
-      ['diaries', isArray],
-      ['notes', isArray],
-      ['photos', isArray],
-      ['goals', isArray],
-      ['bookmarks', isArray],
-      ['ledger', isArray],
-      ['countdowns', isArray],
-      ['trash', isArray]
+      },
+      { key: 'diaries', fn: isArray },
+      { key: 'notes', fn: isArray },
+      { key: 'photos', fn: isArray },
+      { key: 'goals', fn: isArray },
+      { key: 'bookmarks', fn: isArray },
+      { key: 'ledger', fn: isArray },
+      { key: 'countdowns', fn: isArray },
+      { key: 'trash', fn: isArray }
     ];
 
     for (let i = 0; i < checks.length; i++) {
-      for (let i = 0; i < checks.length; i++) {
-  const key = checks[i][0];
-  const fn = checks[i][1];
-  if (data[key] !== undefined && !fn(data[key])) {
-    return 'Invalid ' + key;
-  }
-}
-
-      if (data[key] !== undefined && !fn(data[key])) {
-        return 'Invalid ' + key;
+      const item = checks[i];
+      if (data[item.key] !== undefined && !item.fn(data[item.key])) {
+        return 'Invalid ' + item.key;
       }
     }
 
@@ -365,13 +358,13 @@ try {
       if (typeof renderPhotos === 'function') renderPhotos();
       if (typeof renderGoals === 'function') renderGoals();
       if (typeof renderBookmarks === 'function') renderBookmarks();
-      if (typeof renderLedger === 'function') renderLedger();
+if (typeof renderLedger === 'function') renderLedger();
 if (typeof renderHome === 'function') renderHome();
 if (typeof renderTrash === 'function') renderTrash();
 });
 }
 // ==========================================
-// 4. Google Drive 雲端備份邏輯（分段防截斷）
+// 4. Google Drive 雲端備份邏輯
 // ==========================================
 const CLIENT_ID = [
 '355931371376-sdu9qo95t0ghojgsb6eicqgc5nd6i31o',
@@ -481,8 +474,7 @@ bgFileInput.click();
 });
 bgFileInput.addEventListener('change', function (e) {
 const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-const file = e.target.files && e.target.files[0];
-
+const file = e.target.files ? e.target.files.at(0) : null;
 e.target.value = '';
 if (!file) return;
 toast(dict.imgProcessing);
@@ -542,8 +534,7 @@ importFileInput.click();
 });
 importFileInput.addEventListener('change', function (e) {
 const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-const file = e.target.files && e.target.files[0];
-
+const file = e.target.files ? e.target.files.at(0) : null;
 e.target.value = '';
 if (!file) return;
 if (file.size > 60 * 1024 * 1024) {
@@ -665,10 +656,7 @@ return;
 const searchData = await searchRes.json();
 let fileId = null;
 if (searchData.files && searchData.files.length > 0) {
-if (searchData.files && searchData.files.length > 0) {
-  fileId = searchData.files[0].id;
-}
-
+fileId = searchData.files.at(0).id;
 }
 const boundary = '-------314159265358979323846';
 const delimiter = '\r\n--' + boundary + '\r\n';
@@ -751,8 +739,7 @@ if (!searchData.files || searchData.files.length === 0) {
 toast(dict.gRestoreEmpty);
 return;
 }
-const fileId = searchData.files[0].id;
-
+const fileId = searchData.files.at(0).id;
 const fileRes = await fetch(
 DRIVE_FILES_API + '/' + fileId + '?alt=media',
 {
