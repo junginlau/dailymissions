@@ -1,5 +1,6 @@
-// CORE_VERSION: v0.6.5
-const CACHE_NAME = 'my-space-cache-v1.3.1-beta-b3';
+// CORE_VERSION: v0.6.5//
+//                  chmod +x push.command && ./push.command
+const CACHE_NAME = 'my-space-cache-v1.3.1-beta-b4';
 
 const ASSETS = [
   './',

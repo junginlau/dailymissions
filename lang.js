@@ -370,6 +370,15 @@ const I18N = {
     aboutFeat7: '番茄鐘（時分秒自訂、精細按鈕動畫）',
     aboutFeat8: '資料備份匯出／匯入',
     calSidebarTitle: '接下來的要事',
+    gAutoSyncLabel: '自動雲端同步',
+    gAutoSyncDesc: '開啟後，修改資料 5 秒後自動備份；偵測到雲端較新時會先詢問再覆蓋。',
+    gAutoSyncOn: '已開啟自動雲端同步',
+    gAutoSyncOff: '已關閉自動雲端同步',
+    gSyncingBg: '雲端同步中...',
+    gSyncSyncedAt: '已同步：',
+    gConflictTitle: '偵測到雲端有較新的資料',
+    gConflictMsg: '雲端備份時間（{t}）比本機資料更新，是否要下載並覆蓋目前裝置的資料？',
+    gConflictOk: '確認覆蓋本機',
   },
   'en': {
     // Landing Page
@@ -742,6 +751,15 @@ const I18N = {
     movingToTrash: 'Moved {n} item(s) to the Trash',
     restoredFromTrash: 'Restored',
     permanentDeleted: 'Permanently deleted',
+    gAutoSyncLabel: 'Auto Cloud Sync',
+    gAutoSyncDesc: 'Auto-backup 5s after changes; prompts before overwriting with newer cloud data.',
+    gAutoSyncOn: 'Auto cloud sync enabled',
+    gAutoSyncOff: 'Auto cloud sync disabled',
+    gSyncingBg: 'Syncing...',
+    gSyncSyncedAt: 'Synced: ',
+    gConflictTitle: 'Newer Cloud Data Found',
+    gConflictMsg: 'Cloud backup ({t}) is newer than local data. Overwrite local data now?',
+    gConflictOk: 'Confirm Overwrite',
   },
   'ja': {
     // Landing Page
@@ -1114,6 +1132,16 @@ const I18N = {
     movingToTrash: '{n}個のアイテムをゴミ箱に移動しました',
     restoreFromTrash: '復元しました',
     permanentDeleted: '完全に削除されました',
+    gAutoSyncLabel: '自動クラウド同期',
+    gAutoSyncDesc: '変更の5秒後に自動バックアップし、クラウドが新しい場合は確認後に上書きします。',
+    gAutoSyncOn: '自動クラウド同期をオンにしました',
+    gAutoSyncOff: '自動クラウド同期をオフにしました',
+    gSyncingBg: '同期中...',
+    gSyncSyncedAt: '同期済み：',
+    gConflictTitle: 'クラウドに新しいデータがあります',
+    gConflictMsg: 'クラウドのバックアップ（{t}）がローカルより新しいです。上書きしますか？',
+    gConflictOk: '上書きを確認',
+
   }
 };
 
