@@ -360,15 +360,15 @@ try {
       if (typeof renderGoals === 'function') renderGoals();
       if (typeof renderBookmarks === 'function') renderBookmarks();
       if (typeof renderLedger === 'function') renderLedger();
-      if (typeof renderHome === 'function') renderHome();
+if (typeof renderHome === 'function') renderHome();
 if (typeof renderTrash === 'function') renderTrash();
 });
 }
 // ==========================================
-// 4. Google Drive 雲端備份邏輯
+// 4. Google Drive 雲端備份邏輯（完整端點）
 // ==========================================
-const CLIENT_ID = '355931371376-sdu9qo95t0ghojgsb6eicqgc5nd6i31o.apps.googleusercontent.com';
-const SCOPES = 'https://googleapis.com';
+const CLIENT_ID = 'googleusercontent.com';
+const SCOPES = 'googleapis.com';
 let tokenClient = null;
 function clearGoogleToken() {
 accessToken = null;
@@ -445,7 +445,6 @@ const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
 toast(dict.storageNo);
 }, 900);
 }
-// 亮度滑桿
 (function bindLumSlider() {
 const lumRange = $('#lumRange');
 if (!lumRange || lumRange.dataset.bound) return;
@@ -456,7 +455,6 @@ applyTheme();
 savePrefs();
 });
 })();
-// 背景圖片選擇與清除
 (function bindBackgroundControls() {
 const pickBg = $('#pickBg');
 const bgFileInput = $('#bgFileInput');
@@ -495,7 +493,6 @@ toast(dict.bgRemoved);
 });
 }
 })();
-// 深/淺色快捷切換
 (function bindThemeToggle() {
 const themeToggle = $('#themeToggle');
 if (!themeToggle || themeToggle.dataset.bound) return;
@@ -508,7 +505,6 @@ savePrefs();
 toast(state.lum > 50 ? dict.themeLight : dict.themeDark);
 });
 })();
-// 匯出與匯入備份
 (function bindLocalBackup() {
 const exportBtn = $('#exportBtn');
 if (exportBtn && !exportBtn.dataset.bound) {
@@ -570,7 +566,6 @@ reader.readAsText(file);
 });
 }
 })();
-// 清除所有資料
 (function bindClearAll() {
 const clearAllBtn = $('#clearAllBtn');
 if (!clearAllBtn || clearAllBtn.dataset.bound) return;
@@ -621,7 +616,6 @@ location.reload();
 });
 });
 })();
-// Google Drive 雲端上傳與還原
 (function bindGoogleDrive() {
 updateGoogleUI();
 window.addEventListener('load', function () {
@@ -638,7 +632,7 @@ try {
 const data = await buildBackupPayload();
 const jsonString = JSON.stringify(data);
 const searchRes = await fetch(
-  'https://googleapis.com',
+'googleapis.com',
 {
 headers: {
 Authorization: 'Bearer ' + accessToken
@@ -673,7 +667,7 @@ delimiter +
 'Content-Type: application/json\r\n\r\n' +
 jsonString +
 close_delim;
-let url = 'https://googleapis.com';
+let url = 'googleapis.com';
 let method = 'POST';
 if (fileId) {
 url += '/' + fileId;
@@ -719,7 +713,7 @@ if (!ok) return;
 toast(dict.gRestoreDownloading);
 try {
 const searchRes = await fetch(
-  'https://googleapis.com',
+'googleapis.com',
 {
 headers: {
 Authorization: 'Bearer ' + accessToken
@@ -738,7 +732,7 @@ return;
 }
 const fileId = searchData.files[0].id;
 const fileRes = await fetch(
-  'https://googleapis.com' + fileId + '?alt=media',
+'googleapis.com' + fileId + '?alt=media',
 {
 headers: {
 Authorization: 'Bearer ' + accessToken

@@ -126,203 +126,186 @@ function renderCalSidebar() {
 }
 
 function inCalendarRange(date) {
-  const now = new Date();
-  const minIdx = monthIndex(now.getFullYear(), now.getMonth()) - 6;
-  const maxIdx = monthIndex(now.getFullYear(), now.getMonth()) + 12;
-  const idx = monthIndex(date.getFullYear(), date.getMonth());
-  return idx >= minIdx && idx <= maxIdx;
+const now = new Date();
+const minIdx = monthIndex(now.getFullYear(), now.getMonth()) - 6;
+const maxIdx = monthIndex(now.getFullYear(), now.getMonth()) + 12;
+const idx = monthIndex(date.getFullYear(), date.getMonth());
+return idx >= minIdx && idx <= maxIdx;
 }
-
 function shiftMonth(delta) {
-  const now = new Date();
-  const minIdx = monthIndex(now.getFullYear(), now.getMonth()) - 6;
-  const maxIdx = monthIndex(now.getFullYear(), now.getMonth()) + 12;
-  const cur = monthIndex(calCursor.getFullYear(), calCursor.getMonth());
-  const next = cur + delta;
-  if (next < minIdx || next > maxIdx) return;
-  calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() + delta, 1);
-  renderCalendar();
+const now = new Date();
+const minIdx = monthIndex(now.getFullYear(), now.getMonth()) - 6;
+const maxIdx = monthIndex(now.getFullYear(), now.getMonth()) + 12;
+const cur = monthIndex(calCursor.getFullYear(), calCursor.getMonth());
+const next = cur + delta;
+if (next < minIdx || next > maxIdx) return;
+calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() + delta, 1);
+renderCalendar();
 }
-
 function openEventModal(key) {
-  const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-  eventDateKey = key;
-  editingEventId = null;
-  const d = keyToDate(key);
-  const week = dict.weekdays[d.getDay()];
-  $('#eventDateTitle').textContent =
-    dict.evMonthYear.replace('{y}', d.getFullYear()).replace('{m}', d.getMonth() + 1) +
-    ' ' +
-    d.getDate() +
-    ' · ' +
-    dict.evWeek.replace('{w}', week);
-  $('#eventForm').reset();
-  $('#eventSubmit').textContent = dict.evSave;
-  $('#eventCancelEdit').hidden = true;
-  renderEventList();
-  openModal('#eventModal');
-  setTimeout(function () {
-    $('#evTitle').focus();
-  }, 80);
+const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+eventDateKey = key;
+editingEventId = null;
+const d = keyToDate(key);
+const week = dict.weekdays[d.getDay()];
+$('#eventDateTitle').textContent =
+dict.evMonthYear.replace('{y}', d.getFullYear()).replace('{m}', d.getMonth() + 1) +
+' ' +
+d.getDate() +
+' · ' +
+dict.evWeek.replace('{w}', week);
+$('#eventForm').reset();
+$('#eventSubmit').textContent = dict.evSave;
+$('#eventCancelEdit').hidden = true;
+renderEventList();
+openModal('#eventModal');
+setTimeout(function () {
+$('#evTitle').focus();
+}, 80);
 }
-
 function renderEventList() {
-  const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-  const wrap = $('#eventList');
-  const list = events[eventDateKey] || [];
-  if (!list.length) {
-    wrap.innerHTML = '<div class="empty small">' + dict.calEventEmpty + '</div>';
-    return;
-  }
-  wrap.innerHTML = list
-    .map(function (ev) {
-      return (
-        '<div class="event-item" data-id="' +
-        ev.id +
-        '">' +
-        (ev.time ? '<div class="ev-time">' + escapeHtml(ev.time) + '</div>' : '') +
-        '<div class="ev-main">' +
-        '<div class="ev-title">' +
-        escapeHtml(ev.title) +
-        '</div>' +
-        (ev.content ? '<div class="ev-content">' + escapeHtml(ev.content) + '</div>' : '') +
-        '</div>' +
-        '<div class="ev-acts">' +
-        '<button class="mini" data-act="edit" title="' +
-        dict.edit +
-        '">✎</button>' +
-        '<button class="mini del" data-act="del" title="' +
-        dict.delete +
-        '">×</button>' +
-        '</div>' +
-        '</div>'
-      );
-    })
-    .join('');
+const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+const wrap = $('#eventList');
+const list = events[eventDateKey] || [];
+if (!list.length) {
+wrap.innerHTML = '' + dict.calEventEmpty + '';
+return;
 }
-
+wrap.innerHTML = list
+.map(function (ev) {
+return (
+'' +
+(ev.time ? '' + escapeHtml(ev.time) + '' : '') +
+'' +
+'' +
+escapeHtml(ev.title) +
+'' +
+(ev.content ? '' + escapeHtml(ev.content) + '' : '') +
+'' +
+'' +
+'✎' +
+'×' +
+'' +
+''
+);
+})
+.join('');
+}
 function initCalendarEvents() {
-  const calPrev = $('#calPrev');
-  if (calPrev && !calPrev.dataset.bound) {
-    calPrev.dataset.bound = '1';
-    calPrev.addEventListener('click', function () {
-      shiftMonth(-1);
-    });
-  }
-
-  const calNext = $('#calNext');
-  if (calNext && !calNext.dataset.bound) {
-    calNext.dataset.bound = '1';
-    calNext.addEventListener('click', function () {
-      shiftMonth(1);
-    });
-  }
-
-  const calToday = $('#calToday');
-  if (calToday && !calToday.dataset.bound) {
-    calToday.dataset.bound = '1';
-    calToday.addEventListener('click', function () {
-      calCursor = new Date();
-      calCursor.setDate(1);
-      $('#calJumpDate').value = todayKey();
-      renderCalendar();
-    });
-  }
-
-  const calJumpDate = $('#calJumpDate');
-  if (calJumpDate && !calJumpDate.dataset.bound) {
-    calJumpDate.dataset.bound = '1';
-    calJumpDate.addEventListener('change', function () {
-      const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-      const val = this.value;
-      if (!val) return;
-      const p = val.split('-').map(Number);
-      const target = new Date(p[0], p[1] - 1, 1);
-      if (!inCalendarRange(target)) {
-        toast(dict.calRangeLimit);
-        this.value = todayKey();
-        return;
-      }
-      calCursor = target;
-      renderCalendar();
-      openEventModal(val);
-    });
-  }
-
-  const calGrid = $('#calGrid');
-  if (calGrid && !calGrid.dataset.bound) {
-    calGrid.dataset.bound = '1';
-    calGrid.addEventListener('click', function (e) {
-      const cell = e.target.closest('.cal-cell[data-date]');
-      if (cell) openEventModal(cell.dataset.date);
-    });
-  }
-
-  const eventForm = $('#eventForm');
-  if (eventForm && !eventForm.dataset.bound) {
-    eventForm.dataset.bound = '1';
-    eventForm.addEventListener('submit', function (e) {
-      const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-      e.preventDefault();
-      const title = $('#evTitle').value.trim();
-      if (!title) {
-        $('#evTitle').focus();
-        return;
-      }
-      const time = $('#evTime').value;
-      const content = $('#evContent').value.trim();
-      if (!events[eventDateKey]) events[eventDateKey] = [];
-      if (editingEventId) {
-        const ev = events[eventDateKey].find(function (x) {
-          return x.id === editingEventId;
-        });
-        if (ev) {
-          ev.title = title;
-          ev.time = time;
-          ev.content = content;
-        }
-      } else {
-        events[eventDateKey].push({
-          id: uid(),
-          title: title,
-          time: time,
-          content: content
-        });
-      }
-      save('events');
-      $('#eventForm').reset();
-      editingEventId = null;
-      $('#eventSubmit').textContent = dict.evSave;
-      $('#eventCancelEdit').hidden = true;
-      renderEventList();
-      renderCalendar();
-      renderHome();
-      toast(dict.eventSaved);
-    });
-  }
-
-  const eventCancelEdit = $('#eventCancelEdit');
-  if (eventCancelEdit && !eventCancelEdit.dataset.bound) {
-    eventCancelEdit.dataset.bound = '1';
-    eventCancelEdit.addEventListener('click', function () {
-      const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-      editingEventId = null;
-      $('#eventForm').reset();
-      $('#eventSubmit').textContent = dict.evSave;
-      $('#eventCancelEdit').hidden = true;
-      $('#evTitle').focus();
-    });
-  }
-
-  const eventList = $('#eventList');
-  if (eventList && !eventList.dataset.bound) {
-    eventList.dataset.bound = '1';
-    eventList.addEventListener('click', function (e) {
-      const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-      const btn = e.target.closest('[data-act]');
-      if (!btn) return;
-      const item = e.target.closest('.event-item');
-      if (!item) return;
+const calPrev = $('#calPrev');
+if (calPrev && !calPrev.dataset.bound) {
+calPrev.dataset.bound = '1';
+calPrev.addEventListener('click', function () {
+shiftMonth(-1);
+});
+}
+const calNext = $('#calNext');
+if (calNext && !calNext.dataset.bound) {
+calNext.dataset.bound = '1';
+calNext.addEventListener('click', function () {
+shiftMonth(1);
+});
+}
+const calToday = $('#calToday');
+if (calToday && !calToday.dataset.bound) {
+calToday.dataset.bound = '1';
+calToday.addEventListener('click', function () {
+calCursor = new Date();
+calCursor.setDate(1);
+$('#calJumpDate').value = todayKey();
+renderCalendar();
+});
+}
+const calJumpDate = $('#calJumpDate');
+if (calJumpDate && !calJumpDate.dataset.bound) {
+calJumpDate.dataset.bound = '1';
+calJumpDate.addEventListener('change', function () {
+const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+const val = this.value;
+if (!val) return;
+const p = val.split('-').map(Number);
+const target = new Date(p[0], p[1] - 1, 1);
+if (!inCalendarRange(target)) {
+toast(dict.calRangeLimit);
+this.value = todayKey();
+return;
+}
+calCursor = target;
+renderCalendar();
+openEventModal(val);
+});
+}
+const calGrid = $('#calGrid');
+if (calGrid && !calGrid.dataset.bound) {
+calGrid.dataset.bound = '1';
+calGrid.addEventListener('click', function (e) {
+const cell = e.target.closest('.cal-cell[data-date]');
+if (cell) openEventModal(cell.dataset.date);
+});
+}
+const eventForm = $('#eventForm');
+if (eventForm && !eventForm.dataset.bound) {
+eventForm.dataset.bound = '1';
+eventForm.addEventListener('submit', function (e) {
+const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+e.preventDefault();
+const title = $('#evTitle').value.trim();
+if (!title) {
+$('#evTitle').focus();
+return;
+}
+const time = $('#evTime').value;
+const content = $('#evContent').value.trim();
+if (!events[eventDateKey]) events[eventDateKey] = [];
+if (editingEventId) {
+const ev = events[eventDateKey].find(function (x) {
+return x.id === editingEventId;
+});
+if (ev) {
+ev.title = title;
+ev.time = time;
+ev.content = content;
+}
+} else {
+events[eventDateKey].push({
+id: uid(),
+title: title,
+time: time,
+content: content
+});
+}
+save('events');
+$('#eventForm').reset();
+editingEventId = null;
+$('#eventSubmit').textContent = dict.evSave;
+$('#eventCancelEdit').hidden = true;
+renderEventList();
+renderCalendar();
+renderHome();
+toast(dict.eventSaved);
+});
+}
+const eventCancelEdit = $('#eventCancelEdit');
+if (eventCancelEdit && !eventCancelEdit.dataset.bound) {
+eventCancelEdit.dataset.bound = '1';
+eventCancelEdit.addEventListener('click', function () {
+const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+editingEventId = null;
+$('#eventForm').reset();
+$('#eventSubmit').textContent = dict.evSave;
+$('#eventCancelEdit').hidden = true;
+$('#evTitle').focus();
+});
+}
+const eventList = $('#eventList');
+if (eventList && !eventList.dataset.bound) {
+eventList.dataset.bound = '1';
+eventList.addEventListener('click', function (e) {
+const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+const btn = e.target.closest('[data-act]');
+if (!btn) return;
+const item = e.target.closest('.event-item');
+if (!item) return;
 const id = item.dataset.id;
 const list = events[eventDateKey] || [];
 const ev = list.find(function (x) {
@@ -330,7 +313,6 @@ return x.id === id;
 });
 if (!ev) return;
 if (btn.dataset.act === 'del') {
-// [NEW] 日曆事件刪除先移入垃圾桶
 trash.push({
 id: uid(),
 type: 'event',
