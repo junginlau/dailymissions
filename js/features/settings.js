@@ -367,7 +367,7 @@ if (typeof renderTrash === 'function') renderTrash();
 // ==========================================
 // 4. Google Drive 雲端備份邏輯
 // ==========================================
-const CLIENT_ID = 'googleusercontent.com';
+const CLIENT_ID = '355931371376-sdu9qo95t0ghojgsb6eicqgc5nd6i31o.apps.googleusercontent.com';
 const SCOPES = 'googleapis.com';
 let tokenClient = null;
 function clearGoogleToken() {
