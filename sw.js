@@ -1,5 +1,5 @@
 // CORE_VERSION: v0.6.5
-const CACHE_NAME = 'my-space-cache-v1.0.10';
+const CACHE_NAME = 'my-space-cache-v1.3.1';
 
 const ASSETS = [
   './',

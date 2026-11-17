@@ -1,47 +1,204 @@
-/* ═══════════════ 平板區間（流式佈局 + 主內容內部滾動） ═══════════════ */
+/* css/pad.css - 平板端響應式適配 (769px - 1366px) */
+
 @media (min-width: 769px) and (max-width: 1366px) {
-  .app { padding: 80px 3vw 70px !important; max-width: 100% !important; margin: 0 auto !important; display: flex !important; flex-direction: column !important; height: 100vh !important; overflow: hidden !important; }
-  .view.active { display: flex !important; flex-direction: column !important; flex: 1 1 auto !important; height: 100% !important; overflow: hidden !important; }
-  .scroll-box { overflow-y: auto !important; height: auto !important; flex: 1 1 auto !important; min-height: 0 !important; }
-  
-  .home-layout, .home-main, .home-side { height: 100% !important; overflow: visible !important; flex: 0 0 auto !important; }
-  .home-layout { gap: 2% !important; }
-  .home-main { flex: 1 1 68% !important; max-width: 68% !important; min-width: 0 !important; }
-  .home-side { flex: 0 0 30% !important; max-width: 30% !important; min-width: 0 !important; }
-  
-  .stats { grid-template-columns: repeat(4, 1fr) !important; }
-  .shortcuts-grid { grid-template-columns: repeat(2, 1fr) !important; }
-  
-  /* 每週必做：左右並排 */
-  .todo-container { flex-direction: row !important; align-items: flex-start !important; justify-content: space-between !important; gap: 16px !important; height: 100% !important; flex: 1 1 auto !important; min-height: 0 !important; }
-  .tomorrow-col { flex: 0 0 20% !important; max-width: 220px !important; min-width: 0 !important; height: 100% !important; }
-  .today-col { flex: 1 1 auto !important; min-width: 0 !important; height: 100% !important; }
-  .today-card { height: 100% !important; min-height: 300px !important; max-width: none !important; margin: 0 !important; }
-  
-  /* 日曆：填滿可用寬高 */
-  .cal-layout { flex-direction: row !important; gap: 2% !important; flex: 1 1 auto !important; min-height: 0 !important; padding-bottom: 20px !important; height: 100% !important; }
-  .cal-sidebar { flex: 0 0 26% !important; width: auto !important; max-width: 280px !important; min-width: 0 !important; height: 100% !important; min-height: 0 !important; }
-  .cal-main { flex: 1 1 auto !important; width: auto !important; min-width: 0 !important; min-height: 0 !important; display: flex !important; flex-direction: column !important; height: 100% !important; }
-  .cal-card { flex: 1 1 auto !important; height: 100% !important; min-height: 0 !important; }
-  .cal-container { max-width: 100% !important; width: 100% !important; height: 100% !important; margin: 16px 0 0 !important; align-self: stretch !important; }
-  .cal-grid { grid-template-rows: repeat(7, minmax(0, 1fr)) !important; min-height: 0 !important; flex: 1 1 auto !important; }
-  .cal-cell { aspect-ratio: auto !important; min-height: 0 !important; }
-  
-  /* 記帳：相對寬度 */
-  .ledger-layout { flex-direction: row !important; align-items: flex-start !important; justify-content: space-between !important; gap: 2% !important; height: 100% !important; min-height: 0 !important; flex: 1 1 auto !important; }
-  .ledger-form-card { flex: 1 1 34% !important; max-width: 34% !important; min-width: 0 !important; align-self: flex-start !important; height: 100% !important; }
-  .ledger-list-card { flex: 1 1 64% !important; max-width: 64% !important; min-width: 0 !important; align-self: flex-start !important; height: 100% !important; min-height: 0 !important; }
-  
-  /* 關於本站 */
-  .about-layout { justify-content: center !important; height: 100% !important; }
-  
-  /* Footer */
-  .site-footer { padding: 10px 24px !important; padding-bottom: calc(10px + env(safe-area-inset-bottom)) !important; }
-  .nav { height: 64px !important; padding-top: 0 !important; }
+  .app {
+    max-width: 100%;
+    padding: 76px 20px 64px;
+    height: 100dvh;
+  }
+
+  /* 導覽列精簡留白，避免搜尋框與右側按鈕擠壓 */
+  .nav {
+    padding: 0 12px;
+    gap: 10px;
+  }
+
+  .logo-btn {
+    margin-right: 4px;
+  }
+
+  .logo-btn img {
+    width: 44px;
+  }
+
+  .nav-btn {
+    padding: 7px 11px;
+    font-size: 13px;
+  }
+
+  .search-wrap {
+    flex: 1 1 280px;
+    min-width: 140px;
+  }
+
+  /* 首頁平板雙欄比例調整 (64% : 34%) */
+  .home-layout {
+    gap: 2% !important;
+    margin-top: 12px !important;
+  }
+
+  .home-main {
+    flex: 1 1 64% !important;
+    max-width: 64% !important;
+    gap: 14px;
+  }
+
+  .home-side {
+    flex: 0 0 34% !important;
+    max-width: 34% !important;
+    gap: 14px !important;
+  }
+
+  .clock-time {
+    font-size: 36px;
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .stat {
+    padding: 12px 14px;
+  }
+
+  .stat b {
+    font-size: 20px;
+  }
+
+  /* 每週必做欄寬微調 */
+  .tomorrow-col {
+    flex: 0 0 26% !important;
+    max-width: 240px !important;
+  }
+
+  /* 日曆平板適配：確保月曆 7x7 格子完整填滿不溢出 */
+  .cal-layout {
+    gap: 14px !important;
+  }
+
+  .cal-sidebar {
+    flex: 0 0 30% !important;
+    max-width: 260px !important;
+    padding: 14px !important;
+  }
+
+  .cal-card {
+    padding: 14px !important;
+  }
+
+  .cal-cell {
+    font-size: 12px;
+    border-radius: 6px;
+  }
+
+  /* 筆記本 1:1 等高等寬網格在平板調整最小欄寬 */
+  #notesGrid {
+    grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  /* 照片庫一行 5 格適配 */
+  .photo-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+  }
+
+  /* 記帳左右分欄比例調整 (40% : 58%) */
+  .ledger-layout {
+    gap: 14px !important;
+  }
+
+  .ledger-form-card {
+    flex: 0 0 40% !important;
+    max-width: 40% !important;
+  }
+
+  /* 批量刪除工具列在平板換行對齊 */
+  .batch-bar {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .site-footer {
+    padding: 8px 16px;
+    font-size: 11px;
+  }
 }
 
-/* ═══════════════ PWA 底部安全區域 ═══════════════ */
-@media all and (display-mode: standalone) {
-  .mobile-nav { padding-bottom: env(safe-area-inset-bottom) !important; }
-  .site-footer { bottom: calc(64px + env(safe-area-inset-bottom)) !important; }
+/* ══════════ 直向平板專屬微調 (769px - 960px，如 iPad 直屏) ══════════ */
+@media (min-width: 769px) and (max-width: 960px) {
+  /* 首頁直屏改為可捲動單欄，避免左側過窄 */
+  .home-layout {
+    flex-direction: column !important;
+    overflow-y: auto !important;
+    padding-bottom: 24px !important;
+    gap: 14px !important;
+  }
+
+  .home-main,
+  .home-side {
+    flex: 0 0 auto !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .bookmarks {
+    max-height: 280px;
+  }
+
+  /* 日曆直屏改為上下堆疊：上方日曆、下方近期要事 */
+  .cal-layout {
+    flex-direction: column-reverse !important;
+    gap: 12px !important;
+  }
+
+  .cal-main {
+    flex: 1 1 68% !important;
+    height: auto !important;
+  }
+
+  .cal-sidebar {
+    flex: 0 0 28% !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    height: auto !important;
+    margin-bottom: 12px !important;
+  }
+
+  /* 日記與記帳在直屏改為上下分欄，防止輸入框太窄 */
+  .diary-container,
+  .ledger-layout {
+    flex-direction: column !important;
+    overflow-y: auto !important;
+    gap: 14px !important;
+    padding-bottom: 20px !important;
+  }
+
+  .diary-left,
+  .diary-right,
+  .ledger-form-card,
+  .ledger-list-card {
+    flex: 0 0 auto !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    margin-bottom: 0 !important;
+  }
+
+  .diary-scroll {
+    max-height: 360px;
+  }
+
+  #diaryContent {
+    min-height: 160px !important;
+  }
+
+  /* 照片庫直屏一行 4 格 */
+  .photo-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
