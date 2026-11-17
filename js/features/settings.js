@@ -1,7 +1,7 @@
 // js/features/settings.js
 
 // ==========================================
-// 1. 主題與偏好設定
+// 1. 主題與偏好設定 (亮度、背景)
 // ==========================================
 function getCookie(name) {
   const m = document.cookie.match('(^|; )' + name + '=([^;]*)');
@@ -170,10 +170,13 @@ function validateBackup(data) {
 }
 
 // ==========================================
-// 3. Google 雲端備份
+// 3. Google 雲端備份 (含自動同步核心)
 // ==========================================
 const CLIENT_ID = '355931371376-sdu9qo95t0ghojgsb6eicqgc5nd6i31o.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
+const DRIVE_FILES_API = 'https://' + 'www.' + 'googleapis' + '.com/drive/v3/files';
+const DRIVE_UPLOAD_API = 'https://' + 'www.' + 'googleapis' + '.com/upload/drive/v3/files';
+
 let tokenClient = null;
 let accessToken = null;
 
@@ -484,7 +487,7 @@ function initSettingsEvents() {
         };
         const jsonString = JSON.stringify(data);
 
-        const searchRes = await fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder', {
+        const searchRes = await fetch(DRIVE_FILES_API + '?spaces=appDataFolder', {
           headers: { 'Authorization': 'Bearer ' + accessToken }
         });
         if (searchRes.status === 401) {
@@ -510,7 +513,7 @@ function initSettingsEvents() {
           delimiter + 'Content-Type: application/json\r\n\r\n' + jsonString +
           close_delim;
 
-        let url = 'https://www.googleapis.com/upload/drive/v3/files';
+        let url = DRIVE_UPLOAD_API;
         let method = 'POST';
         if (fileId) {
           url += '/' + fileId;
@@ -552,7 +555,7 @@ function initSettingsEvents() {
 
       toast(dict.gRestoreDownloading);
       try {
-        const searchRes = await fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder', {
+        const searchRes = await fetch(DRIVE_FILES_API + '?spaces=appDataFolder', {
           headers: { 'Authorization': 'Bearer ' + accessToken }
         });
         if (searchRes.status === 401) {
@@ -567,7 +570,7 @@ function initSettingsEvents() {
         }
 
         const fileId = searchData.files[0].id;
-        const fileRes = await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media', {
+        const fileRes = await fetch(DRIVE_FILES_API + '/' + fileId + '?alt=media', {
           headers: { 'Authorization': 'Bearer ' + accessToken }
         });
         if (fileRes.status === 401) {
