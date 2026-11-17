@@ -362,9 +362,9 @@ if ($('#statTodo')) $('#statTodo').textContent = countTodayTags();
 if ($('#statEvent')) $('#statEvent').textContent = countUpcoming(7);
 if ($('#statDiary')) $('#statDiary').textContent = diaries.length;
 if ($('#statExpense')) $('#statExpense').textContent = currencySymbols[mainCurrency] + ' ' + getTodayExpense();
-renderCountdowns();
-renderGoals();
-renderBookmarks();
+  renderCountdowns();
+  renderGoals();
+  renderBookmarks();
 }
 // ==========================================
 // 4. 目標 (Goals)

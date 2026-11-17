@@ -637,6 +637,28 @@ function initSettingsEvents() {
     });
   }
 
+  // [NEW] 自動雲端同步開關
+  const gAutoSyncToggle = $('#gAutoSyncToggle');
+  const gSyncTimeText = $('#gSyncTimeText');
+  
+  if (gAutoSyncToggle) {
+    // 載入上次的設定 (預設關閉)
+    const isAutoSyncOn = LS.get('autoSyncEnabled', false);
+    gAutoSyncToggle.checked = isAutoSyncOn;
+    if (gSyncTimeText) {
+      gSyncTimeText.textContent = isAutoSyncOn ? (window.I18N[currentLang].gAutoSyncOn || '已開啟') : (window.I18N[currentLang].gAutoSyncOff || '已關閉');
+    }
+
+    gAutoSyncToggle.addEventListener('change', function() {
+      const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+      LS.set('autoSyncEnabled', this.checked);
+      if (gSyncTimeText) {
+        gSyncTimeText.textContent = this.checked ? (dict.gAutoSyncOn || '已開啟') : (dict.gAutoSyncOff || '已關閉');
+      }
+      toast(this.checked ? (dict.gAutoSyncOn || '已開啟自動同步') : (dict.gAutoSyncOff || '已關閉自動同步'));
+    });
+  }
+
   updateGoogleUI();
   window.addEventListener('load', function () {
     setTimeout(initGoogleAuth, 1000);

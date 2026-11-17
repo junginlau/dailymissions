@@ -303,6 +303,8 @@ document.addEventListener('keydown', function (e) {
     $('#confirmOk').click();
   }
 });
+// 確保在 main.js 載入前，initSettingsEvents 是存在的 (由 settings.js 定義)
+window.initSettingsEvents = window.initSettingsEvents || function() {};
 
 // ==========================================
 // 資料初始化（100% 保留原本的 localStorage 鍵名）

@@ -14,6 +14,12 @@
   document.addEventListener('DOMContentLoaded', function () {
     // 1. 初始化設定面板、主題亮度與 Google 狀態 (最優先套用視覺主題)
     safeRun('initSettingsEvents', window.initSettingsEvents);
+    
+    // 2. 初始化語言與靜態文字
+    currentLang = LS.get('userLang', 'zh-TW');
+    safeRun('applyLanguage', function () {
+      applyLanguage(currentLang);
+    });
 
     // 2. 初始化語言與靜態文字
     currentLang = LS.get('userLang', 'zh-TW');
@@ -27,11 +33,12 @@
     safeRun('initTodoEvents', window.initTodoEvents);
     safeRun('initCalendarEvents', window.initCalendarEvents);
     safeRun('initDiaryEvents', window.initDiaryEvents);
-    safeRun('initNotesEvents', window.initNotesEvents);
+    safeRun('initNotesEvents', window.initNotesEvents); // [NEW] 補上
     safeRun('initPhotosEvents', window.initPhotosEvents);
     safeRun('initPomoEvents', window.initPomoEvents);
-    safeRun('initLedgerEvents', window.initLedgerEvents);
+    safeRun('initLedgerEvents', window.initLedgerEvents); // [NEW] 補上
     safeRun('initTrashEvents', window.initTrashEvents);
+    safeRun('initSettingsEvents', window.initSettingsEvents); // [NEW] 補上
 
     // 4. 啟動時鐘與天氣定時器
     if (typeof updateClock === 'function') {
