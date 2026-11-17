@@ -184,6 +184,17 @@ function openEventModal(key) {
     dict.evWeek.replace('{w}', week);
 
   $('#eventForm').reset();
+
+  const evDateEl = $('#evDate');
+  if (evDateEl) {
+    const now = new Date();
+    const minD = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+    const maxD = new Date(now.getFullYear(), now.getMonth() + 13, 0);
+    evDateEl.min = dateKey(minD);
+    evDateEl.max = dateKey(maxD);
+    evDateEl.value = key;
+  }
+
   $('#eventSubmit').textContent = dict.evSave;
   $('#eventCancelEdit').hidden = true;
   renderEventList();
@@ -324,26 +335,50 @@ function initCalendarEvents() {
     eventForm.dataset.bound = '1';
     eventForm.addEventListener('submit', function (e) {
       const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
-      e.preventDefault();
-      const title = $('#evTitle').value.trim();
-      if (!title) {
-        $('#evTitle').focus();
-        return;
-      }
-      const time = $('#evTime').value;
-      const content = $('#evContent').value.trim();
-      if (!events[eventDateKey]) events[eventDateKey] = [];
-      if (editingEventId) {
-const ev = events[eventDateKey].find(function (x) {
+e.preventDefault();
+const title = $('#evTitle').value.trim();
+if (!title) {
+$('#evTitle').focus();
+return;
+}
+const evDateEl = $('#evDate');
+const targetKey = evDateEl && evDateEl.value ? evDateEl.value : eventDateKey;
+const p = targetKey.split('-').map(Number);
+const targetDateObj = new Date(p.at(0), p.at(1) - 1, 1);
+if (!inCalendarRange(targetDateObj)) {
+toast(dict.calRangeLimit);
+if (evDateEl) evDateEl.value = eventDateKey;
+return;
+}
+const time = $('#evTime').value;
+const content = $('#evContent').value.trim();
+if (editingEventId) {
+const oldList = events[eventDateKey] || [];
+const ev = oldList.find(function (x) {
 return x.id === editingEventId;
 });
 if (ev) {
 ev.title = title;
 ev.time = time;
 ev.content = content;
+if (targetKey !== eventDateKey) {
+events[eventDateKey] = oldList.filter(function (x) {
+return x.id !== editingEventId;
+});
+if (!events[eventDateKey].length) {
+delete events[eventDateKey];
+}
+if (!events[targetKey]) {
+events[targetKey] = [];
+}
+events[targetKey].push(ev);
+}
 }
 } else {
-events[eventDateKey].push({
+if (!events[targetKey]) {
+events[targetKey] = [];
+}
+events[targetKey].push({
 id: uid(),
 title: title,
 time: time,
@@ -352,6 +387,7 @@ content: content
 }
 save('events');
 $('#eventForm').reset();
+if (evDateEl) evDateEl.value = eventDateKey;
 editingEventId = null;
 $('#eventSubmit').textContent = dict.evSave;
 $('#eventCancelEdit').hidden = true;
@@ -368,6 +404,8 @@ eventCancelEdit.addEventListener('click', function () {
 const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
 editingEventId = null;
 $('#eventForm').reset();
+const evDateEl = $('#evDate');
+if (evDateEl) evDateEl.value = eventDateKey;
 $('#eventSubmit').textContent = dict.evSave;
 $('#eventCancelEdit').hidden = true;
 $('#evTitle').focus();
@@ -406,6 +444,8 @@ save('events');
 if (editingEventId === id) {
 editingEventId = null;
 $('#eventForm').reset();
+const evDateEl = $('#evDate');
+if (evDateEl) evDateEl.value = eventDateKey;
 $('#eventSubmit').textContent = dict.evSave;
 $('#eventCancelEdit').hidden = true;
 }
@@ -416,6 +456,8 @@ toast((dict.movedToTrash || '已將 {n} 個項目移至垃圾桶').replace('{n}'
 } else if (btn.dataset.act === 'edit') {
 editingEventId = id;
 $('#evTitle').value = ev.title;
+const evDateEl = $('#evDate');
+if (evDateEl) evDateEl.value = eventDateKey;
 $('#evTime').value = ev.time || '';
 $('#evContent').value = ev.content || '';
 $('#eventSubmit').textContent = dict.evUpdate;

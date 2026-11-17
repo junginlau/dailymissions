@@ -679,13 +679,36 @@
     </div>
     <div class="event-list" id="eventList"></div>
     <form class="form-block" id="eventForm" autocomplete="off">
-      <input type="text" id="evTitle" placeholder="要事標題…" data-i18n-placeholder="evTitlePlaceholder" maxlength="100" required>
-      <div class="row">
-        <input type="time" id="evTime">
-        <button type="submit" class="btn primary" id="eventSubmit" data-i18n="evSave">保存要事</button>
-      </div>
-      <textarea id="evContent" placeholder="補充內容（選填）…" data-i18n-placeholder="evContentPlaceholder" style="min-height:80px;"></textarea>
-      <button type="button" class="btn ghost" id="eventCancelEdit" data-i18n="evCancel" hidden>取消編輯</button>
+        <div
+          class="row"
+        >
+          <input
+            type="date"
+            id="evDate"
+          />
+          <input
+            type="time"
+            id="evTime"
+          />
+        </div>
+        <div
+          class="row"
+        >
+          <button
+            type="submit"
+            class="btn primary"
+            id="eventSubmit"
+            data-i18n="evSave"
+          >儲存要事</button>
+          <button
+            type="button"
+            class="btn ghost"
+            id="eventCancelEdit"
+            data-i18n="evCancel"
+            hidden
+          >取消</button>
+        </div>
+
     </form>
   </div>
 </div>
