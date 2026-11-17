@@ -206,22 +206,24 @@ function clearGoogleToken() {
 function updateGoogleUI() {
   const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
   const gLoginBtn = $('#gLoginBtn');
-  const gBackupBtn = $('#gBackupBtn');
-  const gRestoreBtn = $('#gRestoreBtn');
   const gStatus = $('#gStatus');
   const gActionWrap = $('#gActionWrap');
-  if (!gLoginBtn || !gStatus || !gActionWrap) return;
+  if (!gLoginBtn || !gActionWrap) return;
 
   if (accessToken) {
     gLoginBtn.style.display = 'none';
     gActionWrap.style.display = 'flex';
-    gStatus.textContent = dict.gStatusConnected;
-    gStatus.style.color = 'var(--income-color)';
+    if (gStatus) {
+      gStatus.textContent = dict.gStatusConnected || '已連接 Google 雲端';
+      gStatus.style.color = 'var(--income-color)';
+    }
   } else {
     gLoginBtn.style.display = 'block';
     gActionWrap.style.display = 'none';
-    gStatus.textContent = dict.gStatusNone;
-    gStatus.style.color = 'var(--fg-dim)';
+    if (gStatus) {
+      gStatus.textContent = dict.gStatusNone || '尚未登入';
+      gStatus.style.color = 'var(--fg-dim)';
+    }
   }
 }
 
@@ -244,9 +246,14 @@ function initGoogleAuth() {
           LS.set('googleToken', accessToken);
           LS.set('googleTokenExp', Date.now() + expiresIn);
         } catch (e) {}
-        updateGoogleUI();
+                updateGoogleUI();
         toast(d.gLoginOk);
-        setTimeout(checkCloudNewerOnLogin, 1500);
+        // 登入後檢查雲端是否有較新版本
+        if (typeof window.checkCloudNewerOnLogin === 'function') {
+          setTimeout(window.checkCloudNewerOnLogin, 1500);
+        } else if (typeof checkCloudNewerOnLogin === 'function') {
+          setTimeout(checkCloudNewerOnLogin, 1500);
+        }
       } else {
         toast(d.gLoginFail);
       }
@@ -767,32 +774,44 @@ function initSettingsEvents() {
     });
   }
 
-  // [NEW] 自動雲端同步開關
+  // 自動雲端同步開關
   const gAutoSyncToggle = $('#gAutoSyncToggle');
   const gSyncTimeText = $('#gSyncTimeText');
-  
+
+  function refreshAutoSyncHint() {
+    if (!gSyncTimeText) return;
+    const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
+    const isOn = LS.get('autoSyncEnabled', false);
+    const last = LS.get('lastCloudSyncTime', 0);
+    if (!isOn) {
+      gSyncTimeText.textContent = dict.gAutoSyncDesc || '開啟後，修改資料 5 秒後自動備份；偵測到雲端較新時會先詢問再覆蓋。';
+      return;
+    }
+    if (last) {
+      const d = new Date(last);
+      const t = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ':' + String(d.getSeconds()).padStart(2, '0');
+      gSyncTimeText.textContent = (dict.gSyncSyncedAt || '已同步：') + t;
+    } else {
+      gSyncTimeText.textContent = dict.gAutoSyncOn || '已開啟自動雲端同步';
+    }
+  }
+
   if (gAutoSyncToggle) {
     const isAutoSyncOn = LS.get('autoSyncEnabled', false);
-    gAutoSyncToggle.checked = isAutoSyncOn;
-    if (gSyncTimeText) {
-      gSyncTimeText.textContent = isAutoSyncOn ? (window.I18N[currentLang].gAutoSyncOn || '已開啟') : (window.I18N[currentLang].gAutoSyncOff || '已關閉');
-    }
+    gAutoSyncToggle.checked = !!isAutoSyncOn;
+    refreshAutoSyncHint();
 
-    gAutoSyncToggle.addEventListener('change', function() {
+    gAutoSyncToggle.addEventListener('change', function () {
       const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
       LS.set('autoSyncEnabled', this.checked);
-      if (gSyncTimeText) {
-        gSyncTimeText.textContent = this.checked ? (dict.gAutoSyncOn || '已開啟') : (dict.gAutoSyncOff || '已關閉');
-      }
-      toast(this.checked ? (dict.gAutoSyncOn || '已開啟自動同步') : (dict.gAutoSyncOff || '已關閉自動同步'));
-      
-      if (this.checked) {
+      refreshAutoSyncHint();
+      toast(this.checked ? (dict.gAutoSyncOn || '已開啟自動雲端同步') : (dict.gAutoSyncOff || '已關閉自動雲端同步'));
+      if (this.checked && typeof window.scheduleAutoSync === 'function') {
         window.scheduleAutoSync();
       }
     });
   }
 
   updateGoogleUI();
-  // [NEW] 直接在 initSettingsEvents 裡面延遲初始化 Google Auth
   setTimeout(initGoogleAuth, 1000);
 }
