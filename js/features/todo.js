@@ -136,10 +136,9 @@ function renderTagPool() {
 }
 
 /**
- * 每天顯示全部標籤：
- * - 已選（on）：亮色，可點擊變灰取消選取，可拖曳排序
- * - 未選：灰色，可點擊變亮加入該天
- * 排序只影響已選標籤在 schedule[day] 中的順序；未選標籤固定排在後面。
+ * 每天顯示全部標籤（固定依標籤池順序，避免點擊變灰後跳位像被刪掉）：
+ * - 已選（on）：亮色，可點擊變灰；可拖曳調整「今天必做」順序（角標顯示序號）
+ * - 未選：灰色，可點擊變亮
  */
 function renderSchedule() {
   const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
@@ -157,22 +156,15 @@ function renderSchedule() {
     const assigned = todoDraft.schedule[w.key] || [];
     const label = (dict.weekdaysFull && dict.weekdaysFull[w.key]) || w.label;
 
-    // 已選：依 schedule 順序；未選：依 tags 池順序接在後面
-    const orderedOn = assigned
-      .map(function (id) {
-        return todoDraft.tags.find(function (t) {
-          return t.id === id;
-        });
-      })
-      .filter(Boolean);
-    const offTags = todoDraft.tags.filter(function (t) {
-      return assigned.indexOf(t.id) < 0;
-    });
-    const displayTags = orderedOn.concat(offTags);
-
-    const tagsHtml = displayTags
+    // 固定用標籤池順序，只改亮/灰，位置不變
+    const tagsHtml = todoDraft.tags
       .map(function (t) {
-        const on = assigned.indexOf(t.id) >= 0;
+        const onIdx = assigned.indexOf(t.id);
+        const on = onIdx >= 0;
+        const orderBadge =
+          on && assigned.length > 1
+            ? '<span class="sched-order">' + (onIdx + 1) + '</span>'
+            : '';
         return (
           '<button type="button" class="sched-tag' +
           (on ? ' on' : '') +
@@ -181,6 +173,7 @@ function renderSchedule() {
           '" data-tag="' +
           t.id +
           '">' +
+          orderBadge +
           escapeHtml(t.name) +
           '</button>'
         );

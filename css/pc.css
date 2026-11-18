@@ -2493,13 +2493,35 @@ color: #e5484d;
   border: 1px solid var(--panel-border);
   background: transparent;
   color: var(--fg-dim);
-  cursor: grab;
+  cursor: pointer;
   transition: all .2s var(--ease);
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
 }
 .sched-tag.on {
   background: var(--fg);
   color: var(--ink-inv);
   border-color: transparent;
+  position: relative;
+  cursor: grab;
+}
+.sched-tag.on:active {
+  cursor: grabbing;
+}
+.sched-order {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 14px;
+  height: 14px;
+  margin-right: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.28);
+  color: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
 }
 .sched-tag:hover {
   border-color: var(--fg-dim);
@@ -2510,12 +2532,6 @@ color: #e5484d;
 }
 .sched-tag.drag-target {
   box-shadow: -3px 0 0 0 var(--fg);
-}
-.sched-tag.on {
-  cursor: grab;
-}
-.sched-tag.on:active {
-  cursor: grabbing;
 }
 .tag-chip[draggable="true"] {
   cursor: grab;
