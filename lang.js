@@ -102,7 +102,7 @@ const I18N = {
     tomorrowLabel: '明天',
     todoEmptyDay: '今天沒有安排，點右上角設定標籤。',
     todoModalTitle: '設定每週必做',
-    todoModalSub: '先新增標籤，再分配到星期幾',
+    todoModalSub: '先新增標籤，再拖曳到星期幾（點擊或拖出可移除）',
     tagInputPlaceholder: '新增標籤（例如：運動、讀書）…',
     tagAddBtn: '添加',
     tagEmpty: '還沒有標籤，先新增一個吧。',
@@ -111,7 +111,9 @@ const I18N = {
     todoSave: '儲存變更',
     todoSaved: '已保存每週設定',
     todoReverted: '已撤銷變更',
-    scheduleEmpty: '先新增標籤，再分配到星期。',
+    scheduleEmpty: '先新增標籤，再拖曳到星期。',
+    todoDropHint: '拖曳標籤到這裡',
+    todoClickToRemove: '點擊移除',
     yesterdayUnfinished: '還想蒙混過關？昨天有 {n} 件事在等你。',
 
     // 日曆
@@ -483,7 +485,7 @@ const I18N = {
     tomorrowLabel: 'Tomorrow',
     todoEmptyDay: 'Nothing scheduled today. Click settings to add tags.',
     todoModalTitle: 'Weekly To-Do Settings',
-    todoModalSub: 'Add tags first, then assign to weekdays.',
+    todoModalSub: 'Add tags, then drag them onto weekdays (click or drag out to remove).',
     tagInputPlaceholder: 'Add tag (e.g., Sports, Reading)...',
     tagAddBtn: 'Add',
     tagEmpty: 'No tags yet. Add one first.',
@@ -492,7 +494,9 @@ const I18N = {
     todoSave: 'Save Changes',
     todoSaved: 'Weekly settings saved',
     todoReverted: 'Changes reverted',
-    scheduleEmpty: 'Add tags first, then assign to weekdays.',
+    scheduleEmpty: 'Add tags first, then drag them onto weekdays.',
+    todoDropHint: 'Drop tags here',
+    todoClickToRemove: 'Click to remove',
     yesterdayUnfinished: 'Sneaking past? You have {n} unfinished items from yesterday.',
 
     // 日曆
@@ -864,7 +868,7 @@ const I18N = {
     tomorrowLabel: '明日',
     todoEmptyDay: '今日の予定はありません。設定をクリックしてタグを追加してください。',
     todoModalTitle: '週間ToDoの設定',
-    todoModalSub: 'まずタグを追加し、曜日に割り当てます。',
+    todoModalSub: 'まずタグを追加し、曜日へドラッグ（クリックまたは外へドラッグで解除）',
     tagInputPlaceholder: 'タグを追加（例：スポーツ、読書）...',
     tagAddBtn: '追加',
     tagEmpty: 'タグがありません。まず追加してください。',
@@ -873,7 +877,9 @@ const I18N = {
     todoSave: '変更を保存',
     todoSaved: '週間設定を保存しました',
     todoReverted: '変更を元に戻しました',
-    scheduleEmpty: 'まずタグを追加し、曜日に割り当てます。',
+    scheduleEmpty: 'まずタグを追加し、曜日へドラッグしてください。',
+    todoDropHint: 'ここにドロップ',
+    todoClickToRemove: 'クリックで解除',
     yesterdayUnfinished: '抜け駆けですか？昨日の未完了が {n} 件あります。',
 
     // 日曆

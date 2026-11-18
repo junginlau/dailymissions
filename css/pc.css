@@ -2436,46 +2436,83 @@ transition: background .2s, color .2s;
 background: var(--panel-border);
 color: #e5484d;
 }
+/* 每週必做設定：PC 上 4 下 3，方塊等大 */
+#todoModal .modal-card {
+  width: min(760px, 100%);
+}
 .schedule-grid {
-display: grid;
-grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  align-items: stretch;
 }
 .sched-card {
-padding: 12px;
-border-radius: 14px;
-background: var(--hover);
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--hover);
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  border: 1px dashed transparent;
+  transition: border-color .15s, background .15s, box-shadow .15s;
+}
+.sched-card.drag-over {
+  border-color: var(--fg-dim);
+  background: var(--panel);
+  box-shadow: inset 0 0 0 1px var(--panel-border);
 }
 .sched-card h4 {
-font-size: 12px;
-font-weight: 600;
-letter-spacing: .04em;
-color: var(--fg-dim);
-margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  color: var(--fg-dim);
+  margin-bottom: 8px;
+  flex: 0 0 auto;
 }
 .sched-tags {
-display: flex;
-flex-wrap: wrap;
-gap: 5px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-content: flex-start;
+  flex: 1 1 auto;
+  min-height: 40px;
+}
+.sched-drop-hint {
+  font-size: 11px;
+  color: var(--fg-dim);
+  opacity: .55;
+  line-height: 1.3;
+  pointer-events: none;
+  user-select: none;
 }
 .sched-tag {
-font: inherit;
-font-size: 12px;
-padding: 4px 10px;
-border-radius: 999px;
-border: 1px solid var(--panel-border);
-background: transparent;
-color: var(--fg-dim);
-cursor: pointer;
-transition: all .2s var(--ease);
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  background: transparent;
+  color: var(--fg-dim);
+  cursor: grab;
+  transition: all .2s var(--ease);
 }
 .sched-tag.on {
-background: var(--fg);
-color: var(--ink-inv);
-border-color: transparent;
+  background: var(--fg);
+  color: var(--ink-inv);
+  border-color: transparent;
 }
 .sched-tag:hover {
-border-color: var(--fg-dim);
+  border-color: var(--fg-dim);
+}
+.sched-tag.dragging,
+.tag-chip.dragging {
+  opacity: .45;
+}
+.tag-chip[draggable="true"] {
+  cursor: grab;
+}
+.tag-chip[draggable="true"]:active {
+  cursor: grabbing;
 }
 .event-list {
 max-height: 230px;

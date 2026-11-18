@@ -137,6 +137,17 @@
   input:not([type="range"]):not([type="checkbox"]):not([type="radio"]), select, textarea, .btn:not(.mini) { font-size: 16px; min-height: 44px; }
   .bm-head .mini { width: 36px; height: 36px; font-size: 20px; }
   .bm-drag-handle { padding: 10px 8px; margin-left: -8px; }
+
+  /* 每週必做設定：手機 2 欄 */
+  #todoModal .modal-card { width: 100%; }
+  .schedule-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+  .sched-card {
+    min-height: 96px !important;
+    padding: 10px !important;
+  }
 }
 
 @media (max-width: 400px) {
