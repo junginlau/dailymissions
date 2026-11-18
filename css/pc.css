@@ -2508,6 +2508,15 @@ color: #e5484d;
 .tag-chip.dragging {
   opacity: .45;
 }
+.sched-tag.drag-target {
+  box-shadow: -3px 0 0 0 var(--fg);
+}
+.sched-tag.on {
+  cursor: grab;
+}
+.sched-tag.on:active {
+  cursor: grabbing;
+}
 .tag-chip[draggable="true"] {
   cursor: grab;
 }

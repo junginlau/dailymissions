@@ -72,7 +72,7 @@ function renderTodos() {
 
 let todoDraft = null;
 let todoChanged = false;
-let todoDrag = null; // { tagId, fromDay } fromDay = day key or null (pool)
+let todoDrag = null; // { tagId, fromDay, mode: 'assign'|'reorder' }
 
 function checkTodoChanged() {
   if (!todoDraft) return;
@@ -127,7 +127,7 @@ function renderTagPool() {
         t.id +
         '">' +
         escapeHtml(t.name) +
-        '<button class="chip-x" data-del-tag="' +
+        '<button type="button" class="chip-x" data-del-tag="' +
         t.id +
         '" aria-label="刪除標籤">×</button></span>'
       );
@@ -135,46 +135,68 @@ function renderTagPool() {
     .join('');
 }
 
+/**
+ * 每天顯示全部標籤：
+ * - 已選（on）：亮色，可點擊變灰取消選取，可拖曳排序
+ * - 未選：灰色，可點擊變亮加入該天
+ * 排序只影響已選標籤在 schedule[day] 中的順序；未選標籤固定排在後面。
+ */
 function renderSchedule() {
   const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
   const grid = $('#scheduleGrid');
   if (!grid) return;
   if (!todoDraft.tags.length) {
     grid.innerHTML =
-      '<div class="empty small" style="grid-column:1/-1;">' + (dict.scheduleEmpty || '請先新增標籤') + '</div>';
+      '<div class="empty small" style="grid-column:1/-1;">' +
+      (dict.scheduleEmpty || '請先新增標籤') +
+      '</div>';
     return;
   }
-  const dropHint = dict.todoDropHint || '拖曳標籤到這裡';
+
   grid.innerHTML = WEEKDAYS.map(function (w) {
     const assigned = todoDraft.schedule[w.key] || [];
     const label = (dict.weekdaysFull && dict.weekdaysFull[w.key]) || w.label;
-    const tagsHtml = assigned.length
-      ? assigned
-          .map(function (tagId) {
-            const t = todoDraft.tags.find(function (x) {
-              return x.id === tagId;
-            });
-            if (!t) return '';
-            return (
-              '<button type="button" class="sched-tag on" draggable="true" data-toggle-day="' +
-              w.key +
-              '" data-tag="' +
-              t.id +
-              '" title="' +
-              (dict.todoClickToRemove || '點擊移除') +
-              '">' +
-              escapeHtml(t.name) +
-              '</button>'
-            );
-          })
-          .join('')
-      : '<span class="sched-drop-hint">' + dropHint + '</span>';
+
+    // 已選：依 schedule 順序；未選：依 tags 池順序接在後面
+    const orderedOn = assigned
+      .map(function (id) {
+        return todoDraft.tags.find(function (t) {
+          return t.id === id;
+        });
+      })
+      .filter(Boolean);
+    const offTags = todoDraft.tags.filter(function (t) {
+      return assigned.indexOf(t.id) < 0;
+    });
+    const displayTags = orderedOn.concat(offTags);
+
+    const tagsHtml = displayTags
+      .map(function (t) {
+        const on = assigned.indexOf(t.id) >= 0;
+        return (
+          '<button type="button" class="sched-tag' +
+          (on ? ' on' : '') +
+          '" draggable="' +
+          (on ? 'true' : 'false') +
+          '" data-toggle-day="' +
+          w.key +
+          '" data-tag="' +
+          t.id +
+          '">' +
+          escapeHtml(t.name) +
+          '</button>'
+        );
+      })
+      .join('');
+
     return (
       '<div class="sched-card" data-day="' +
       w.key +
       '"><h4>' +
       label +
-      '</h4><div class="sched-tags">' +
+      '</h4><div class="sched-tags" data-day="' +
+      w.key +
+      '">' +
       tagsHtml +
       '</div></div>'
     );
@@ -182,25 +204,37 @@ function renderSchedule() {
 }
 
 function addTagToDay(dayKey, tagId) {
-  if (!todoDraft || !dayKey || !tagId) return;
-  const arr = todoDraft.schedule[dayKey];
-  if (!Array.isArray(arr)) todoDraft.schedule[dayKey] = [];
-  if (todoDraft.schedule[dayKey].indexOf(tagId) < 0) {
-    todoDraft.schedule[dayKey].push(tagId);
-    renderSchedule();
-    checkTodoChanged();
-  }
+  if (!todoDraft || !dayKey || !tagId) return false;
+  if (!Array.isArray(todoDraft.schedule[dayKey])) todoDraft.schedule[dayKey] = [];
+  if (todoDraft.schedule[dayKey].indexOf(tagId) >= 0) return false;
+  todoDraft.schedule[dayKey].push(tagId);
+  return true;
 }
 
 function removeTagFromDay(dayKey, tagId) {
+  if (!todoDraft || !dayKey || !tagId) return false;
+  const arr = todoDraft.schedule[dayKey];
+  if (!Array.isArray(arr)) return false;
+  const i = arr.indexOf(tagId);
+  if (i < 0) return false;
+  arr.splice(i, 1);
+  return true;
+}
+
+/** 在同一天內把 tagId 插到 beforeTagId 前面；beforeTagId 為 null 則移到已選列表末尾 */
+function reorderTagInDay(dayKey, tagId, beforeTagId) {
   if (!todoDraft || !dayKey || !tagId) return;
   const arr = todoDraft.schedule[dayKey];
   if (!Array.isArray(arr)) return;
-  const i = arr.indexOf(tagId);
-  if (i >= 0) {
-    arr.splice(i, 1);
-    renderSchedule();
-    checkTodoChanged();
+  const from = arr.indexOf(tagId);
+  if (from < 0) return;
+  arr.splice(from, 1);
+  if (beforeTagId) {
+    const to = arr.indexOf(beforeTagId);
+    if (to >= 0) arr.splice(to, 0, tagId);
+    else arr.push(tagId);
+  } else {
+    arr.push(tagId);
   }
 }
 
@@ -303,78 +337,105 @@ function initTodoEvents() {
       checkTodoChanged();
     });
 
-    // 從標籤池開始拖曳
     tagPool.addEventListener('dragstart', function (e) {
       const chip = e.target.closest('.tag-chip[data-tag-id]');
       if (!chip || e.target.closest('[data-del-tag]')) {
         e.preventDefault();
         return;
       }
-      todoDrag = { tagId: chip.dataset.tagId, fromDay: null };
+      todoDrag = { tagId: chip.dataset.tagId, fromDay: null, mode: 'assign' };
       e.dataTransfer.setData('text/plain', chip.dataset.tagId);
-      e.dataTransfer.effectAllowed = 'copyMove';
+      e.dataTransfer.effectAllowed = 'copy';
       chip.classList.add('dragging');
     });
     tagPool.addEventListener('dragend', function (e) {
       const chip = e.target.closest('.tag-chip');
       if (chip) chip.classList.remove('dragging');
       todoDrag = null;
-      $$('.sched-card.drag-over').forEach(function (el) {
-        el.classList.remove('drag-over');
-      });
+      clearSchedDragUI();
+    });
+  }
+
+  function clearSchedDragUI() {
+    $$('.sched-card.drag-over').forEach(function (el) {
+      el.classList.remove('drag-over');
+    });
+    $$('.sched-tag.drag-target').forEach(function (el) {
+      el.classList.remove('drag-target');
     });
   }
 
   const scheduleGrid = $('#scheduleGrid');
   if (scheduleGrid) {
-    // 點擊已分配標籤 → 移除（滅燈）
+    // 點擊：亮 ↔ 灰（加入 / 取消選取），標籤仍留在該天
     scheduleGrid.addEventListener('click', function (e) {
-      const btn = e.target.closest('.sched-tag.on[data-toggle-day]');
+      const btn = e.target.closest('.sched-tag[data-toggle-day]');
       if (!btn) return;
-      removeTagFromDay(btn.dataset.toggleDay, btn.dataset.tag);
+      // 避免拖曳結束後的殘留 click
+      if (btn.dataset.dragMoved === '1') {
+        btn.dataset.dragMoved = '';
+        return;
+      }
+      const day = btn.dataset.toggleDay;
+      const tagId = btn.dataset.tag;
+      const arr = todoDraft.schedule[day];
+      const i = arr.indexOf(tagId);
+      if (i >= 0) arr.splice(i, 1);
+      else arr.push(tagId);
+      renderSchedule();
+      checkTodoChanged();
     });
 
-    // 從某天內的標籤開始拖曳
+    // 已選標籤：拖曳排序；也可拖到其他天（加入該天）
     scheduleGrid.addEventListener('dragstart', function (e) {
       const btn = e.target.closest('.sched-tag.on[data-tag]');
-      if (!btn) return;
-      todoDrag = { tagId: btn.dataset.tag, fromDay: btn.dataset.toggleDay };
+      if (!btn) {
+        if (e.target.closest('.sched-tag')) e.preventDefault();
+        return;
+      }
+      todoDrag = {
+        tagId: btn.dataset.tag,
+        fromDay: btn.dataset.toggleDay,
+        mode: 'reorder'
+      };
       e.dataTransfer.setData('text/plain', btn.dataset.tag);
       e.dataTransfer.effectAllowed = 'move';
       btn.classList.add('dragging');
+      btn.dataset.dragMoved = '';
     });
 
     scheduleGrid.addEventListener('dragend', function (e) {
       const btn = e.target.closest('.sched-tag');
       if (btn) btn.classList.remove('dragging');
-      // 拖到天數範圍外 → 從原天移除
-      if (todoDrag && todoDrag.fromDay && e.dataTransfer && e.dataTransfer.dropEffect === 'none') {
-        // dropEffect none 表示沒有成功 drop；但瀏覽器行為不一致，改用 drag-over 狀態判斷較不穩
-        // 這裡僅清狀態；真正「拖出移除」在 drop 到非卡片區時處理
-      }
       todoDrag = null;
-      $$('.sched-card.drag-over').forEach(function (el) {
-        el.classList.remove('drag-over');
-      });
+      clearSchedDragUI();
     });
 
     scheduleGrid.addEventListener('dragover', function (e) {
       const card = e.target.closest('.sched-card[data-day]');
-      if (!card) return;
+      if (!card || !todoDrag) return;
       e.preventDefault();
-      e.dataTransfer.dropEffect = todoDrag && todoDrag.fromDay ? 'move' : 'copy';
-      if (!card.classList.contains('drag-over')) {
-        $$('.sched-card.drag-over').forEach(function (el) {
-          el.classList.remove('drag-over');
-        });
-        card.classList.add('drag-over');
+      e.dataTransfer.dropEffect = todoDrag.mode === 'reorder' ? 'move' : 'copy';
+
+      $$('.sched-card.drag-over').forEach(function (el) {
+        if (el !== card) el.classList.remove('drag-over');
+      });
+      card.classList.add('drag-over');
+
+      $$('.sched-tag.drag-target').forEach(function (el) {
+        el.classList.remove('drag-target');
+      });
+      if (todoDrag.fromDay === card.dataset.day) {
+        const targetBtn = e.target.closest('.sched-tag.on');
+        if (targetBtn && targetBtn.dataset.tag !== todoDrag.tagId) {
+          targetBtn.classList.add('drag-target');
+        }
       }
     });
 
     scheduleGrid.addEventListener('dragleave', function (e) {
       const card = e.target.closest('.sched-card[data-day]');
       if (!card) return;
-      // 只有真正離開卡片時才移除高亮
       if (!card.contains(e.relatedTarget)) {
         card.classList.remove('drag-over');
       }
@@ -382,38 +443,34 @@ function initTodoEvents() {
 
     scheduleGrid.addEventListener('drop', function (e) {
       const card = e.target.closest('.sched-card[data-day]');
-      if (!card) return;
+      if (!card || !todoDrag) return;
       e.preventDefault();
-      card.classList.remove('drag-over');
-      const tagId = (todoDrag && todoDrag.tagId) || e.dataTransfer.getData('text/plain');
       const toDay = card.dataset.day;
-      if (!tagId || !toDay) return;
+      const tagId = todoDrag.tagId;
+      const fromDay = todoDrag.fromDay;
 
-      // 從另一天拖過來：先從原天移除
-      if (todoDrag && todoDrag.fromDay && todoDrag.fromDay !== toDay) {
-        removeTagFromDay(todoDrag.fromDay, tagId);
+      if (fromDay && fromDay === toDay) {
+        // 同天排序：插到目標標籤前
+        const targetBtn = e.target.closest('.sched-tag.on');
+        const beforeId =
+          targetBtn && targetBtn.dataset.tag !== tagId ? targetBtn.dataset.tag : null;
+        reorderTagInDay(toDay, tagId, beforeId);
+        // 標記避免 dragend 後觸發 click 把狀態又 toggle 掉
+        setTimeout(function () {
+          const srcBtn = scheduleGrid.querySelector(
+            '.sched-tag[data-tag="' + tagId + '"][data-toggle-day="' + toDay + '"]'
+          );
+          if (srcBtn) srcBtn.dataset.dragMoved = '1';
+        }, 0);
+      } else {
+        // 從標籤池或其他天 → 加入此天
+        addTagToDay(toDay, tagId);
       }
-      addTagToDay(toDay, tagId);
+
       todoDrag = null;
-    });
-  }
-
-  // 拖到 modal 空白處（非某天卡片）→ 若來源是某天，則移除
-  const todoModal = $('#todoModal');
-  if (todoModal) {
-    todoModal.addEventListener('dragover', function (e) {
-      if (todoDrag && todoDrag.fromDay) {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-      }
-    });
-    todoModal.addEventListener('drop', function (e) {
-      if (e.target.closest('.sched-card[data-day]')) return;
-      if (todoDrag && todoDrag.fromDay && todoDrag.tagId) {
-        e.preventDefault();
-        removeTagFromDay(todoDrag.fromDay, todoDrag.tagId);
-        todoDrag = null;
-      }
+      clearSchedDragUI();
+      renderSchedule();
+      checkTodoChanged();
     });
   }
 
