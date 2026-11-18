@@ -24,6 +24,12 @@ function renderDiaries() {
   if (diaryFilterDate) list = list.filter(function (d) { return dateKey(new Date(d.createdAt)) === diaryFilterDate; });
   const wrap = $('#diaryList'); if (!list.length) { wrap.innerHTML = '<div class="empty">' + (diaryFilterDate ? dict.diaryEmptyDay : dict.diaryEmpty) + '</div>'; return; }
   wrap.innerHTML = list.map(function (d) { const dt = new Date(d.createdAt); return '<div class="diary-card" data-id="' + d.id + '"><div class="diary-meta"><span>' + fmtDateTime(dt) + '</span>' + (d.weather ? '<span class="tag">' + escapeHtml(d.weather) + '</span>' : '') + (d.mood ? '<span class="tag">' + escapeHtml(d.mood) + '</span>' : '') + '</div><div class="diary-title">' + escapeHtml(d.title) + '</div><div class="diary-preview">' + escapeHtml(d.content) + '</div></div>'; }).join('');
+  
+  // [NEW] 手機版顯示懸浮按鈕
+  const mobileAddBtn = $('#mobileDiaryAddBtn');
+  if (mobileAddBtn) {
+    mobileAddBtn.style.display = window.innerWidth <= 768 ? 'flex' : 'none';
+  }
 }
 
 function openDiaryModal(id) {
@@ -55,8 +61,20 @@ function editDiary(id) {
   $('#diaryCompose').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-function initDiaryEvents() {
-  $('#diaryList').addEventListener('click', function (e) { const card = e.target.closest('.diary-card[data-id]'); if (card) openDiaryModal(card.dataset.id); });
+  // [NEW] 手機版懸浮按鈕點擊事件：打開一個空白的日記彈窗
+  const mobileAddBtn = $('#mobileDiaryAddBtn');
+  if (mobileAddBtn) {
+    mobileAddBtn.addEventListener('click', function() {
+      resetDiaryForm();
+      // 在手機版，我們直接把左邊的表單移到彈窗裡顯示
+      // 這裡簡化處理：點擊後切換到左邊的輸入區塊並滾動到它
+      const diaryLeft = document.querySelector('.diary-left');
+      if (diaryLeft) {
+        diaryLeft.style.display = 'block';
+        diaryLeft.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+  }
   
   $('#diaryImgPick').addEventListener('click', function() { $('#diaryImgInput').click(); });
   $('#diaryImgInput').addEventListener('change', function(e) {
