@@ -2,14 +2,30 @@
 
 // ==========================================
 // 每週必做
+// schedule[day] = [ { id, on: true|false }, ... ]
+// - 拖進某天：出現並亮起 (on:true)
+// - 點擊：亮/灰切換（灰仍留在該天，但不算進今日待辦）
+// - 拖出該天框外：真正從該天移除
 // ==========================================
 function tagById(id) {
   return todos.tags.find(function (t) {
     return t.id === id;
   }) || null;
 }
+
+/** 只回傳該天「亮起」的標籤（用於首頁／今日清單） */
 function tagsForDay(dayKey) {
-  return (todos.schedule[dayKey] || []).map(tagById).filter(Boolean);
+  const list = todos.schedule[dayKey] || [];
+  return list
+    .filter(function (e) {
+      if (typeof e === 'string') return true;
+      return e && e.on !== false;
+    })
+    .map(function (e) {
+      const id = typeof e === 'string' ? e : e.id;
+      return tagById(id);
+    })
+    .filter(Boolean);
 }
 
 function renderTodos() {
@@ -104,7 +120,7 @@ function openTodoSettings() {
   if (!todoDraft.tags) todoDraft.tags = [];
   if (!todoDraft.schedule) todoDraft.schedule = emptyTodoData().schedule;
   WEEKDAYS.forEach(function (w) {
-    if (!Array.isArray(todoDraft.schedule[w.key])) todoDraft.schedule[w.key] = [];
+    todoDraft.schedule[w.key] = normalizeDaySchedule(todoDraft.schedule[w.key]);
   });
   renderTagPool();
   renderSchedule();
@@ -136,9 +152,8 @@ function renderTagPool() {
 }
 
 /**
- * 每天顯示全部標籤（固定依標籤池順序，避免點擊變灰後跳位像被刪掉）：
- * - 已選（on）：亮色，可點擊變灰；可拖曳調整「今天必做」順序（角標顯示序號）
- * - 未選：灰色，可點擊變亮
+ * 每天只顯示「已加入該天」的標籤；預設空白。
+ * on → 亮；!on → 灰（仍可見，不算進待辦）
  */
 function renderSchedule() {
   const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
@@ -152,33 +167,52 @@ function renderSchedule() {
     return;
   }
 
+  const dropHint = dict.todoDropHint || '拖曳標籤到這裡';
+
   grid.innerHTML = WEEKDAYS.map(function (w) {
-    const assigned = todoDraft.schedule[w.key] || [];
+    const entries = normalizeDaySchedule(todoDraft.schedule[w.key]);
+    todoDraft.schedule[w.key] = entries;
     const label = (dict.weekdaysFull && dict.weekdaysFull[w.key]) || w.label;
 
-    // 固定用標籤池順序，只改亮/灰，位置不變
-    const tagsHtml = todoDraft.tags
-      .map(function (t) {
-        const onIdx = assigned.indexOf(t.id);
-        const on = onIdx >= 0;
-        const orderBadge =
-          on && assigned.length > 1
-            ? '<span class="sched-order">' + (onIdx + 1) + '</span>'
-            : '';
-        return (
-          '<button type="button" class="sched-tag' +
-          (on ? ' on' : '') +
-          '" data-toggle-day="' +
-          w.key +
-          '" data-tag="' +
-          t.id +
-          '">' +
-          orderBadge +
-          escapeHtml(t.name) +
-          '</button>'
-        );
-      })
-      .join('');
+    var tagsHtml;
+    if (!entries.length) {
+      tagsHtml = '<span class="sched-drop-hint">' + dropHint + '</span>';
+    } else {
+      var onCount = 0;
+      entries.forEach(function (e) {
+        if (e.on !== false) onCount++;
+      });
+      tagsHtml = entries
+        .map(function (e) {
+          const t = todoDraft.tags.find(function (x) {
+            return x.id === e.id;
+          });
+          if (!t) return '';
+          const on = e.on !== false;
+          var orderBadge = '';
+          if (on && onCount > 1) {
+            var n = 0;
+            for (var i = 0; i < entries.length; i++) {
+              if (entries[i].on !== false) n++;
+              if (entries[i].id === e.id) break;
+            }
+            orderBadge = '<span class="sched-order">' + n + '</span>';
+          }
+          return (
+            '<button type="button" class="sched-tag' +
+            (on ? ' on' : '') +
+            '" data-toggle-day="' +
+            w.key +
+            '" data-tag="' +
+            t.id +
+            '">' +
+            orderBadge +
+            escapeHtml(t.name) +
+            '</button>'
+          );
+        })
+        .join('');
+    }
 
     return (
       '<div class="sched-card" data-day="' +
@@ -194,38 +228,64 @@ function renderSchedule() {
   }).join('');
 }
 
+function findEntry(dayKey, tagId) {
+  const arr = todoDraft.schedule[dayKey] || [];
+  for (var i = 0; i < arr.length; i++) {
+    const e = arr[i];
+    const id = typeof e === 'string' ? e : e.id;
+    if (id === tagId) return { entry: typeof e === 'string' ? { id: e, on: true } : e, index: i };
+  }
+  return null;
+}
+
+/** 加入該天（預設亮起）；已存在則不重複 */
 function addTagToDay(dayKey, tagId) {
   if (!todoDraft || !dayKey || !tagId) return false;
   if (!Array.isArray(todoDraft.schedule[dayKey])) todoDraft.schedule[dayKey] = [];
-  if (todoDraft.schedule[dayKey].indexOf(tagId) >= 0) return false;
-  todoDraft.schedule[dayKey].push(tagId);
+  if (findEntry(dayKey, tagId)) return false;
+  todoDraft.schedule[dayKey].push({ id: tagId, on: true });
   return true;
 }
 
+/** 從該天真正移除 */
 function removeTagFromDay(dayKey, tagId) {
   if (!todoDraft || !dayKey || !tagId) return false;
   const arr = todoDraft.schedule[dayKey];
   if (!Array.isArray(arr)) return false;
-  const i = arr.indexOf(tagId);
-  if (i < 0) return false;
-  arr.splice(i, 1);
-  return true;
+  const before = arr.length;
+  todoDraft.schedule[dayKey] = arr.filter(function (e) {
+    const id = typeof e === 'string' ? e : e.id;
+    return id !== tagId;
+  });
+  return todoDraft.schedule[dayKey].length !== before;
 }
 
-/** 在同一天內把 tagId 插到 beforeTagId 前面；beforeTagId 為 null 則移到已選列表末尾 */
+/** 切換亮/灰 */
+function toggleTagOnDay(dayKey, tagId) {
+  const found = findEntry(dayKey, tagId);
+  if (!found) return;
+  const arr = todoDraft.schedule[dayKey];
+  const cur = found.entry;
+  arr[found.index] = { id: cur.id, on: cur.on === false };
+}
+
+/** 同天排序：把 tagId 移到 beforeTagId 前面 */
 function reorderTagInDay(dayKey, tagId, beforeTagId) {
-  if (!todoDraft || !dayKey || !tagId) return;
   const arr = todoDraft.schedule[dayKey];
   if (!Array.isArray(arr)) return;
-  const from = arr.indexOf(tagId);
+  const from = arr.findIndex(function (e) {
+    return (typeof e === 'string' ? e : e.id) === tagId;
+  });
   if (from < 0) return;
-  arr.splice(from, 1);
+  const item = arr.splice(from, 1)[0];
   if (beforeTagId) {
-    const to = arr.indexOf(beforeTagId);
-    if (to >= 0) arr.splice(to, 0, tagId);
-    else arr.push(tagId);
+    const to = arr.findIndex(function (e) {
+      return (typeof e === 'string' ? e : e.id) === beforeTagId;
+    });
+    if (to >= 0) arr.splice(to, 0, item);
+    else arr.push(item);
   } else {
-    arr.push(tagId);
+    arr.push(item);
   }
 }
 
@@ -251,7 +311,7 @@ function checkUnfinishedTasks() {
 }
 
 // ==========================================
-// 綁定每週必做的事件
+// 綁定事件
 // ==========================================
 function initTodoEvents() {
   const todayCol = $('#todayCol');
@@ -309,6 +369,15 @@ function initTodoEvents() {
     });
   }
 
+  function clearSchedDragUI() {
+    $$('.sched-card.drag-over').forEach(function (el) {
+      el.classList.remove('drag-over');
+    });
+    $$('.sched-tag.drag-target').forEach(function (el) {
+      el.classList.remove('drag-target');
+    });
+  }
+
   const tagPool = $('#tagPool');
   if (tagPool) {
     tagPool.addEventListener('click', function (e) {
@@ -319,8 +388,9 @@ function initTodoEvents() {
         return t.id !== id;
       });
       WEEKDAYS.forEach(function (w) {
-        todoDraft.schedule[w.key] = todoDraft.schedule[w.key].filter(function (x) {
-          return x !== id;
+        todoDraft.schedule[w.key] = (todoDraft.schedule[w.key] || []).filter(function (e) {
+          const eid = typeof e === 'string' ? e : e.id;
+          return eid !== id;
         });
       });
       renderTagPool();
@@ -347,18 +417,9 @@ function initTodoEvents() {
     });
   }
 
-  function clearSchedDragUI() {
-    $$('.sched-card.drag-over').forEach(function (el) {
-      el.classList.remove('drag-over');
-    });
-    $$('.sched-tag.drag-target').forEach(function (el) {
-      el.classList.remove('drag-target');
-    });
-  }
-
   const scheduleGrid = $('#scheduleGrid');
   if (scheduleGrid) {
-    // 點擊：亮 ↔ 灰（標籤仍留在該天）
+    // 點擊：亮 ↔ 灰（仍留在該天）
     scheduleGrid.addEventListener('click', function (e) {
       const btn = e.target.closest('.sched-tag[data-toggle-day]');
       if (!btn) return;
@@ -366,22 +427,17 @@ function initTodoEvents() {
         btn.dataset.dragMoved = '';
         return;
       }
-      const day = btn.dataset.toggleDay;
-      const tagId = btn.dataset.tag;
-      const arr = todoDraft.schedule[day];
-      const i = arr.indexOf(tagId);
-      if (i >= 0) arr.splice(i, 1);
-      else arr.push(tagId);
+      toggleTagOnDay(btn.dataset.toggleDay, btn.dataset.tag);
       renderSchedule();
       checkTodoChanged();
     });
 
-    // Pointer 拖曳排序（避免 HTML5 draggable 吞掉 click）
-    var ptr = null; // { tagId, fromDay, startX, startY, moved, el, pointerId }
+    // Pointer：同天排序 / 拖到其他天 / 拖出框外移除
+    var ptr = null;
 
     scheduleGrid.addEventListener('pointerdown', function (e) {
       if (e.button !== 0 && e.pointerType === 'mouse') return;
-      const btn = e.target.closest('.sched-tag.on[data-tag]');
+      const btn = e.target.closest('.sched-tag[data-tag]');
       if (!btn) return;
       ptr = {
         tagId: btn.dataset.tag,
@@ -398,7 +454,7 @@ function initTodoEvents() {
       if (!ptr || e.pointerId !== ptr.pointerId) return;
       const dx = e.clientX - ptr.startX;
       const dy = e.clientY - ptr.startY;
-      if (!ptr.moved && dx * dx + dy * dy < 36) return; // 6px 門檻，未超過當點擊
+      if (!ptr.moved && dx * dx + dy * dy < 36) return;
 
       if (!ptr.moved) {
         ptr.moved = true;
@@ -409,14 +465,13 @@ function initTodoEvents() {
         ptr.el.dataset.dragMoved = '1';
       }
 
-      // 高亮目前懸停的同天 on 標籤 / 卡片
       clearSchedDragUI();
       const under = document.elementFromPoint(e.clientX, e.clientY);
       const card = under && under.closest ? under.closest('.sched-card[data-day]') : null;
       if (card) {
         card.classList.add('drag-over');
         if (card.dataset.day === ptr.fromDay) {
-          const targetBtn = under.closest('.sched-tag.on');
+          const targetBtn = under.closest('.sched-tag');
           if (targetBtn && targetBtn.dataset.tag !== ptr.tagId) {
             targetBtn.classList.add('drag-target');
           }
@@ -430,7 +485,6 @@ function initTodoEvents() {
       ptr = null;
 
       if (!info.moved) {
-        // 純點擊：交給 click 處理
         if (info.el) info.el.classList.remove('dragging');
         clearSchedDragUI();
         return;
@@ -440,23 +494,26 @@ function initTodoEvents() {
       const under = document.elementFromPoint(e.clientX, e.clientY);
       const card = under && under.closest ? under.closest('.sched-card[data-day]') : null;
 
-      if (card) {
+      if (!card) {
+        // 拖出所有天的框外 → 從原天移除
+        removeTagFromDay(info.fromDay, info.tagId);
+      } else {
         const toDay = card.dataset.day;
         if (toDay === info.fromDay) {
-          const targetBtn = under.closest('.sched-tag.on');
+          const targetBtn = under.closest('.sched-tag');
           const beforeId =
             targetBtn && targetBtn.dataset.tag !== info.tagId ? targetBtn.dataset.tag : null;
           reorderTagInDay(toDay, info.tagId, beforeId);
         } else {
-          // 拖到其他天 → 加入該天（原天仍保留選取）
+          // 移到另一天
+          removeTagFromDay(info.fromDay, info.tagId);
           addTagToDay(toDay, info.tagId);
         }
-        renderSchedule();
-        checkTodoChanged();
       }
 
+      renderSchedule();
+      checkTodoChanged();
       clearSchedDragUI();
-      // 防止後續 click 再 toggle
       setTimeout(function () {
         const el = scheduleGrid.querySelector(
           '.sched-tag[data-tag="' + info.tagId + '"][data-toggle-day="' + info.fromDay + '"]'
@@ -468,7 +525,7 @@ function initTodoEvents() {
     scheduleGrid.addEventListener('pointerup', endPointerDrag);
     scheduleGrid.addEventListener('pointercancel', endPointerDrag);
 
-    // 標籤池 HTML5 拖到某天（可選快捷）
+    // 標籤池 HTML5 drop → 加入該天並亮起
     scheduleGrid.addEventListener('dragover', function (e) {
       const card = e.target.closest('.sched-card[data-day]');
       if (!card || !todoDrag || todoDrag.mode !== 'assign') return;
@@ -498,6 +555,9 @@ function initTodoEvents() {
     todoSaveBtn.addEventListener('click', function () {
       const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
       if (!todoChanged) return;
+      WEEKDAYS.forEach(function (w) {
+        todoDraft.schedule[w.key] = normalizeDaySchedule(todoDraft.schedule[w.key]);
+      });
       todos = todoDraft;
       save('todos');
       renderTodos();
@@ -512,6 +572,9 @@ function initTodoEvents() {
     todoCancelBtn.addEventListener('click', function () {
       const dict = window.I18N[currentLang] || window.I18N['zh-TW'];
       todoDraft = JSON.parse(JSON.stringify(todos));
+      WEEKDAYS.forEach(function (w) {
+        todoDraft.schedule[w.key] = normalizeDaySchedule(todoDraft.schedule[w.key]);
+      });
       renderTagPool();
       renderSchedule();
       checkTodoChanged();

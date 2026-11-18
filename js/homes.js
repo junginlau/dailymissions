@@ -298,7 +298,10 @@ function renderCountdowns() {
 // ==========================================
 function countTodayTags() {
   const tk = dayKeyOf(new Date());
-  return (todos.schedule[tk] || []).length;
+  return (todos.schedule[tk] || []).filter(function (e) {
+    if (typeof e === 'string') return true;
+    return e && e.on !== false;
+  }).length;
 }
 
 function countUpcoming(days) {

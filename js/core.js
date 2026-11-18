@@ -473,11 +473,31 @@ const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 function emptyTodoData() {
   return { tags: [], schedule: { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] }, done: {} };
 }
+/** schedule[day] 項目統一成 { id, on }；舊版字串 id 視為 on:true */
+function normalizeScheduleEntry(item) {
+  if (typeof item === 'string') return { id: item, on: true };
+  if (item && typeof item === 'object' && item.id) {
+    return { id: item.id, on: item.on !== false };
+  }
+  return null;
+}
+function normalizeDaySchedule(arr) {
+  if (!Array.isArray(arr)) return [];
+  const out = [];
+  const seen = {};
+  arr.forEach(function (item) {
+    const e = normalizeScheduleEntry(item);
+    if (!e || seen[e.id]) return;
+    seen[e.id] = true;
+    out.push(e);
+  });
+  return out;
+}
 function migrateTodos(raw) {
   if (!raw) return emptyTodoData();
   if (raw.tags && raw.schedule) {
     WEEKDAYS.forEach(function (w) {
-      if (!Array.isArray(raw.schedule[w.key])) raw.schedule[w.key] = [];
+      raw.schedule[w.key] = normalizeDaySchedule(raw.schedule[w.key]);
     });
     if (!raw.done || typeof raw.done !== 'object') raw.done = {};
     return raw;
@@ -494,7 +514,7 @@ function migrateTodos(raw) {
         seen[name] = { id: uid(), name: name };
         data.tags.push(seen[name]);
       }
-      data.schedule[w.key].push(seen[name].id);
+      data.schedule[w.key].push({ id: seen[name].id, on: true });
     });
   });
   return data;
@@ -514,10 +534,10 @@ let photoMeta = LS.get('photoMeta', null);
 const legacyPhotos = LS.get('photos', null);
 let needsLegacyPhotoMigration = false;
 if (!photoMeta && Array.isArray(legacyPhotos) && legacyPhotos.length) {
-needsLegacyPhotoMigration = true;
-photoMeta = legacyPhotos.map(function (p) {
-return { id: p.id, title: p.title || '' };
-});
+  needsLegacyPhotoMigration = true;
+  photoMeta = legacyPhotos.map(function (p) {
+    return { id: p.id, title: p.title || '' };
+  });
 }
 if (!Array.isArray(photoMeta)) photoMeta = [];
 const DEFAULT_RATES = { TWD: 1, USD: 32, JPY: 0.22, HKD: 4.1, EUR: 35, GBP: 41, CNY: 4.4 };
@@ -526,24 +546,26 @@ let exchangeRatesUpdatedAt = 0;
 const photoCache = {};
 const RATE_MIN_INTERVAL = 60 * 60 * 1000;
 (function loadCachedRates() {
-const cached = LS.get('exchangeRates', null);
-if (cached && cached.rates && cached.updatedAt) {
-exchangeRates = Object.assign({}, DEFAULT_RATES, cached.rates);
-exchangeRatesUpdatedAt = cached.updatedAt;
-}
+  const cached = LS.get('exchangeRates', null);
+  if (cached && cached.rates && cached.updatedAt) {
+    exchangeRates = Object.assign({}, DEFAULT_RATES, cached.rates);
+    exchangeRatesUpdatedAt = cached.updatedAt;
+  }
 })();
 let mainCurrency = LS.get('mainCurrency', 'HKD');
 const currencySymbols = { TWD: 'NT$', USD: '$', JPY: '¥', HKD: 'HK$', EUR: '€', GBP: '£', CNY: '¥' };
 let ledger = LS.get('ledger', null);
 if (!ledger) {
-const oldExp = LS.get('expenses', []);
-if (oldExp.length) {
-ledger = oldExp.map((e) => ({ ...e, type: 'expense' }));
-LS.set('ledger', ledger);
-LS.remove('expenses');
-} else {
-ledger = [];
-}
+  const oldExp = LS.get('expenses', []);
+  if (oldExp.length) {
+    ledger = oldExp.map(function (e) {
+      return Object.assign({}, e, { type: 'expense' });
+    });
+    LS.set('ledger', ledger);
+    LS.remove('expenses');
+  } else {
+    ledger = [];
+  }
 }
 if (!events || typeof events !== 'object' || Array.isArray(events)) events = {};
 if (!Array.isArray(diaries)) diaries = [];
@@ -553,25 +575,26 @@ if (!Array.isArray(bookmarks)) bookmarks = [];
 if (!Array.isArray(ledger)) ledger = [];
 if (!Array.isArray(countdowns)) countdowns = [];
 if (!Array.isArray(trash)) trash = [];
+
 function save(key) {
-const map = {
-todos: ['todos', todos],
-events: ['events', events],
-diaries: ['diaries', diaries],
-notes: ['notes', notes],
-photoMeta: ['photoMeta', photoMeta],
-goals: ['goals', goals],
-bookmarks: ['bookmarks', bookmarks],
-ledger: ['ledger', ledger],
-countdowns: ['countdowns', countdowns],
-ledgerCategories: ['ledgerCategories', ledgerCategories],
-trash: ['trash', trash]
-};
+  const map = {
+    todos: ['todos', todos],
+    events: ['events', events],
+    diaries: ['diaries', diaries],
+    notes: ['notes', notes],
+    photoMeta: ['photoMeta', photoMeta],
+    goals: ['goals', goals],
+    bookmarks: ['bookmarks', bookmarks],
+    ledger: ['ledger', ledger],
+    countdowns: ['countdowns', countdowns],
+    ledgerCategories: ['ledgerCategories', ledgerCategories],
+    trash: ['trash', trash]
+  };
   if (map[key]) {
     const entry = map[key];
-    LS.set(entry.at(0), entry.at(1));
-    
-    // [NEW] 如果自動同步有開啟，就觸發排程
+    LS.set(entry[0], entry[1]);
+
+    // 如果自動同步有開啟，就觸發排程
     if (!window.__isRestoringBackup) {
       LS.set('localDataUpdatedAt', Date.now());
       if (typeof window.scheduleAutoSync === 'function') {
@@ -580,78 +603,84 @@ trash: ['trash', trash]
     }
   }
 }
+
 function migrateLegacyPhotos() {
-if (!needsLegacyPhotoMigration || !IDB.available()) {
-needsLegacyPhotoMigration = false;
-return Promise.resolve();
+  if (!needsLegacyPhotoMigration || !IDB.available()) {
+    needsLegacyPhotoMigration = false;
+    return Promise.resolve();
+  }
+  return Promise.all(
+    legacyPhotos.map(function (p) {
+      return IDB.put('photos', { id: p.id, src: p.src }).catch(function () {});
+    })
+  ).then(function () {
+    LS.remove('photos');
+    LS.set('photoMeta', photoMeta);
+    needsLegacyPhotoMigration = false;
+  });
 }
-return Promise.all(
-legacyPhotos.map(function (p) {
-return IDB.put('photos', { id: p.id, src: p.src }).catch(function () {});
-})
-).then(function () {
-LS.remove('photos');
-LS.set('photoMeta', photoMeta);
-needsLegacyPhotoMigration = false;
-});
-}
+
 function dayKeyOf(d) {
-return DAY_KEYS.at(d.getDay());
+  return DAY_KEYS[d.getDay()];
 }
+
 function dayLabelOf(key) {
   const dict = (window.I18N && window.I18N[currentLang]) || (window.I18N && window.I18N['zh-TW']) || {};
   const map = dict.weekdaysFull || {};
   return map[key] || key;
 }
+
 function pruneEvents() {
-const cut = new Date();
-cut.setMonth(cut.getMonth() - 6);
-cut.setHours(0, 0, 0, 0);
-let changed = false;
-Object.keys(events).forEach(function (k) {
-if (keyToDate(k) < cut) {
-delete events[k];
-changed = true;
+  const cut = new Date();
+  cut.setMonth(cut.getMonth() - 6);
+  cut.setHours(0, 0, 0, 0);
+  let changed = false;
+  Object.keys(events).forEach(function (k) {
+    if (keyToDate(k) < cut) {
+      delete events[k];
+      changed = true;
+    }
+  });
+  if (changed) save('events');
 }
-});
-if (changed) save('events');
-}
+
 function pruneDone() {
-const cutoff = new Date();
-cutoff.setDate(cutoff.getDate() - 60);
-const minKey = dateKey(cutoff);
-let changed = false;
-Object.keys(todos.done || {}).forEach(function (k) {
-if (k < minKey) {
-delete todos.done[k];
-changed = true;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 60);
+  const minKey = dateKey(cutoff);
+  let changed = false;
+  Object.keys(todos.done || {}).forEach(function (k) {
+    if (k < minKey) {
+      delete todos.done[k];
+      changed = true;
+    }
+  });
+  if (changed) save('todos');
 }
-});
-if (changed) save('todos');
-}
+
 function pruneTrash() {
-const now = Date.now();
-const fourteenDays = 14 * 24 * 60 * 60 * 1000;
-const kept = [];
-let changed = false;
-trash.forEach(function (item) {
-if (now - item.deletedAt < fourteenDays) {
-kept.push(item);
-} else {
-changed = true;
-if (item.type === 'photo' && item.data && item.data.id) {
-delete photoCache[item.data.id];
-if (IDB.available()) {
-IDB.del('photos', item.data.id).catch(function () {});
-}
-}
-}
-});
-if (changed) {
-trash = kept;
-save('trash');
-if (typeof currentView !== 'undefined' && currentView === 'trash' && typeof renderTrash === 'function') {
-renderTrash();
-}
-}
+  const now = Date.now();
+  const fourteenDays = 14 * 24 * 60 * 60 * 1000;
+  const kept = [];
+  let changed = false;
+  trash.forEach(function (item) {
+    if (now - item.deletedAt < fourteenDays) {
+      kept.push(item);
+    } else {
+      changed = true;
+      if (item.type === 'photo' && item.data && item.data.id) {
+        delete photoCache[item.data.id];
+        if (IDB.available()) {
+          IDB.del('photos', item.data.id).catch(function () {});
+        }
+      }
+    }
+  });
+  if (changed) {
+    trash = kept;
+    save('trash');
+    if (typeof currentView !== 'undefined' && currentView === 'trash' && typeof renderTrash === 'function') {
+      renderTrash();
+    }
+  }
 }
