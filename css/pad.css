@@ -31,22 +31,36 @@
     min-width: 140px;
   }
 
-  /* 首頁平板雙欄比例調整 (64% : 34%) */
+  /* 首頁平板雙欄比例調整 (64% : 34%)；內容過高時可捲 */
   .home-layout {
     gap: 2% !important;
     margin-top: 12px !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
   }
 
   .home-main {
     flex: 1 1 64% !important;
     max-width: 64% !important;
     gap: 14px;
+    min-height: 0 !important;
+    overflow-y: auto !important;
   }
 
   .home-side {
     flex: 0 0 34% !important;
     max-width: 34% !important;
     gap: 14px !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+  }
+
+  /* 其他雙欄頁在平板也避免被裁切 */
+  .todo-container,
+  .cal-layout,
+  .diary-container,
+  .ledger-layout {
+    min-height: 0 !important;
   }
 
   .clock-time {
@@ -128,10 +142,26 @@
 
 /* ══════════ 直向平板專屬微調 (769px - 960px，如 iPad 直屏) ══════════ */
 @media (min-width: 769px) and (max-width: 960px) {
+  /* 外層允許捲動，避免內容被 overflow:hidden 裁切 */
+  .app {
+    height: auto !important;
+    min-height: 100dvh !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+  .view,
+  .view.active {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    flex: 0 0 auto !important;
+  }
+
   /* 首頁直屏改為可捲動單欄，避免左側過窄 */
   .home-layout {
     flex-direction: column !important;
-    overflow-y: auto !important;
+    overflow: visible !important;
+    height: auto !important;
     padding-bottom: 24px !important;
     gap: 14px !important;
   }
@@ -263,5 +293,35 @@
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     max-width: 480px !important;
     gap: 14px !important;
+  }
+}
+/* ── 每週必做設定：平板排版 ── */
+@media (min-width: 769px) and (max-width: 1100px) {
+  #todoModal .modal-card {
+    width: min(680px, 94vw) !important;
+    max-height: 86vh;
+  }
+  .schedule-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    align-items: stretch !important;
+  }
+  .sched-card {
+    min-height: 118px !important;
+    height: 100%;
+  }
+}
+
+@media (min-width: 1101px) and (max-width: 1366px) {
+  #todoModal .modal-card {
+    width: min(760px, 92vw) !important;
+  }
+  .schedule-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    align-items: stretch !important;
+  }
+  .sched-card {
+    min-height: 120px !important;
   }
 }
