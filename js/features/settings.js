@@ -364,56 +364,64 @@ function initSettingsEvents() {
         }
         customConfirm(dict.confirmImportTitle, dict.confirmImportMsg, dict.confirmImportOk, dict.cancel, true).then(function (ok) {
           if (!ok) return;
-          if (data.todos) todos = migrateTodos(data.todos);
-          if (data.events) events = data.events;
-          if (data.diaries) diaries = data.diaries;
-          if (data.notes) notes = data.notes;
-          if (data.goals) goals = data.goals;
-          if (data.bookmarks) bookmarks = data.bookmarks;
-          if (data.countdowns) countdowns = data.countdowns;
-          if (data.trash) trash = data.trash;
-          if (data.ledgerCategories) ledgerCategories = data.ledgerCategories;
-          if (data.ledger) ledger = data.ledger;
-          else if (data.expenses) ledger = data.expenses.map(function (x) { return Object.assign({}, x, { type: 'expense' }); });
-          
-          photoMeta = [];
-          const photoWrites = (data.photos || []).map(function (p) {
-            photoMeta.push({ id: p.id, title: p.title || '' });
-            if (IDB.available() && p.src) {
-              photoCache[p.id] = p.src;
-              return IDB.put('photos', { id: p.id, src: p.src }).catch(function () {});
+          window.__isRestoringBackup = true;
+          try {
+            if (data.todos) todos = migrateTodos(data.todos);
+            if (data.events) events = data.events;
+            if (data.diaries) diaries = data.diaries;
+            if (data.notes) notes = data.notes;
+            if (data.goals) goals = data.goals;
+            if (data.bookmarks) bookmarks = data.bookmarks;
+            if (data.countdowns) countdowns = data.countdowns;
+            if (data.trash) trash = data.trash;
+            if (data.ledgerCategories) ledgerCategories = data.ledgerCategories;
+            if (data.ledger) ledger = data.ledger;
+            else if (data.expenses) ledger = data.expenses.map(function (x) { return Object.assign({}, x, { type: 'expense' }); });
+
+            photoMeta = [];
+            const photoWrites = (data.photos || []).map(function (p) {
+              photoMeta.push({ id: p.id, title: p.title || '' });
+              if (IDB.available() && p.src) {
+                photoCache[p.id] = p.src;
+                return IDB.put('photos', { id: p.id, src: p.src }).catch(function () {});
+              }
+              return Promise.resolve();
+            });
+            if (data.prefs) {
+              if (typeof data.prefs.lum === 'number') state.lum = Math.min(100, Math.max(0, data.prefs.lum));
+              if (typeof data.prefs.bg === 'string') state.bg = data.prefs.bg || null;
+              applyTheme();
+              savePrefs();
             }
-            return Promise.resolve();
-          });
-          if (data.prefs) {
-            if (typeof data.prefs.lum === 'number') state.lum = Math.min(100, Math.max(0, data.prefs.lum));
-            if (typeof data.prefs.bg === 'string') state.bg = data.prefs.bg || null;
-            applyTheme();
-            savePrefs();
+            if (data.pomoSoundType === 'synth' || data.pomoSoundType === 'custom') {
+              soundType = data.pomoSoundType;
+              LS.set('pomoSoundType', soundType);
+            }
+            Promise.all(photoWrites).then(function () {
+              ['todos', 'events', 'diaries', 'notes', 'goals', 'bookmarks', 'ledger', 'countdowns', 'ledgerCategories', 'trash'].forEach(save);
+              save('photoMeta');
+              pruneEvents();
+              pruneDone();
+              pruneTrash();
+              if (typeof renderTodos === 'function') renderTodos();
+              if (typeof renderCalendar === 'function') renderCalendar();
+              if (typeof renderDiaries === 'function') renderDiaries();
+              if (typeof renderNotes === 'function') renderNotes();
+              if (typeof renderPhotos === 'function') renderPhotos();
+              if (typeof renderGoals === 'function') renderGoals();
+              if (typeof renderBookmarks === 'function') renderBookmarks();
+              if (typeof renderLedger === 'function') renderLedger();
+              if (typeof renderHome === 'function') renderHome();
+              if (typeof renderTrash === 'function') renderTrash();
+              toast(dict.importing);
+              closeSettings();
+            }).finally(function () {
+              window.__isRestoringBackup = false;
+            });
+          } catch (e) {
+            window.__isRestoringBackup = false;
+            throw e;
           }
-          if (data.pomoSoundType === 'synth' || data.pomoSoundType === 'custom') {
-            soundType = data.pomoSoundType;
-            LS.set('pomoSoundType', soundType);
-          }
-          Promise.all(photoWrites).then(function () {
-            ['todos', 'events', 'diaries', 'notes', 'goals', 'bookmarks', 'ledger', 'countdowns', 'ledgerCategories', 'trash'].forEach(save);
-            save('photoMeta');
-            pruneEvents();
-            pruneDone();
-            pruneTrash();
-            if (typeof renderTodos === 'function') renderTodos();
-            if (typeof renderCalendar === 'function') renderCalendar();
-            if (typeof renderDiaries === 'function') renderDiaries();
-            if (typeof renderNotes === 'function') renderNotes();
-            if (typeof renderPhotos === 'function') renderPhotos();
-            if (typeof renderGoals === 'function') renderGoals();
-            if (typeof renderBookmarks === 'function') renderBookmarks();
-            if (typeof renderLedger === 'function') renderLedger();
-            if (typeof renderHome === 'function') renderHome();
-            if (typeof renderTrash === 'function') renderTrash();
-            toast(dict.importing);
-            closeSettings();
-          });
         });
       };
       reader.readAsText(file);
@@ -585,57 +593,63 @@ function initSettingsEvents() {
         }
         const data = await fileRes.json();
 
-        if (data.todos) todos = migrateTodos(data.todos);
-        if (data.events) events = data.events;
-        if (data.diaries) diaries = data.diaries;
-        if (data.notes) notes = data.notes;
-        if (data.goals) goals = data.goals;
-        if (data.bookmarks) bookmarks = data.bookmarks;
-        if (data.countdowns) countdowns = data.countdowns;
-        if (data.trash) trash = data.trash;
-        if (data.ledgerCategories) ledgerCategories = data.ledgerCategories;
-        if (data.ledger) ledger = data.ledger;
-        else if (data.expenses) ledger = data.expenses.map(x => Object.assign({}, x, { type: 'expense' }));
+        window.__isRestoringBackup = true;
+        try {
+          if (data.todos) todos = migrateTodos(data.todos);
+          if (data.events) events = data.events;
+          if (data.diaries) diaries = data.diaries;
+          if (data.notes) notes = data.notes;
+          if (data.goals) goals = data.goals;
+          if (data.bookmarks) bookmarks = data.bookmarks;
+          if (data.countdowns) countdowns = data.countdowns;
+          if (data.trash) trash = data.trash;
+          if (data.ledgerCategories) ledgerCategories = data.ledgerCategories;
+          if (data.ledger) ledger = data.ledger;
+          else if (data.expenses) ledger = data.expenses.map(function (x) { return Object.assign({}, x, { type: 'expense' }); });
 
-        photoMeta = [];
-        const photoWrites = (data.photos || []).map(p => {
-          photoMeta.push({ id: p.id, title: p.title || '' });
-          if (IDB.available() && p.src) {
-            photoCache[p.id] = p.src;
-            return IDB.put('photos', { id: p.id, src: p.src }).catch(() => {});
+          photoMeta = [];
+          const photoWrites = (data.photos || []).map(function (p) {
+            photoMeta.push({ id: p.id, title: p.title || '' });
+            if (IDB.available() && p.src) {
+              photoCache[p.id] = p.src;
+              return IDB.put('photos', { id: p.id, src: p.src }).catch(function () {});
+            }
+            return Promise.resolve();
+          });
+
+          if (data.prefs) {
+            if (typeof data.prefs.lum === 'number') state.lum = Math.min(100, Math.max(0, data.prefs.lum));
+            if (typeof data.prefs.bg === 'string') state.bg = data.prefs.bg || null;
+            applyTheme();
+            savePrefs();
           }
-          return Promise.resolve();
-        });
+          if (data.pomoSoundType === 'synth' || data.pomoSoundType === 'custom') {
+            soundType = data.pomoSoundType;
+            LS.set('pomoSoundType', soundType);
+          }
 
-        if (data.prefs) {
-          if (typeof data.prefs.lum === 'number') state.lum = Math.min(100, Math.max(0, data.prefs.lum));
-          if (typeof data.prefs.bg === 'string') state.bg = data.prefs.bg || null;
-          applyTheme();
-          savePrefs();
+          await Promise.all(photoWrites);
+          ['todos', 'events', 'diaries', 'notes', 'goals', 'bookmarks', 'ledger', 'countdowns', 'ledgerCategories', 'trash'].forEach(save);
+          save('photoMeta');
+          pruneEvents();
+          pruneDone();
+          pruneTrash();
+          if (typeof renderTodos === 'function') renderTodos();
+          if (typeof renderCalendar === 'function') renderCalendar();
+          if (typeof renderDiaries === 'function') renderDiaries();
+          if (typeof renderNotes === 'function') renderNotes();
+          if (typeof renderPhotos === 'function') renderPhotos();
+          if (typeof renderGoals === 'function') renderGoals();
+          if (typeof renderBookmarks === 'function') renderBookmarks();
+          if (typeof renderLedger === 'function') renderLedger();
+          if (typeof renderHome === 'function') renderHome();
+          if (typeof renderTrash === 'function') renderTrash();
+          toast(dict.gRestoreOk);
+        } finally {
+          window.__isRestoringBackup = false;
         }
-        if (data.pomoSoundType === 'synth' || data.pomoSoundType === 'custom') {
-          soundType = data.pomoSoundType;
-          LS.set('pomoSoundType', soundType);
-        }
-
-        await Promise.all(photoWrites);
-        ['todos', 'events', 'diaries', 'notes', 'goals', 'bookmarks', 'ledger', 'countdowns', 'ledgerCategories', 'trash'].forEach(save);
-        save('photoMeta');
-        pruneEvents();
-        pruneDone();
-        pruneTrash();
-        if (typeof renderTodos === 'function') renderTodos();
-        if (typeof renderCalendar === 'function') renderCalendar();
-        if (typeof renderDiaries === 'function') renderDiaries();
-        if (typeof renderNotes === 'function') renderNotes();
-        if (typeof renderPhotos === 'function') renderPhotos();
-        if (typeof renderGoals === 'function') renderGoals();
-        if (typeof renderBookmarks === 'function') renderBookmarks();
-        if (typeof renderLedger === 'function') renderLedger();
-        if (typeof renderHome === 'function') renderHome();
-        if (typeof renderTrash === 'function') renderTrash();
-        toast(dict.gRestoreOk);
       } catch (err) {
+        window.__isRestoringBackup = false;
         console.error(err);
         toast(dict.gRestoreFail);
       }

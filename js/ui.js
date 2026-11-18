@@ -54,8 +54,9 @@ function cycleLanguage() {
   const currentIndex = LANG_CYCLE.indexOf(currentLang);
   currentLang = LANG_CYCLE[(currentIndex + 1) % LANG_CYCLE.length];
   applyLanguage(currentLang);
-  if (window.I18N[currentLang].welcomeLangSwitched) {
-    toast(window.I18N[currentLang].welcomeLangSwitched);
+  const dict = (window.I18N && window.I18N[currentLang]) || {};
+  if (dict.welcomeLangSwitched) {
+    toast(dict.welcomeLangSwitched);
   }
 }
 

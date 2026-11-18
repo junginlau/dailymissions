@@ -305,9 +305,8 @@ document.addEventListener('keydown', function (e) {
 });
 // 確保在 main.js 載入前，initSettingsEvents 是存在的 (由 settings.js 定義)
 window.initSettingsEvents = window.initSettingsEvents || function() {};
-
 // ==========================================
-// 自動同步核心邏輯（只在 core.js 宣告一次）
+// 自動同步核心邏輯（僅此處宣告 autoSyncTimer，settings.js 不可再宣告）
 // ==========================================
 let autoSyncTimer = null;
 
@@ -359,10 +358,7 @@ window.scheduleAutoSync = function () {
         countdowns: countdowns,
         ledgerCategories: ledgerCategories,
         trash: trash,
-        prefs: {
-          lum: (typeof state !== 'undefined' && state) ? state.lum : 55,
-          bg: (typeof state !== 'undefined' && state) ? state.bg : null
-        },
+        prefs: { lum: (typeof state !== 'undefined' && state) ? state.lum : 55, bg: (typeof state !== 'undefined' && state) ? state.bg : null },
         pomoSoundType: (typeof soundType !== 'undefined') ? soundType : 'synth'
       };
       const jsonString = JSON.stringify(data);
@@ -409,9 +405,7 @@ window.scheduleAutoSync = function () {
         const now = Date.now();
         LS.set('lastCloudSyncTime', now);
         LS.set('lastSyncedDataTime', now);
-        if (gSyncTimeText) {
-          gSyncTimeText.textContent = (dict.gSyncSyncedAt || '已同步：') + getFormattedTime(now);
-        }
+        if (gSyncTimeText) gSyncTimeText.textContent = (dict.gSyncSyncedAt || '已同步：') + getFormattedTime(now);
       } else if (res.status === 401) {
         if (typeof clearGoogleToken === 'function') clearGoogleToken();
       } else if (gSyncTimeText) {
@@ -605,8 +599,9 @@ function dayKeyOf(d) {
 return DAY_KEYS.at(d.getDay());
 }
 function dayLabelOf(key) {
-const map = window.I18N[currentLang].weekdaysFull || {};
-return map[key] || key;
+  const dict = (window.I18N && window.I18N[currentLang]) || (window.I18N && window.I18N['zh-TW']) || {};
+  const map = dict.weekdaysFull || {};
+  return map[key] || key;
 }
 function pruneEvents() {
 const cut = new Date();
